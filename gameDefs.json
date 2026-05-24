@@ -1,0 +1,40 @@
+{
+  "layers": [
+    {
+      "name":"bmp",
+      "offscreen": true,
+      "width": 1000,
+      "height": 1000
+    },
+    {
+      "name":"grid",
+      "offscreen": true,
+      "width": 2000,
+      "height": 2000
+    },
+    {
+      "name":"map",
+      "reset": true,
+      "resize": true
+    },
+    {
+      "name":"landPath",
+      "reset": true,
+      "resize": true
+    },
+    {
+      "name":"agent",
+      "reset": true,
+      "resize": true
+    },
+    {
+      "name":"airPath",
+      "reset": true,
+      "resize": true
+    },
+    {
+      "name":"gui",
+      "reset": true
+    }
+  ]
+}

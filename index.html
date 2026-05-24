@@ -8,12 +8,38 @@
     :root {
       color-scheme: dark;
     }
+    canvas {
+      position: fixed;
+      inset: 0;
+    }
   </style>
 </head>
 <body>
-  <script>
-    import {C,M,zoomTo} from "camera.js"
-    import "listeners.js"
+  <script type="module">
+    import gameDefs from "./gameDefs.json" with {type:'json'}
+    import {C,M,zoomToC} from "./camera.js"
+    import {CVS,CTX,initCanvi,generateMap,generateGrid,resetCanvi} from "./canvas.js"
+    import "./listeners.js"
+
+
+    onload=()=>{
+      initCanvi(gameDefs.layers)
+      generateMap()
+      generateGrid()
+  
+      refresh()
+    }
+
+    function refresh() {
+      resetCanvi(gameDefs.layers)
+      zoomToC(gameDefs.layers)
+
+      CTX['map'].drawImage(CVS['bmp'],0,0)
+      CTX['map'].drawImage(CVS['grid'],0,0)
+
+      requestAnimationFrame(refresh)
+    }
+
   </script>
 </body>
 </html>
