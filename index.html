@@ -22,12 +22,13 @@
     import gameDefs from "./gameDefs.json" with {type:'json'}
     import Hex from "./hex.js"
     import {C,M,zoomToC} from "./camera.js"
-    import {CVS,CTX,initCanvi,generateMap,generateGrid,resetCanvi} from "./canvas.js"
-    import {drawMap,drawGrid} from "./map.js"
+    import {CVS,CTX,initCanvi,generateGrid,resetCanvi} from "./canvas.js"
+    import {mapData,generateMap,drawMap,drawGrid} from "./map.js"
     import "./listeners.js"
 
     onload=()=>{
       initCanvi(gameDefs.layers)
+      resetCanvi(gameDefs.layers)
       generateMap()
       generateGrid()
       refresh()
@@ -42,7 +43,18 @@
       resetCanvi(gameDefs.layers)
       zoomToC(gameDefs.layers)
       drawMap()
-      drawGrid()
+      // drawGrid()
+
+      for (const hex of mapData) {
+        // console.log(hex)
+        CTX['map'].save()
+        CTX['map'].translate(hex.x,hex.y)
+        if (CTX['map'].isPointInPath(hex.path,M.x,M.y)) {
+          hex.highlight(CTX['map'])
+        }
+        CTX['map'].restore()
+      }
+
       requestAnimationFrame(refresh)
     }
 

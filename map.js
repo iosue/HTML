@@ -1,7 +1,32 @@
+import gameDefs from "./gameDefs.json" with {type:'json'}
+import Hex from './hex.js'
 import {CVS,CTX} from './canvas.js'
 
+export const mapData=[]
+
+export function generateMap(lyrName='grid') {
+  let mapImg=document.getElementById('mapImg')
+  // CTX['bmp'].drawImage(mapImg,0,0)
+
+  let I=gameDefs.map.cols,J=gameDefs.map.rows
+
+  CTX['bmp'].translate(gameDefs.hex.mDiameter,gameDefs.hex.mDiameter/0.75**0.5/2)
+  // CTX['bmp'].translate(0,-gameDefs.hex.mDiameter/0.75**0.5/2)
+  for (let i=0;i<I;i++) {
+  for (let j=0;j<J;j++) {
+    let hex=new Hex(i,j)
+    mapData.push(hex)
+    hex.draw(CTX['bmp'])
+  }}
+}
+
+
 export function drawMap(ctx=CTX['map']) {
+  ctx.save()
+  ctx.translate(-gameDefs.hex.mDiameter,-gameDefs.hex.mDiameter/0.75**0.5/2)
+  ctx.strokeRect(0,0,CVS['bmp'].width,CVS['bmp'].height)
   ctx.drawImage(CVS['bmp'],0,0)
+  ctx.restore()
 }
 
 export function drawStaticGrid(ctx=CTX['map']) {

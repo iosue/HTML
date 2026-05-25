@@ -8,24 +8,34 @@ export default class Hex {
     this.y=j*gameDefs.hex.mDiameter*0.75**0.5
   }
   get path() {
-    let p=new Path2D()
-    p.translate(this.x,this.y)
-    for (let i=0;i<6;i++) {
-      p.lineTo(gameDefs.hex.mDiameter,-gameDefs.hex.mDiameter*Math.tan(Math.PI/6))
-      p.rotate(Math.PI/3)
-    }
+    let p=new Path2D(),
+        d=gameDefs.hex.mDiameter,
+        D=d/0.75**0.5
+    p.moveTo(+0/2,-D/2)
+    p.lineTo(+d/2,-D/4)
+    p.lineTo(+d/2,+D/4)
+    p.lineTo(-0/2,+D/2)
+    p.lineTo(-d/2,+D/4)
+    p.lineTo(-d/2,-D/4)
     p.closePath()
-    p.clip()
     return p
   }
-  draw(ctx=CTX['bmp']) {
+  draw(ctx) {
     ctx.save()
-    ctx.strokeStyle='salmon'
+    ctx.translate(this.x,this.y)
+    ctx.clip(this.path)
     ctx.stroke(this.path)
+    ctx.fillText(`${this.i}:${this.j}`,0,0)
     ctx.restore()
   }
-  highlight(ctx=CTX['map']) {
-
+  highlight(ctx) {
+    ctx.save()
+    // ctx.translate(this.x,this.y)
+    ctx.strokeStyle='white'
+    ctx.stroke(this.path)
+    ctx.fillStyle='cyan'
+    ctx.fillText(`${this.i}:${this.j}`,0,0)
+    ctx.restore()
   }
   get nAddresses() {
     const d=this.j%2

@@ -1,13 +1,15 @@
 {
+  "map":{
+    "cols":25,
+    "rows":20
+  },
   "hex":{
     "mDiameter": 100
   },
   "layers": [
     {
       "name":"bmp",
-      "offscreen": true,
-      "width": 2500,
-      "height": 2000
+      "offscreen": true
     },
     {
       "name":"map",

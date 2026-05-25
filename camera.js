@@ -6,10 +6,11 @@ export const C={x:0,y:0,z:1,v:10/9},
 
 export function zoomToC(layers) {
   for (const lyr of layers) {
+    let ctx=CTX[lyr.name]
     if (lyr.resize) {
-      CTX[lyr.name].translate(innerWidth/2,innerHeight/2)
-      CTX[lyr.name].scale(1/C.z,1/C.z)
-      CTX[lyr.name].translate(-C.x,-C.y)
+      ctx.translate(innerWidth/2,innerHeight/2)
+      ctx.scale(1/C.z,1/C.z)
+      ctx.translate(-C.x,-C.y)
     }
   }
 }
