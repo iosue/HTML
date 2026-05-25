@@ -15,28 +15,34 @@
   </style>
 </head>
 <body>
+  <resources style="display:none">
+    <img id="mapImg" src="./me.png">
+  </resources>
   <script type="module">
     import gameDefs from "./gameDefs.json" with {type:'json'}
+    import Hex from "./hex.js"
     import {C,M,zoomToC} from "./camera.js"
     import {CVS,CTX,initCanvi,generateMap,generateGrid,resetCanvi} from "./canvas.js"
+    import {drawMap,drawGrid} from "./map.js"
     import "./listeners.js"
-
 
     onload=()=>{
       initCanvi(gameDefs.layers)
       generateMap()
       generateGrid()
-  
       refresh()
+      let h1=new Hex(0,0),
+          h2=new Hex(0,1)
+
+      console.log(...h1.nAddresses)
+      console.log(...h2.nAddresses)
     }
 
     function refresh() {
       resetCanvi(gameDefs.layers)
       zoomToC(gameDefs.layers)
-
-      CTX['map'].drawImage(CVS['bmp'],0,0)
-      CTX['map'].drawImage(CVS['grid'],0,0)
-
+      drawMap()
+      drawGrid()
       requestAnimationFrame(refresh)
     }
 
