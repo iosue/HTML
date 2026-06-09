@@ -2,13 +2,14 @@
 // STRAIGHT SECTION
 // -----------------------------
 export class TrackSection {
-	constructor(id, startX = 0, startY = 0, heading = 0, length = 100) {
+	constructor(id, startX = 0, startY = 0, heading = 0, length = 100, network, color="#444") {
 		this.id = id
 		this.length = length
 		this.next = []
 
 		this.start = { x: startX, y: startY }
 		this.heading = heading
+		this.color = color
 		this.recomputeGeometry()
 	}
 
@@ -45,7 +46,7 @@ export class TrackSection {
 		} else if (this.isActiveBranch === false) {
 			ctx.strokeStyle = "#4444"
 		} else {
-			ctx.strokeStyle = "#444"
+			ctx.strokeStyle = this.color
 		}
 
 		ctx.lineWidth = 4
@@ -61,8 +62,8 @@ export class TrackSection {
 // CURVED SECTION
 // -----------------------------
 export class CurvedTrackSection extends TrackSection {
-	constructor(id, startX, startY, heading, radius, sweepAngle) {
-		super(id, startX, startY, heading, radius * Math.abs(sweepAngle))
+	constructor(id, startX, startY, heading, radius, sweepAngle, color) {
+		super(id, startX, startY, heading, radius * Math.abs(sweepAngle), color)
 		this.radius = radius
 		this.sweepAngle = sweepAngle
 		this.recomputeGeometry()
@@ -115,7 +116,7 @@ export class CurvedTrackSection extends TrackSection {
 		} else if (this.isActiveBranch === false) {
 			ctx.strokeStyle = "#4444"
 		} else {
-			ctx.strokeStyle = "#444"
+			ctx.strokeStyle = this.color
 		}
 
 		ctx.lineWidth = 4

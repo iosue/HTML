@@ -19,6 +19,29 @@ export class TrackNetwork {
 		return this.sections.get(id)
 	}
 
+	getPointAlongPath(section, t, offset) {
+		// Move forward or backward along connected sections
+		let current = section
+		let remaining = offset
+
+		while (current && Math.abs(remaining) > current.length) {
+			if (remaining > 0) {
+				remaining -= current.length
+				current =
+					current instanceof SwitchSection
+						? current.getActiveNext()
+						: current.next[0]
+			} else {
+				remaining += current.length
+				current = this.findPreviousSection(current)
+			}
+		}
+
+		if (!current) return section.getPointAt(t) // fallback
+		const localT = Math.min(Math.max(remaining / current.length, 0), 1)
+		return current.getPointAt(localT)
+	}
+
 	isSectionOccupied(section) {
 		for (const train of this.trains) {
 			if (train.isOnSection(section)) return true
@@ -55,6 +78,7 @@ export class TrackNetwork {
 
 	addTrain(train) {
 		this.trains.push(train)
+		return train
 	}
 
 	update(dt) {

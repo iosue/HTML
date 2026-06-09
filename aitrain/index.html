@@ -19,33 +19,65 @@
 	</head>
 	<body>
 		<script type="module">
-			import { TrackSection, CurvedTrackSection, SwitchSection } from "./classes/tracks.js"
+			import {
+				TrackSection,
+				CurvedTrackSection,
+				SwitchSection,
+			} from "./classes/tracks.js"
 			import { Train } from "./classes/trains.js"
 			import { TrackNetwork } from "./classes/network.js"
 
 			const Camera = { x: 0, y: 0, z: 1, v: 10 / 9 }
 
 			const cvs = document.createElement("canvas")
-          cvs.id = "yard"
-          cvs.width = innerWidth
-          cvs.height = innerHeight
-  			document.body.appendChild(cvs)
+			cvs.id = "yard"
+			cvs.width = innerWidth
+			cvs.height = innerHeight
+			document.body.appendChild(cvs)
 			const ctx = cvs.getContext("2d")
 
 			const network = new TrackNetwork()
 
-			network.addSection(new TrackSection("A", 50, 200, 0, 150, network))
-			network.addSection(new SwitchSection("S", 0, 0, 0, 0, network))
-			network.addSection(new CurvedTrackSection("B", 0, 0, 0, 100, Math.PI / 4, network))
-			network.addSection(new CurvedTrackSection("C", 0, 0, 0, 100, -Math.PI / 4, network))
+			network.addSection(
+				new TrackSection("A", 50, 200, 0, 150, network, "green"),
+			)
+			network.addSection(new SwitchSection("S", 0, 0, 0, 50, network, "gold"))
+			network.addSection(
+				new CurvedTrackSection(
+					"B",
+					0,
+					0,
+					0,
+					100,
+					Math.PI / 4,
+					network,
+					"salmon",
+				),
+			)
+			network.addSection(
+				new CurvedTrackSection(
+					"C",
+					0,
+					0,
+					0,
+					100,
+					-Math.PI / 4,
+					network,
+					"blue",
+				),
+			)
+			network.addSection(
+				new CurvedTrackSection("D", 0, 0, 0, 50, Math.PI / 2, network, "blue"),
+			)
 
 			network.connectSections(network.get("A"), network.get("S"))
 			network.connectSections(network.get("S"), network.get("B"))
 			network.connectSections(network.get("S"), network.get("C"))
+			network.connectSections(network.get("C"), network.get("D"))
 			network.get("S").setRoute(1)
 
 			// Train
-      network.addTrain(new Train("T1", network.get("A"), 60, network));
+			const train=network.addTrain(new Train("T1", network.get("A"), 100, network))
 
 			// Animation loop
 			let last = performance.now()
@@ -83,31 +115,52 @@
 					}
 				}
 			})
-      cvs.addEventListener("mousemove", (e) => {
-        const rect = cvs.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+			cvs.addEventListener("mousemove", e => {
+				const rect = cvs.getBoundingClientRect()
+				const x = e.clientX - rect.left
+				const y = e.clientY - rect.top
+				let hoveringSwitch = false
+				for (const section of network.sections.values()) {
+					if (section instanceof SwitchSection) {
+						const dx = x - section.end.x
+						const dy = y - section.end.y
+						const dist = Math.hypot(dx, dy)
+						if (dist < 15) {
+							// same radius as click
+							hoveringSwitch = true
+							section.isHovered = true
+							break
+						} else {
+							section.isHovered = false
+						}
+					}
+				}
+				cvs.style.cursor = hoveringSwitch ? "pointer" : "default"
+			})
 
-        let hoveringSwitch = false;
+			window.addEventListener("keydown", e => {
+				switch (e.code) {
+					case "KeyW":
+					case "ArrowUp":
+						train.targetSpeed = train.maxSpeed
+						break
+					case "KeyS":
+					case "ArrowDown":
+						train.targetSpeed = 0
+						break
+					case "Tab":
+						e.preventDefault()
+						train.setGearForward(!train.forward)
+						break
+				}
+			})
 
-        for (const section of network.sections.values()) {
-          if (section instanceof SwitchSection) {
-            const dx = x - section.end.x;
-            const dy = y - section.end.y;
-            const dist = Math.hypot(dx, dy);
-
-            if (dist < 15) { // same radius as click
-              hoveringSwitch = true;
-              section.isHovered = true
-              break;
-            } else {
-              section.isHovered = false
-            }
-          }
-        }
-
-        cvs.style.cursor = hoveringSwitch ? "pointer" : "default";
-      });
+			window.addEventListener("keyup", e => {
+				if (e.code === "KeyW" || e.code === "ArrowUp" || e.code === "KeyS" || e.code === "ArrowDown") {
+					// optional: coast when released
+					train.targetSpeed = train.speed
+				}
+			})
 		</script>
 	</body>
 </html>
