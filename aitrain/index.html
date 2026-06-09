@@ -29,23 +29,20 @@ const ctx = cvs.getContext("2d");
 
 const network = new TrackNetwork();
 
-// Build a tiny demo layout
-const A = network.addSection(new TrackSection("A", 25, 200, 0, 150));
-const S = network.addSection(new SwitchSection("S", 0, 0, 0, 50)); // placeholder
-network.connectSections(A, S);
+network.addSection(new TrackSection("A", 50, 200, 0, 150));
+network.addSection(new SwitchSection("S", 0, 0, 0, 50));
+network.addSection(new CurvedTrackSection("B", 0, 0, 0, 100, Math.PI / 4));
+network.addSection(new CurvedTrackSection("C", 0, 0, 0, 100, -Math.PI / 4));
 
-const B = network.addSection(new TrackSection("B", 0, 0, 0, 100));
-const C = network.addSection(new CurvedTrackSection("C", 0, 0, 0, 100, Math.PI / 4));
-
-network.connectSections(S, B); // adds B
-network.connectSections(S, C); // keeps both (distinct geometry)
-// network.disconnectSections(S, B); // B fades out smoothly
-// network.connectSections(C, B); // replaces C’s old connection
+network.connectSections(network.get("A"), network.get("S"));
+network.connectSections(network.get("S"), network.get("B"));
+network.connectSections(network.get("S"), network.get("C"));
+network.get('S').setRoute(0)
 
 
 
 // Train
-network.addTrain(new Train("T1", A, 60));
+network.addTrain(new Train("T1", network.get('A'), 60));
 
 // Animation loop
 let last = performance.now();

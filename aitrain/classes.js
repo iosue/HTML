@@ -2,7 +2,7 @@
 // TRACK SECTION
 // -----------------------------
 export class TrackSection {
-    constructor(id, startX=0, startY=0, heading=0, length=0) {
+    constructor(id, startX=0, startY=0, heading=0, length=100) {
         this.id = id;
         this.length = length;
         this.next = [];
@@ -43,11 +43,9 @@ export class TrackSection {
         if (this.isDisconnected) {
             ctx.strokeStyle = "red";
         } else if (this.isActiveBranch === false) {
-            ctx.strokeStyle = "#444";
-            ctx.globalAlpha = 0.4; // semi-transparent inactive
+            ctx.strokeStyle = "#4444";
         } else {
             ctx.strokeStyle = "#444";
-            ctx.globalAlpha = 1.0;
         }
 
         ctx.lineWidth = 4;
@@ -111,30 +109,27 @@ export class CurvedTrackSection extends TrackSection {
         };
     }
 
-draw(ctx) {
-    if (this.isDisconnected) {
-        ctx.strokeStyle = "red";
-    } else if (this.isActiveBranch === false) {
-        ctx.strokeStyle = "#444";
-        ctx.globalAlpha = 0.4;
-    } else {
-        ctx.strokeStyle = "#444";
-        ctx.globalAlpha = 1.0;
-    }
+    draw(ctx) {
+        if (this.isDisconnected) {
+            ctx.strokeStyle = "red";
+        } else if (this.isActiveBranch === false) {
+          ctx.strokeStyle = "#4444";
+        } else {
+          ctx.strokeStyle = "#444";
+        }
 
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.arc(
-        this.center.x,
-        this.center.y,
-        this.radius,
-        this.startAngle,
-        this.endAngle,
-        this.sweepAngle < 0
-    );
-    ctx.stroke();
-    ctx.globalAlpha = 1.0;
-}
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(
+            this.center.x,
+            this.center.y,
+            this.radius,
+            this.startAngle,
+            this.endAngle,
+            this.sweepAngle < 0
+        );
+        ctx.stroke();
+    }
 }
 
 
@@ -142,29 +137,38 @@ draw(ctx) {
 // SWITCH SECTION
 // -----------------------------
 export class SwitchSection extends TrackSection {
-    constructor(id, x1, y1, x2, y2) {
-        super(id, x1, y1, x2, y2);
-        this.activeIndex = 0; // which exit is active
+    constructor(id, startX, startY, heading, length=0) {
+        super(id, startX, startY, heading, length);
+        this.activeIndex = 0;
+    }
+    setRoute(index) {
+        this.activeIndex = index;
+
+        // Auto‑update branch states
+        this.next.forEach((branch, i) => {
+            branch.isActiveBranch = i === index;
+        });
     }
 
-    setRoute(index) {
-        if (index >= 0 && index < this.next.length) {
-            this.activeIndex = index;
-        }
-    }
+
 
     getActiveNext() {
         return this.next[this.activeIndex];
     }
 
     draw(ctx) {
-        super.draw(ctx);
-        // highlight switch
-        const p = this.getPointAt(0.5);
-        ctx.fillStyle = "orange";
+        ctx.strokeStyle = "#444";
+        ctx.lineWidth = 4;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, 6, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.moveTo(this.start.x, this.start.y);
+        ctx.lineTo(this.end.x, this.end.y);
+        ctx.stroke();
+
+        // // Draw a small indicator dot
+        // ctx.fillStyle = "orange";
+        // ctx.beginPath();
+        // ctx.arc(this.end.x, this.end.y, 5, 0, 2 * Math.PI);
+        // ctx.fill();
     }
 }
 
@@ -210,50 +214,43 @@ export class Train {
 // -----------------------------
 export class TrackNetwork {
     constructor() {
-        this.sections = [];
+        this.sections = new Map(); // store by id
         this.trains = [];
     }
 
     addSection(section) {
-        this.sections.push(section);
+        this.sections.set(section.id, section);
         return section;
     }
+
+    get(id) {
+        return this.sections.get(id);
+    }
+
     connectSections(prev, next) {
         const isSwitch = prev instanceof SwitchSection;
         const alreadyConnected = prev.next.includes(next);
 
-        // Propagate geometry
         const newStart = prev.end;
         const newHeading = prev.getEndHeading();
         next.setStartAndHeading(newStart, newHeading);
 
-        // Connection logic
-        if (!isSwitch) {
-            prev.next = [next];
-        } else if (!alreadyConnected) {
-            prev.next.push(next);
+        if (isSwitch && !alreadyConnected) {
+            prev.next.push(next)
+            prev.setRoute(prev.next.length - 1)
+        } else {
+            prev.next = [next]
         }
 
-        // Mark section as active
         next.isDisconnected = false;
+        next.isActiveBranch = true; // default active
     }
 
     disconnectSections(prev, next) {
         const index = prev.next.indexOf(next);
         if (index !== -1) {
             prev.next.splice(index, 1);
-            next.isDisconnected = true; // mark visually inactive
-        }
-    }
-
-    markInactiveBranches() {
-        // For each switch, mark non-active branches as inactive
-        for (const s of this.sections) {
-            if (s instanceof SwitchSection) {
-                s.next.forEach((branch, i) => {
-                    branch.isActiveBranch = i === s.activeIndex;
-                });
-            }
+            next.isDisconnected = true;
         }
     }
 
@@ -266,11 +263,11 @@ export class TrackNetwork {
     }
 
     draw(ctx) {
-        for (const s of this.sections) {
-            ctx.globalAlpha = s.fadeAlpha ?? 1;
-            s.draw(ctx);
+        for (const section of this.sections.values()) {
+            section.draw(ctx);
         }
-        ctx.globalAlpha = 1;
-        for (const t of this.trains) t.draw(ctx);
+        for (const train of this.trains) {
+            train.draw(ctx);
+        }
     }
 }
