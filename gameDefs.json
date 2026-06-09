@@ -1,10 +1,10 @@
 {
   "map":{
-    "cols":25,
-    "rows":20
+    "cols":125,
+    "rows":120
   },
   "hex":{
-    "mDiameter": 100
+    "mDiameter": 32
   },
   "layers": [
     {
@@ -18,14 +18,11 @@
     },
     {
       "name":"grid",
-      "offscreen": true,
-      "width": 2000,
-      "height": 2000
+      "offscreen": true
     },
     {
       "name":"hudGrid",
-      "reset": true,
-      "resize": true
+      "reset": true
     },
     {
       "name":"landPath",

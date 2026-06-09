@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Army</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+      color-scheme: dark;
+      font: 12px consolas;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      position: relative;
+    }
+
+
+    .enlisted {
+      display: grid;
+      gap: 0.5rem;
+      grid-template-columns: auto 10em 1fr;
+      /* margin: 0.5em 2em; */
+      border: 1px solid #ccc;
+      i {
+        display: block;
+        height:1lh; width: 1lh;
+        background-color: #f008;
+      }
+      &.e00 i {background-color: oklch(35% 50% 070); background-image: url('svg/e00.svg');}
+      &.e01 i {background-color: oklch(35% 50% 080); background-image: url('svg/e01.svg');}
+      &.e02 i {background-color: oklch(35% 50% 090); background-image: url('svg/e02.svg');}
+      &.e03 i {background-color: oklch(35% 50% 100); background-image: url('svg/e03.svg');}
+      &.e04 i {background-color: oklch(35% 50% 110); background-image: url('svg/e04.svg');}
+      &.e05 i {background-color: oklch(35% 50% 120); background-image: url('svg/e05.svg');}
+      &.e06 i {background-color: oklch(35% 50% 130); background-image: url('svg/e06.svg');}
+      &.e07 i {background-color: oklch(35% 50% 140); background-image: url('svg/e07.svg');}
+      &.e08 i {background-color: oklch(35% 50% 150); background-image: url('svg/e08.svg');}
+      &.e09 i {background-color: oklch(35% 50% 160); background-image: url('svg/e09.svg');}
+      &.e10 i {background-color: oklch(35% 50% 170); background-image: url('svg/e10.svg');}
+      &.e11 i {background-color: oklch(35% 50% 180); background-image: url('svg/e11.svg');}
+      &.e12 i {background-color: oklch(35% 50% 190); background-image: url('svg/e12.svg');}
+      &.e13 i {background-color: oklch(35% 50% 200); background-image: url('svg/e13.svg');}
+      ul {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
+        grid-column: 2;
+        grid-row: 2;
+        li {
+          text-align: center;
+        }
+      }
+    }
+
+    .officer {
+      display: grid;
+      gap: 0.5rem;
+      grid-template-columns: auto 12em 1fr;
+      /* margin: 0.5em 2em; */
+      border: 1px solid #ccc;
+      i {
+        display: block;
+        height:1lh; width: 1lh;
+        background-color: #08f8;
+        outline: 1px solid;
+      }
+      &.o00 i {background-color: oklch(35% 50% 290); background-image: url('svg/o00.svg');}
+      &.o01 i {background-color: oklch(35% 50% 260); background-image: url('svg/o01.svg');}
+      &.o02 i {background-color: oklch(35% 50% 230); background-image: url('svg/o02.svg');}
+      &.o03 i {background-color: oklch(35% 50% 230); background-image: url('svg/o03.svg');}
+      &.o04 i {background-color: oklch(35% 50% 230); background-image: url('svg/o04.svg');}
+      &.o05 i {background-color: oklch(35% 50% 200); background-image: url('svg/o05.svg');}
+      &.o06 i {background-color: oklch(35% 50% 170); background-image: url('svg/o06.svg');}
+      &.o07 i {background-color: oklch(35% 50% 170); background-image: url('svg/o07.svg');}
+      &.o08 i {background-color: oklch(35% 50% 170); background-image: url('svg/o08.svg');}
+      &.o09 i {background-color: oklch(35% 50% 140); background-image: url('svg/o09.svg');}
+      &.o10 i {background-color: oklch(35% 50% 110); background-image: url('svg/o10.svg');}
+      &.o11 i {background-color: oklch(35% 50% 110); background-image: url('svg/o11.svg');}
+      &.o12 i {background-color: oklch(35% 50% 110); background-image: url('svg/o12.svg');}
+      &.o13 i {background-color: oklch(35% 50% 050); background-image: url('svg/o13.svg');}
+      ul {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 1fr;
+        grid-column: 2;
+        grid-row: 2;
+        li {
+          text-align: center;
+        }
+      }
+    }
+
+    .formation {
+      --color: #888;
+      --gap: 0.25rem;
+      display: inline-block;
+      &>i {
+        display: block;
+        border: 1px solid;
+        height: 2rlh;
+        width: 3rlh;
+        margin-block: 1rem;
+        &::before {
+          content: '•';
+          content: attr(size);
+          position: absolute;
+          left: 0rem; right: 0rem; width: auto;
+          top: auto; bottom: 100%; height: auto;
+          text-align: center;
+        }
+        &::after {
+          content: '';
+          position: absolute;
+          left: -1px; right: auto; width: auto;
+          top: 100%; bottom: auto; height: calc(2rem + var(--gap));
+          border-left: 1px solid var(--color);
+        }
+      }
+    }
+    .formation,.formation>ul>li {
+      /* padding: 1rem; */
+      &>ul {
+        display: grid;
+        row-gap: var(--gap);
+        padding-left: 1rem;
+        &>li {
+          &::before {
+            content: '';
+            position: absolute;
+            left: auto; right: 100%; width: 1rem;
+            top: 1rlh; bottom: 0rem; height: auto;
+            border-top: 1px solid var(--color);
+          }
+          &:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: auto; right: 100%; width: 1rem;
+            top: 1rlh; bottom: auto; height: calc(100% + var(--gap));
+            border-left: 1px solid var(--color);
+          }
+        }
+      }
+      &.sqd>ul>li {
+        padding-bottom: 1rem;
+      }
+    }
+
+    .plt>ul {
+      --color: #888;
+      display: inline grid;
+      grid-auto-flow: column;
+      margin: 0.5rlh;
+      li:has([size="•"]) {
+        padding-inline: 0.5rlh;
+        &:not(:first-child)::before {
+          content: '';
+          position: absolute;
+          left: 0rem; right: auto; width: calc(2rlh + 1px);
+          top: auto; bottom: 100%; height: 1rem;
+          border-top: 1px solid var(--color);
+          border-right: 1px solid var(--color);
+        }
+        &:not(:last-child)::after {
+          content: '';
+          position: absolute;
+          left: 2rlh; right: 0rem; width: auto;
+          top: auto; bottom: 100%; height: 1rem;
+          border-top: 1px solid var(--color);
+          border-left: 1px solid var(--color);
+        }
+      }
+    }
+</style>
+</head>
+<body>
+  <script>
+    let SoldierCount=0,
+        OfficerCount=0
+    class SoldierClass {
+      constructor(rank,role,kit=[]) {
+        this.mode='enlisted'
+        this.rank=rank
+        this.role=role
+        this.kit=kit
+        SoldierCount++
+      }
+      get markup() {
+        return `
+        <div class="enlisted ${this.mode[0]}${String(this.rank).padStart(2,0)}">
+          <i title="${
+            [
+              'Lance Private',
+              'Private',
+              'Master Private',
+              'Lance Corporal',
+              'Corporal',
+              'Master Corporal',
+              'Lance  Sergeant',
+              'Sergeant',
+              'Master Sergeant',
+              'Lance Sergeant Major',
+              'Company Sergeant Major',
+              'Battalion Sergeant Major',
+              'Regiment Sergeant Major',
+              'Master Sergeant Major',
+            ][this.rank]
+            }"></i>
+          <a>${this.role}</a>
+          <ul class=kit>
+          ${this.kit.map(item=>`<li>${item.name}</li>`).join('')}
+          </ul>
+        </div>`
+      }
+    }
+    class OfficerClass extends SoldierClass {
+      constructor(rank,role,kit=[]) {
+        super(...arguments)
+        this.mode='officer'
+        SoldierCount--
+        OfficerCount++
+      }
+      get markup() {
+        return `
+        <div class="officer ${this.mode[0]}${String(this.rank).padStart(2,0)}">
+          <i title="${
+            [
+              'Cadet',
+              'Ensign',
+              'Lieutenant [Captain]',
+              'Captain',
+              '[Captain] Major',
+              'Commandant',
+              'Lieutenant Colonel',
+              'Colonel',
+              'Colonel Major',
+              'Brigadier',
+              'Lieutenant General',
+              'General',
+              'General Major',
+              'Field Marshall',
+            ][this.rank]
+            }"></i>
+          <a>${this.role}</a>
+          <ul class=kit>
+          ${this.kit.map(item=>`<li>${item.name}</li>`).join('')}
+          </ul>
+        </div>`
+      }
+    }
+    const Soldier={
+      mech:{
+        sqd1:class extends SoldierClass{
+          constructor(rank=5) {
+            super()
+            this.mode='enlisted'
+            this.rank=rank
+            this.role='Squad Leader'
+            this.kit=[
+              {name:'Rifle'},
+              {name:'Shotgun'}
+            ]
+          }
+        },
+        veh1:class extends SoldierClass{
+          constructor(rank=4) {
+            super()
+            this.mode='enlisted'
+            this.rank=rank
+            this.role='Vehicle Leader'
+            this.kit=[
+              {name:'Carbine'},
+            ]
+          }
+        },
+        vehg:class extends SoldierClass{
+          constructor(rank=2) {
+            super()
+            this.mode='enlisted'
+            this.rank=rank
+            this.role='Vehicle Gunner'
+            this.kit=[
+              {name:'Carbine'},
+            ]
+          }
+        },
+        vehd:class extends SoldierClass{
+          constructor(rank=1) {
+            super()
+            this.mode='enlisted'
+            this.rank=rank
+            this.role='Vehicle Driver'
+            this.kit=[
+              {name:'Carbine'},
+            ]
+          }
+        },
+        sqd2:class extends SoldierClass{
+          constructor(rank=3) {
+            super()
+            this.mode='enlisted'
+            this.rank=rank
+            this.role='Squad Second'
+            this.kit=[
+              {name:'Rifle'},
+              {name:'UBGL'}
+            ]
+          }
+        },
+        saw1:class extends SoldierClass{
+          constructor(rank=1) {
+            super()
+            this.mode='enlisted'
+            this.rank=rank
+            this.role='SAW Gunner'
+            this.kit=[
+              {name:'LMG'},
+              {name:'Ammo'},
+            ]
+          }
+        },
+        saw2:class extends SoldierClass{
+          constructor(rank=3) {
+            super()
+            this.mode='enlisted'
+            this.rank=rank
+            this.role='Team Leader'
+            this.kit=[
+              {name:'Rifle'},
+              {name:'UBGL'},
+            ]
+          }
+        },
+        rifleman:class extends SoldierClass{
+          constructor(rank=0) {
+            super()
+            this.mode='enlisted'
+            this.rank=rank
+            this.role='Rifleman'
+            this.kit=[
+              {name:'Rifle'},
+              {name:'LAT'}
+            ]
+          }
+        },
+        rfmn:class extends SoldierClass{
+          constructor(rank=0) {
+            super()
+            this.mode='enlisted'
+            this.rank=rank
+            this.role='Rifleman'
+            this.kit=[
+              {name:'Rifle'},
+              {name:'LAT'}
+            ]
+          }
+        },
+
+        mmg1:class extends SoldierClass{
+          constructor(rank=2) {
+            super()
+            this.mode='enlisted'
+            this.rank=rank
+            this.role='Rifleman'
+            this.kit=[
+              {name:'MMG'},
+              {name:'Ammo'}
+            ]
+          }
+        },
+        mmg2:class extends SoldierClass{
+          constructor(rank=1) {
+            super()
+            this.mode='enlisted'
+            this.rank=rank
+            this.role='Rifleman'
+            this.kit=[
+              {name:'Carbine'},
+              {name:'Ammo'}
+            ]
+          }
+        },
+        mat1:class extends SoldierClass{
+          constructor(rank=2) {
+            super()
+            this.mode='enlisted'
+            this.rank=rank
+            this.role='MAT Gunner'
+            this.kit=[
+              {name:'Carbine'},
+              {name:'MAT'}
+            ]
+          }
+        },
+        mat2:class extends SoldierClass{
+          constructor(rank=1) {
+            super()
+            this.mode='enlisted'
+            this.rank=rank
+            this.role='MAT Assist'
+            this.kit=[
+              {name:'Carbine'},
+              {name:'Ammo'}
+            ]
+          }
+        },
+      }
+    }
+    const Officer={
+      sqd1:class extends OfficerClass{
+        constructor(rank=5) {
+          super()
+          this.mode='enlisted'
+          this.rank=rank
+          this.role='Squad Leader'
+          this.kit=[
+            {name:'Rifle'},
+            {name:'Shotgun'}
+          ]
+        }
+      },
+      veh1:class extends OfficerClass{
+        constructor(rank=4) {
+          super()
+          this.mode='enlisted'
+          this.rank=rank
+          this.role='Vehicle Leader'
+          this.kit=[
+            {name:'Carbine'},
+          ]
+        }
+      },
+      vehg:class extends OfficerClass{
+        constructor(rank=2) {
+          super()
+          this.mode='enlisted'
+          this.rank=rank
+          this.role='Vehicle Gunner'
+          this.kit=[
+            {name:'Carbine'},
+          ]
+        }
+      },
+      vehd:class extends OfficerClass{
+        constructor(rank=1) {
+          super()
+          this.mode='enlisted'
+          this.rank=rank
+          this.role='Vehicle Driver'
+          this.kit=[
+            {name:'Carbine'},
+          ]
+        }
+      },
+      sqd2:class extends OfficerClass{
+        constructor(rank=3) {
+          super()
+          this.mode='enlisted'
+          this.rank=rank
+          this.role='Squad Second'
+          this.kit=[
+            {name:'Rifle'},
+            {name:'UBGL'}
+          ]
+        }
+      },
+      saw1:class extends OfficerClass{
+        constructor(rank=1) {
+          super()
+          this.mode='enlisted'
+          this.rank=rank
+          this.role='SAW Gunner'
+          this.kit=[
+            {name:'LMG'},
+            {name:'Ammo'},
+          ]
+        }
+      },
+      saw2:class extends OfficerClass{
+        constructor(rank=3) {
+          super()
+          this.mode='enlisted'
+          this.rank=rank
+          this.role='SAW Assist'
+          this.kit=[
+            {name:'Rifle'},
+            {name:'UBGL'},
+          ]
+        }
+      },
+      rifleman:class extends OfficerClass{
+        constructor(rank=0) {
+          super()
+          this.mode='enlisted'
+          this.rank=rank
+          this.role='Rifleman'
+          this.kit=[
+            {name:'Rifle'},
+            {name:'LAT'}
+          ]
+        }
+      },
+    }
+
+    class Formation {
+      constructor() {
+
+      }
+      get markup() {
+        return `
+        <div class="${this.size} formation">
+          <i size="${{
+            sqd:"•",
+            sec:"••",
+            plt:"•••",
+            ech:"••••",
+          }[this.size]}"></i>
+          <ul>
+          ${this.subs.map(sub=>`
+            <li>
+              <ul>
+                ${sub.map(s=>`<li>${s.markup}</li>`).join('')}
+              </ul>
+            </li>`).join('')}
+          </ul>
+        </div>`
+      }
+    }
+
+
+    const Platoon={
+      mech:class extends Formation {
+        constructor() {
+          super(...arguments)
+          this.size='plt'
+          this.subs=[
+            new Squad.plthq(),
+            new Squad.mech(),
+            new Squad.mech(),
+            new Squad.mech(),
+          ]
+        }
+        get markup() {
+          console.log('custom')
+          return `
+          <div class="${this.size} formation">
+            <i size="${{
+              sqd:"•",
+              sec:"••",
+              plt:"•••",
+              ech:"••••",
+            }[this.size]}"></i>
+            <ul>
+            ${this.subs.map(sub=>`<li>${sub.markup}</li>`).join('')}
+            </ul>
+          </div>`
+        }
+      }
+    }
+
+    const Squad={
+      mech:class extends Formation {
+        constructor() {
+          super(...arguments)
+          this.size='sqd'
+          this.subs=[
+            [
+              new Soldier.mech.veh1(),
+              new Soldier.mech.vehg(),
+              new Soldier.mech.vehd(),
+            ],
+            [
+              new Soldier.mech.sqd1(),
+            ],
+            [
+              new Soldier.mech.saw2(),
+              new Soldier.mech.saw1(),
+              new Soldier.mech.rfmn(),
+            ],
+            [
+              new Soldier.mech.sqd2(),
+              new Soldier.mech.saw1(),
+              new Soldier.mech.rfmn(),
+            ],
+          ]
+        }
+      },
+      plthq:class extends Formation {
+        constructor() {
+          super(...arguments)
+          this.size='sqd'
+          this.subs=[
+            [
+              new OfficerClass(4,'Platoon OC',[{name:'Carbine'},{name:'Pistol'}]),
+              new SoldierClass(8,'Platoon Sergeant',[{name:'Carbine'},{name:'Pistol'}]),
+              new Soldier.mech.vehg(),
+              new Soldier.mech.vehd(),
+            ],
+            [
+              new SoldierClass(4,'Weapons Master',[{name:'Carbine'},{name:'Pistol'}]),
+              new Soldier.mech.mat1(),
+              new Soldier.mech.mat2(),
+            ],
+            [
+              new OfficerClass(2,'Platoon 2iC',[{name:'Carbine'},{name:'Pistol'}]),
+              new Soldier.mech.mmg1(),
+              new Soldier.mech.mmg2(),
+            ],
+          ]
+        }
+      }
+    }
+
+
+    document.body.innerHTML+=''
+
+    +'<br>'
+    +new Platoon.mech().markup
+    +'<br><br><hr><br><hr><br><br>'
+    +'<br>'
+    +'<ul class="platoon">'
+    +'<li>'+new Squad.mech().markup+'</li>'
+    +'<li>'+new Squad.mech().markup+'</li>'
+    +'<li>'+new Squad.mech().markup+'</li>'
+    +'</ul>'
+    +'<br><br><hr><br><hr><br><br>'
+    +'<table border><td>'
+    +'<table border>'
+    +'<td>'
+    +new OfficerClass(4,'Platoon OC',[{name:'Carbine'},{name:'Pistol'}]).markup
+    +new SoldierClass(8,'Platoon Sergeant',[{name:'Carbine'},{name:'Pistol'}]).markup
+    +'<br>'
+    +new Soldier.mech.vehg().markup
+    +new Soldier.mech.vehd().markup
+    +'<br>'
+    +new SoldierClass(4,'Weapons Master',[{name:'Carbine'},{name:'Pistol'}]).markup
+    +new Soldier.mech.mat1().markup
+    +new Soldier.mech.mat2().markup
+    +'<br>'
+    +new OfficerClass(2,'Platoon 2iC',[{name:'Carbine'},{name:'Pistol'}]).markup
+    +new Soldier.mech.mmg1().markup
+    +new Soldier.mech.mmg2().markup
+    +'</td>'
+    +'<td>'
+    +new Soldier.mech.veh1().markup
+    +new Soldier.mech.vehg().markup
+    +new Soldier.mech.vehd().markup
+    +'<br>'
+    +new Soldier.mech.sqd1().markup
+    +'<br>'
+    +new Soldier.mech.saw2().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.rifleman().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.sqd2().markup
+    +'</td>'
+    +'<td>'
+    +new Soldier.mech.veh1().markup
+    +new Soldier.mech.vehg().markup
+    +new Soldier.mech.vehd().markup
+    +'<br>'
+    +new Soldier.mech.sqd1().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.saw2().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.sqd2().markup
+    +'</td>'
+    +'<td>'
+    +new Soldier.mech.veh1().markup
+    +new Soldier.mech.vehg().markup
+    +new Soldier.mech.vehd().markup
+    +'<br>'
+    +new Soldier.mech.sqd1().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.saw2().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.sqd2().markup
+    +'</td>'
+    +'</table><br><table border>'
+    +'<td>'
+    +new OfficerClass(3,'Platoon OC',[{name:'Carbine'},{name:'Pistol'}]).markup
+    +new SoldierClass(7,'Platoon Sergeant',[{name:'Carbine'},{name:'Pistol'}]).markup
+    +'<br>'
+    +new Soldier.mech.vehg().markup
+    +new Soldier.mech.vehd().markup
+    +'<br>'
+    +new SoldierClass(6,'Weapons Sergeant',[{name:'Carbine'},{name:'Pistol'}]).markup
+    +new Soldier.mech.mat1().markup
+    +new Soldier.mech.mat2().markup
+    +'<br>'
+    +new OfficerClass(2,'Platoon 2iC',[{name:'Carbine'},{name:'Pistol'}]).markup
+    +new Soldier.mech.mmg1().markup
+    +new Soldier.mech.mmg2().markup
+    +'</td>'
+    +'<td>'
+    +new Soldier.mech.veh1().markup
+    +new Soldier.mech.vehg().markup
+    +new Soldier.mech.vehd().markup
+    +'<br>'
+    +new Soldier.mech.sqd1().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.saw2().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.sqd2().markup
+    +'</td>'
+    +'<td>'
+    +new Soldier.mech.veh1().markup
+    +new Soldier.mech.vehg().markup
+    +new Soldier.mech.vehd().markup
+    +'<br>'
+    +new Soldier.mech.sqd1().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.saw2().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.sqd2().markup
+    +'</td>'
+    +'<td>'
+    +new Soldier.mech.veh1().markup
+    +new Soldier.mech.vehg().markup
+    +new Soldier.mech.vehd().markup
+    +'<br>'
+    +new Soldier.mech.sqd1().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.saw2().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.sqd2().markup
+    +'</td>'
+    +'</table>'
+    +'</td><td>'
+    +'<table border>'
+    +'<td>'
+    +new OfficerClass(4,'Platoon OC',[{name:'Carbine'},{name:'Pistol'}]).markup
+    +new SoldierClass(8,'Platoon Sergeant',[{name:'Carbine'},{name:'Pistol'}]).markup
+    +'<br>'
+    +new Soldier.mech.vehg().markup
+    +new Soldier.mech.vehd().markup
+    +'<br>'
+    +new SoldierClass(4,'Weapons Master',[{name:'Carbine'},{name:'Pistol'}]).markup
+    +new Soldier.mech.mat1().markup
+    +new Soldier.mech.mat2().markup
+    +'<br>'
+    +new OfficerClass(2,'Platoon 2iC',[{name:'Carbine'},{name:'Pistol'}]).markup
+    +new Soldier.mech.mmg1().markup
+    +new Soldier.mech.mmg2().markup
+    +'</td>'
+    +'<td>'
+    +new Soldier.mech.veh1().markup
+    +new Soldier.mech.vehg().markup
+    +new Soldier.mech.vehd().markup
+    +'<br>'
+    +new Soldier.mech.sqd1().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.saw2().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.sqd2().markup
+    +'</td>'
+    +'<td>'
+    +new Soldier.mech.veh1().markup
+    +new Soldier.mech.vehg().markup
+    +new Soldier.mech.vehd().markup
+    +'<br>'
+    +new Soldier.mech.sqd1().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.saw2().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.sqd2().markup
+    +'</td>'
+    +'<td>'
+    +new Soldier.mech.veh1().markup
+    +new Soldier.mech.vehg().markup
+    +new Soldier.mech.vehd().markup
+    +'<br>'
+    +new Soldier.mech.sqd1().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.saw2().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.sqd2().markup
+    +'</td>'
+    +'</table><br><table border>'
+    +'<td>'
+    +new OfficerClass(3,'Platoon OC',[{name:'Carbine'},{name:'Pistol'}]).markup
+    +new SoldierClass(7,'Platoon Sergeant',[{name:'Carbine'},{name:'Pistol'}]).markup
+    +'<br>'
+    +new Soldier.mech.vehg().markup
+    +new Soldier.mech.vehd().markup
+    +'<br>'
+    +new SoldierClass(6,'Weapons Sergeant',[{name:'Carbine'},{name:'Pistol'}]).markup
+    +new Soldier.mech.mat1().markup
+    +new Soldier.mech.mat2().markup
+    +'<br>'
+    +new OfficerClass(2,'Platoon 2iC',[{name:'Carbine'},{name:'Pistol'}]).markup
+    +new Soldier.mech.mmg1().markup
+    +new Soldier.mech.mmg2().markup
+    +'</td>'
+    +'<td>'
+    +new Soldier.mech.veh1().markup
+    +new Soldier.mech.vehg().markup
+    +new Soldier.mech.vehd().markup
+    +'<br>'
+    +new Soldier.mech.sqd1().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.saw2().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.sqd2().markup
+    +'</td>'
+    +'<td>'
+    +new Soldier.mech.veh1().markup
+    +new Soldier.mech.vehg().markup
+    +new Soldier.mech.vehd().markup
+    +'<br>'
+    +new Soldier.mech.sqd1().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.saw2().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.sqd2().markup
+    +'</td>'
+    +'<td>'
+    +new Soldier.mech.veh1().markup
+    +new Soldier.mech.vehg().markup
+    +new Soldier.mech.vehd().markup
+    +'<br>'
+    +new Soldier.mech.sqd1().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.saw2().markup
+    +'<br>'
+    +new Soldier.mech.rifleman().markup
+    +new Soldier.mech.saw1().markup
+    +new Soldier.mech.sqd2().markup
+    +'</td>'
+    +'</table>'    +'</td></table>'
+  </script>
+</body>
+</html>

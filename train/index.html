@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    canvas {
+      position: fixed;
+      inset: 0
+    }
+  </style>
+</head>
+<body>
+  <script>
+
+    const cvs=document.createElement('canvas'),
+          ctx=cvs.getContext('2d')
+    document.body.appendChild(cvs)
+
+    cvs.width=innerWidth
+    cvs.height=innerHeight
+
+    ctx.translate(innerWidth/2,innerHeight/2)
+
+    class Track {
+      constructor(x=0,y=0,a=0,length=100) {
+        this.x=x,
+        this.y=y,
+        this.a=a
+        this.length=length
+        this.fixed={}
+      }
+      connect(myEnd,itsEnd,who) {
+        if (!who) return console.error('no destination',this,arguments)
+        if (!who[`get${itsEnd}`]) return console.error('no endpoint',this,arguments)
+        this[`set${myEnd}`](who[`get${itsEnd}`])
+      }
+    }
+
+    const track={
+      straight:class extends Track {
+        constructor(x,y,a,length=150) {
+          super(x,y,a,length)
+        }
+        fix(param) {
+          this.fixed[param]=true
+        }
+        unfix(param) {
+          delete this.fixed[param]
+        }
+        get getA() {
+          return {
+            x:this.x-this.length*Math.cos(this.a)/2,
+            y:this.y-this.length*Math.sin(this.a)/2,
+            a:this.a
+          }
+        }
+        get getB() {
+          return {
+            x:this.x+this.length*Math.cos(this.a)/2,
+            y:this.y+this.length*Math.sin(this.a)/2,
+            a:this.a+Math.PI
+          }
+        }
+        setA(x,y,a) {
+          this.a=a
+          this.x=x+Math.cos(a)*this.length/2
+          this.y=y+Math.sin(a)*this.length/2
+        }
+        setB(x,y,a) {
+          this.a=a
+          this.x=x-Math.cos(a)*this.length/2
+          this.y=y-Math.sin(a)*this.length/2
+        }
+        draw(ctx) {
+          ctx.save()
+          ctx.beginPath()
+          ctx.moveTo(this.getA.x,this.getA.y)
+          ctx.lineTo(this.getB.x,this.getB.y)
+          ctx.lineWidth=16
+          ctx.strokeStyle='hsl(50 20 20)'
+          ctx.stroke()
+          ctx.beginPath()
+          ctx.moveTo(this.getA.x,this.getA.y)
+          ctx.lineTo(this.getB.x,this.getB.y)
+          ctx.lineWidth=10
+          ctx.strokeStyle='hsl(50 0 50)'
+          ctx.stroke()
+          ctx.beginPath()
+          ctx.moveTo(this.getA.x,this.getA.y)
+          ctx.lineTo(this.getB.x,this.getB.y)
+          ctx.lineWidth=8
+          ctx.strokeStyle='hsl(50 20 20)'
+          ctx.stroke()
+          ctx.restore()
+        }
+      },
+      curve:class extends Track {
+        constructor(x=0,y=0,a=0,length=150,turn=Math.PI/12) {
+          super(x,y,a,length)
+          this.turn=turn
+          this.side=length/(1+Math.cos(turn))
+        }
+        get getA() {
+          return {
+            x:this.x-this.side*Math.cos(this.a),
+            y:this.y-this.side*Math.sin(this.a),
+            a:this.a
+          }
+        }
+        get getB() {
+          return {
+            x:this.x+this.side*Math.cos(this.turn+this.a),
+            y:this.y+this.side*Math.sin(this.turn+this.a),
+            a:this.turn+this.a+Math.PI
+          }
+        }
+        draw(ctx) {
+          ctx.save()
+          ctx.beginPath()
+          ctx.moveTo(this.getA.x,this.getA.y)
+          ctx.arcTo(this.x,this.y,this.getB.x,this.getB.y,this.side/Math.tan(this.turn/2))
+          ctx.lineWidth=16
+          ctx.strokeStyle='hsl(50 20 20)'
+          ctx.stroke()
+          ctx.beginPath()
+          ctx.moveTo(this.getA.x,this.getA.y)
+          ctx.arcTo(this.x,this.y,this.getB.x,this.getB.y,this.side/Math.tan(this.turn/2))
+          ctx.lineWidth=10
+          ctx.strokeStyle='hsl(50 0 50)'
+          ctx.stroke()
+          ctx.beginPath()
+          ctx.moveTo(this.getA.x,this.getA.y)
+          ctx.arcTo(this.x,this.y,this.getB.x,this.getB.y,this.side/Math.tan(this.turn/2))
+          ctx.lineWidth=8
+          ctx.strokeStyle='hsl(50 20 20)'
+          ctx.stroke()
+          ctx.restore()
+        }
+      },
+      turnout:{
+        left:class extends Track {
+          constructor(x=0,y=0,a=0,length=150,turn=Math.PI/12) {
+            super(x,y,a,length)
+            this.turn=turn
+            this.side=length/(1+Math.cos(turn))
+          }
+          get getA() {
+            return {
+              x:this.x-this.side*Math.cos(this.a),
+              y:this.y-this.side*Math.sin(this.a),
+              a:this.a
+            }
+          }
+          get getC() {
+            return {
+              x:this.x+this.side*Math.cos(this.turn+this.a),
+              y:this.y+this.side*Math.sin(this.turn+this.a),
+              a:this.turn+this.a+Math.PI
+            }
+          }
+          draw(ctx) {
+            ctx.save()
+            ctx.beginPath()
+            ctx.moveTo(this.getA.x,this.getA.y)
+            ctx.arcTo(this.x,this.y,this.getB.x,this.getB.y,this.side/Math.tan(this.turn/2))
+            ctx.lineWidth=16
+            ctx.strokeStyle='hsl(50 20 20)'
+            ctx.stroke()
+            ctx.beginPath()
+            ctx.moveTo(this.getA.x,this.getA.y)
+            ctx.arcTo(this.x,this.y,this.getB.x,this.getB.y,this.side/Math.tan(this.turn/2))
+            ctx.lineWidth=10
+            ctx.strokeStyle='hsl(50 0 50)'
+            ctx.stroke()
+            ctx.beginPath()
+            ctx.moveTo(this.getA.x,this.getA.y)
+            ctx.arcTo(this.x,this.y,this.getB.x,this.getB.y,this.side/Math.tan(this.turn/2))
+            ctx.lineWidth=8
+            ctx.strokeStyle='hsl(50 20 20)'
+            ctx.stroke()
+            ctx.restore()
+          }
+        },
+        right:class extends Track {
+          constructor(straight=100,turn=Math.PI/6,length=100) {}
+        },
+      }
+    }
+
+
+    ctx.save()
+    ctx.moveTo(-10,0);ctx.lineTo(10,0)
+    ctx.moveTo(0,-10);ctx.lineTo(0,10)
+    ctx.strokeStyle='olivedrab'
+    ctx.stroke()
+    ctx.restore()
+
+
+    ctx.scale(3,3)
+    ctx.globalAlpha=0.25
+
+    let tracks=[]
+    tracks.push(new track.straight(0,0,Math.PI*0/6)),
+    tracks.push(new track.curve(0,0,Math.PI*0/6))
+    tracks[1].connect('A','B',tracks[0])
+
+    tracks.forEach(track=>track.draw())
+
+
+  </script>
+</body>
+</html>

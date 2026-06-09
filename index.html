@@ -21,39 +21,54 @@
   <script type="module">
     import gameDefs from "./gameDefs.json" with {type:'json'}
     import Hex from "./hex.js"
-    import {C,M,zoomToC} from "./camera.js"
-    import {CVS,CTX,initCanvi,generateGrid,resetCanvi} from "./canvas.js"
-    import {mapData,generateMap,drawMap,drawGrid} from "./map.js"
+    import {C,M,lockCamera,zoomToC} from "./camera.js"
+    import {CVS,CTX,initCanvi,resetCanvi} from "./canvas.js"
+    import {mapData,generateMap,generateGrid,drawMap,drawGrid} from "./map.js"
     import "./listeners.js"
+
+    Array.prototype.jiggleSort=function(param,jiggle=1) {
+      return this.sort((a,b)=>a[param]-b[param]+(Math.random()-1/2)*jiggle)
+    }
+
+    const Walk={
+      dist:{},
+      pend:{},
+      prev:{},
+    }
+
 
     onload=()=>{
       initCanvi(gameDefs.layers)
       resetCanvi(gameDefs.layers)
       generateMap()
-      generateGrid()
-      refresh()
-      let h1=new Hex(0,0),
-          h2=new Hex(0,1)
 
-      console.log(...h1.nAddresses)
-      console.log(...h2.nAddresses)
+      let startHex=mapData.find(h=>h.i==10&&h.j==12)
+      for (const hex of mapData) {
+        Walk.dist[hex]=Infinity
+        Walk.dist[startHex]=0
+      }
+
+      refresh()
     }
 
     function refresh() {
       resetCanvi(gameDefs.layers)
+      lockCamera()
       zoomToC(gameDefs.layers)
       drawMap()
       // drawGrid()
 
       for (const hex of mapData) {
-        // console.log(hex)
         CTX['map'].save()
-        CTX['map'].translate(hex.x,hex.y)
-        if (CTX['map'].isPointInPath(hex.path,M.x,M.y)) {
-          hex.highlight(CTX['map'])
+        if (CTX['map'].isPointInPath(hex.path,M.x-hex.x/C.z,M.y-hex.y/C.z)) {
+          // hex.nList(mapData,1).forEach(n=>n?.highlight(CTX['map'],'goldenrod'))
+          // hex.highlight(CTX['map'])
+          hex.ident(CTX['map'])
         }
         CTX['map'].restore()
       }
+
+      // takeStep()
 
       requestAnimationFrame(refresh)
     }

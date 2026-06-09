@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-20 -20 40 40">
+  <g transform="translate(+0+3) scale(3 2) rotate(45)">
+    <path d="
+      M-2.75-0.5
+      v-5.25
+      h+3.25
+      M-0.5-2.74
+      h-5.25
+      v+3.25
+      " fill="none" stroke="#fff" stroke-width="1.5"/>  
+    <!-- <path d="M-1+1 h-2 v+2 h+2 Z" fill="#fff" stroke="#fff"/>  
+    <path d="M+1-1 h+2 v-2 h-2 Z" fill="#fff" stroke="#fff"/>   -->
+    <path d="M+1+1 h+2 v+2 h-2 Z" fill="#fff" stroke="#fff"/>  
+  </g>
+</svg>

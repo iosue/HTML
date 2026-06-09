@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-12 -12 24 24">
+  <path d="M-08+00         l+08+04 l+08-04
+           l+00+03         l-08+04 l-08-04" fill="#ffff" transform="translate(0-4)"/>  
+  <path d="M-06-01 l+02-01 l+04+02 l+04-02 l+02+01
+                   l-02+01 l-04+02 l-04-02" fill="#fff8" transform="translate(0-4)"/>  
+  <path d="M-08+00         l+08+04 l+08-04
+           l+00+03         l-08+04 l-08-04" fill="#ffff" transform="translate(0+1)"/>  
+</svg>

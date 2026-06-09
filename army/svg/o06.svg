@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-18 -18 36 36">
+  <g transform="translate(+0+3)">
+    <path d="
+      M+0+4
+      L-2+2
+      L-6-0
+        L-4.667-2
+          L-6-4
+            L-2-6
+            L+0-8
+            L+2-6
+          L+6-4
+        L+4.667-2
+      L+6+0
+      L+2+2
+      Z" fill="none" stroke="#fff" stroke-width="2.5" transform="translate(+0-6)"/>  
+    <path d="M+0+3 L-2-0 L+0-3 L+2+0 Z" fill="#fff" transform="translate(+10-8)"/>  
+    <path d="M+0+3 L-2-0 L+0-3 L+2+0 Z" fill="#fff" transform="translate(-10-8)"/>  
+    <!-- <path d="M+0+4 L-6-0 L+0-4 L+6+0 Z" fill="#fff" transform="translate(+9+0)"/>  
+    <path d="M+0+4 L-6-0 L+0-4 L+6+0 Z" fill="#fff" transform="translate(-9+0)"/>   -->
+    <path d="M+0+4 L-6-0 L+0-4 L+6+0 Z" fill="#fff" transform="translate(+0+6)"/>  
+  </g>
+</svg>
