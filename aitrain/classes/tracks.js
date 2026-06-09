@@ -57,8 +57,6 @@ export class TrackSection {
 	}
 }
 
-
-
 // -----------------------------
 // CURVED SECTION
 // -----------------------------
@@ -134,48 +132,67 @@ export class CurvedTrackSection extends TrackSection {
 	}
 }
 
-
-
 // -----------------------------
 // SWITCH SECTION
 // -----------------------------
 export class SwitchSection extends TrackSection {
-	constructor(id, startX, startY, heading, length = 0) {
+	constructor(id, startX, startY, heading, length = 0, network = null) {
 		super(id, startX, startY, heading, length)
 		this.activeIndex = 0
+		this.network = network
 	}
+
 	setRoute(index) {
 		this.activeIndex = index
 		this.next.forEach((branch, i) => {
 			branch.isActiveBranch = i === index
 		})
 	}
+
 	cycleRoute() {
+		if (!this.network) return
+
+		const occupied =
+			this.network.isSectionOccupied(this) ||
+			this.next.some(n => this.network.isSectionOccupied(n))
+
+		if (occupied) {
+			console.log(`Switch ${this.id} blocked: train present.`)
+			return // do nothing
+		}
+
 		if (this.next.length === 0) return
 		this.activeIndex = (this.activeIndex + 1) % this.next.length
 		this.setRoute(this.activeIndex)
 	}
+
 	getActiveNext() {
 		return this.next[this.activeIndex]
 	}
 
 	draw(ctx) {
-		ctx.strokeStyle = "#444";
-		ctx.lineWidth = 4;
-		ctx.beginPath();
-		ctx.moveTo(this.start.x, this.start.y);
-		ctx.lineTo(this.end.x, this.end.y);
-		ctx.stroke();
+		const occupied =
+			this.network.isSectionOccupied(this) ||
+			this.next.some(n => this.network.isSectionOccupied(n))
 
-		// Highlight if hovered
-		const isHovered = this.isHovered ?? false;
-		ctx.fillStyle = isHovered ? "yellow" : "orange";
-		ctx.beginPath();
-		ctx.arc(this.end.x, this.end.y, 6, 0, 2 * Math.PI);
-		ctx.fill();
+		ctx.strokeStyle = "#444"
+		ctx.lineWidth = 4
+		ctx.beginPath()
+		ctx.moveTo(this.start.x, this.start.y)
+		ctx.lineTo(this.end.x, this.end.y)
+		ctx.stroke()
 
-		ctx.fillStyle = "#ccc";
-		ctx.font = "12px sans-serif";
-		ctx.fillText(`Route ${this.activeIndex}`, this.end.x + 10, this.end.y - 10);
+		ctx.beginPath()
+		ctx.arc(this.end.x, this.end.y, 6, 0, 2 * Math.PI)
+		if (occupied) {
+			ctx.strokeStyle = "red"
+			ctx.stroke()
+		}
+		ctx.fillStyle = occupied ? "white" : this.isHovered ? "yellow" : "orange"
+		ctx.fill()
+
+		ctx.fillStyle = "#ccc"
+		ctx.font = "12px sans-serif"
+		ctx.fillText(`Route ${this.activeIndex}`, this.end.x + 10, this.end.y - 10)
 	}
 }

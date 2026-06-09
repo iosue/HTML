@@ -1,66 +1,72 @@
 import { TrackSection, CurvedTrackSection, SwitchSection } from "./tracks.js"
 import { Train } from "./trains.js"
 
-
 // -----------------------------
 // TRACK NETWORK
 // -----------------------------
 export class TrackNetwork {
-  constructor() {
-    this.sections = new Map() // store by id
-    this.trains = []
-  }
+	constructor() {
+		this.sections = new Map() // store by id
+		this.trains = []
+	}
 
-  addSection(section) {
-    this.sections.set(section.id, section)
-    return section
-  }
+	addSection(section) {
+		this.sections.set(section.id, section)
+		return section
+	}
 
-  get(id) {
-    return this.sections.get(id)
-  }
+	get(id) {
+		return this.sections.get(id)
+	}
 
-  connectSections(prev, next) {
-    const isSwitch = prev instanceof SwitchSection
-    const alreadyConnected = prev.next.includes(next)
+	isSectionOccupied(section) {
+		for (const train of this.trains) {
+			if (train.isOnSection(section)) return true
+		}
+		return false
+	}
 
-    const newStart = prev.end
-    const newHeading = prev.getEndHeading()
-    next.setStartAndHeading(newStart, newHeading)
+	connectSections(prev, next) {
+		const isSwitch = prev instanceof SwitchSection
+		const alreadyConnected = prev.next.includes(next)
 
-    if (isSwitch && !alreadyConnected) {
-      prev.next.push(next)
-      prev.setRoute(prev.next.length - 1)
-    } else {
-      prev.next = [next]
-    }
+		const newStart = prev.end
+		const newHeading = prev.getEndHeading()
+		next.setStartAndHeading(newStart, newHeading)
 
-    next.isDisconnected = false
-    next.isActiveBranch = true // default active
-  }
+		if (isSwitch && !alreadyConnected) {
+			prev.next.push(next)
+			prev.setRoute(prev.next.length - 1)
+		} else {
+			prev.next = [next]
+		}
 
-  disconnectSections(prev, next) {
-    const index = prev.next.indexOf(next)
-    if (index !== -1) {
-      prev.next.splice(index, 1)
-      next.isDisconnected = true
-    }
-  }
+		next.isDisconnected = false
+		next.isActiveBranch = true // default active
+	}
 
-  addTrain(train) {
-    this.trains.push(train)
-  }
+	disconnectSections(prev, next) {
+		const index = prev.next.indexOf(next)
+		if (index !== -1) {
+			prev.next.splice(index, 1)
+			next.isDisconnected = true
+		}
+	}
 
-  update(dt) {
-    for (const train of this.trains) train.update(dt)
-  }
+	addTrain(train) {
+		this.trains.push(train)
+	}
 
-  draw(ctx) {
-    for (const section of this.sections.values()) {
-      section.draw(ctx)
-    }
-    for (const train of this.trains) {
-      train.draw(ctx)
-    }
-  }
+	update(dt) {
+		for (const train of this.trains) train.update(dt)
+	}
+
+	draw(ctx) {
+		for (const section of this.sections.values()) {
+			section.draw(ctx)
+		}
+		for (const train of this.trains) {
+			train.draw(ctx)
+		}
+	}
 }
