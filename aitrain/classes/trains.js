@@ -53,9 +53,6 @@ export class Train {
 		const ds = (this.forward ? 1 : -1) * this.speed * dt
 		this.s += ds
 
-		// const frontDist = this.s + (1-this.overhangRatio) * this.carLength
-		// const rearDist = this.s - (1-this.overhangRatio) * this.carLength
-
 		if (this.forward) {
 			if (this.frontDist > this.track.length) {
 				const next =
@@ -212,15 +209,37 @@ export class Train {
 		ctx.fillStyle = "#666"
 		ctx.fillRect(-this.carLength / 2, -width / 2, this.carLength, width)
 
-		// bogies
-		ctx.fillStyle = "#444"
-		ctx.beginPath()
-		ctx.arc(+(1/2-this.overhangRatio)*this.carLength, 0, 2, 0, Math.PI*2)
-		ctx.fill()
+// --- Bogie rotation lines ---
+ctx.strokeStyle = "#999"
+ctx.lineWidth = 1.2
 
-		ctx.beginPath()
-		ctx.arc(-(1/2-this.overhangRatio)*this.carLength, 0, 2, 0, Math.PI*2)
-		ctx.fill()
+// Compute tangent angles at bogie world positions
+const frontPoint = this.getPointAlongPath(this.frontDist)
+const rearPoint  = this.getPointAlongPath(this.rearDist)
+const frontAngle = this.getSectionAtDistance(this.frontDist)
+  .getTangentAngleAtWorldPosition(frontPoint)
+const rearAngle = this.getSectionAtDistance(this.rearDist)
+  .getTangentAngleAtWorldPosition(rearPoint)
+
+// --- Front bogie ---
+ctx.save()
+ctx.translate((1/2 - this.overhangRatio) * this.carLength, 0) // move to bogie position
+ctx.rotate(frontAngle - angle) // rotate relative to car body
+ctx.beginPath()
+ctx.moveTo(0, -width / 2)
+ctx.lineTo(0, +width / 2)
+ctx.stroke()
+ctx.restore()
+
+// --- Rear bogie ---
+ctx.save()
+ctx.translate(-(1/2 - this.overhangRatio) * this.carLength, 0)
+ctx.rotate(rearAngle - angle)
+ctx.beginPath()
+ctx.moveTo(0, -width / 2)
+ctx.lineTo(0, +width / 2)
+ctx.stroke()
+ctx.restore()
 
 		ctx.restore()
 	}

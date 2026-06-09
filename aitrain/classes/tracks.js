@@ -2,7 +2,15 @@
 // STRAIGHT SECTION
 // -----------------------------
 export class TrackSection {
-	constructor(id, startX = 0, startY = 0, heading = 0, length = 100, network, color="#444") {
+	constructor(
+		id,
+		startX = 0,
+		startY = 0,
+		heading = 0,
+		length = 100,
+		network,
+		color = "#444",
+	) {
 		this.id = id
 		this.length = length
 		this.next = []
@@ -40,6 +48,14 @@ export class TrackSection {
 			y: this.start.y + (this.end.y - this.start.y) * t,
 		}
 	}
+
+getTangentAngleAtWorldPosition(point) {
+  // Default for straight sections
+  const dx = this.end.x - this.start.x
+  const dy = this.end.y - this.start.y
+  return Math.atan2(dy, dx)
+}
+
 	draw(ctx) {
 		if (this.isDisconnected) {
 			ctx.strokeStyle = "red"
@@ -110,6 +126,16 @@ export class CurvedTrackSection extends TrackSection {
 		}
 	}
 
+getTangentAngleAtWorldPosition(point) {
+  // Vector from center to bogie position
+  const vx = point.x - this.center.x
+  const vy = point.y - this.center.y
+  const radialAngle = Math.atan2(vy, vx)
+
+  // Tangent is perpendicular to radius vector
+  return radialAngle + (this.clockwise ? Math.PI / 2 : -Math.PI / 2)
+}
+
 	draw(ctx) {
 		if (this.isDisconnected) {
 			ctx.strokeStyle = "red"
@@ -137,7 +163,7 @@ export class CurvedTrackSection extends TrackSection {
 // SWITCH SECTION
 // -----------------------------
 export class SwitchSection extends TrackSection {
-	constructor(id, startX, startY, heading, length = 0, network = null) {
+	constructor(id, startX, startY, heading, length = 10, network = null) {
 		super(id, startX, startY, heading, length)
 		this.activeIndex = 0
 		this.network = network

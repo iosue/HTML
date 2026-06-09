@@ -39,10 +39,10 @@
 			const network = new TrackNetwork()
 
 			network.addSection(new TrackSection("A", 50, 200, 0, 150, network))
-			network.addSection(new SwitchSection("S", 0, 0, 0, 50, network))
+			network.addSection(new SwitchSection("S", 0, 0, 0, 10, network))
 			network.addSection(new CurvedTrackSection("B", 0, 0, 0, 100, Math.PI/4, network))
 			network.addSection(new CurvedTrackSection("C", 0, 0, 0, 100, -Math.PI/4, network))
-			network.addSection(new CurvedTrackSection("D", 0, 0, 0, 50, Math.PI/2, network))
+			network.addSection(new CurvedTrackSection("D", 0, 0, 0, 41.4, Math.PI*1/2, network))
 
 			network.connectSections(network.get("A"), network.get("S"))
 			network.connectSections(network.get("S"), network.get("B"))
