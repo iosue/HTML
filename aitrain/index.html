@@ -1,65 +1,113 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
-  <style>
-    :root {
-      color-scheme: dark;
-    }
-    canvas {
-      position: fixed;
-      inset: 0;
-    }
-  </style>
-</head>
-<body>
-  <script type="module">
-import {TrackNetwork,TrackSection,CurvedTrackSection,SwitchSection,Train} from "./classes.js"
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0"
+		/>
+		<title>Document</title>
+		<style>
+			:root {
+				color-scheme: dark;
+			}
+			canvas {
+				position: fixed;
+				inset: 0;
+			}
+		</style>
+	</head>
+	<body>
+		<script type="module">
+			import { TrackSection, CurvedTrackSection, SwitchSection } from "./classes/tracks.js"
+			import { Train } from "./classes/trains.js"
+			import { TrackNetwork } from "./classes/network.js"
 
-const Camera={x:0,y:0,z:1,v:10/9}
+			const Camera = { x: 0, y: 0, z: 1, v: 10 / 9 }
 
-const cvs = document.createElement("canvas");
-    cvs.id="yard";
-    cvs.width=innerWidth;
-    cvs.height=innerHeight;
-  document.body.appendChild(cvs);
-const ctx = cvs.getContext("2d");
+			const cvs = document.createElement("canvas")
+          cvs.id = "yard"
+          cvs.width = innerWidth
+          cvs.height = innerHeight
+  			document.body.appendChild(cvs)
+			const ctx = cvs.getContext("2d")
 
-const network = new TrackNetwork();
+			const network = new TrackNetwork()
 
-network.addSection(new TrackSection("A", 50, 200, 0, 150));
-network.addSection(new SwitchSection("S", 0, 0, 0, 50));
-network.addSection(new CurvedTrackSection("B", 0, 0, 0, 100, Math.PI / 4));
-network.addSection(new CurvedTrackSection("C", 0, 0, 0, 100, -Math.PI / 4));
+			network.addSection(new TrackSection("A", 50, 200, 0, 150))
+			network.addSection(new SwitchSection("S", 0, 0, 0, 50))
+			network.addSection(new CurvedTrackSection("B", 0, 0, 0, 100, Math.PI / 4))
+			network.addSection(new CurvedTrackSection("C", 0, 0, 0, 100, -Math.PI / 4))
 
-network.connectSections(network.get("A"), network.get("S"));
-network.connectSections(network.get("S"), network.get("B"));
-network.connectSections(network.get("S"), network.get("C"));
-network.get('S').setRoute(0)
+			network.connectSections(network.get("A"), network.get("S"))
+			network.connectSections(network.get("S"), network.get("B"))
+			network.connectSections(network.get("S"), network.get("C"))
+			network.get("S").setRoute(0)
 
+			// Train
+			network.addTrain(new Train("T1", network.get("A"), 60))
 
+			// Animation loop
+			let last = performance.now()
+			function loop(now = performance.now()) {
+				const dt = (now - last) / 1000
+				last = now
 
-// Train
-network.addTrain(new Train("T1", network.get('A'), 60));
+				cvs.width = innerWidth
+				cvs.height = innerHeight
+				network.update(dt)
+				network.draw(ctx)
 
-// Animation loop
-let last = performance.now();
-function loop(now=performance.now()) {
-    const dt = (now - last) / 1000;
-    last = now;
+				document.title = now
+				requestAnimationFrame(loop)
+			}
+			loop()
 
-    cvs.width=innerWidth;
-    cvs.height=innerHeight;
-    network.update(dt);
-    network.draw(ctx);
+			cvs.addEventListener("click", e => {
+				const rect = cvs.getBoundingClientRect()
+				const x = e.clientX - rect.left
+				const y = e.clientY - rect.top
 
-    document.title=now
-    requestAnimationFrame(loop);
-}
-loop();
+				// Find clicked switch
+				for (const section of network.sections.values()) {
+					if (section instanceof SwitchSection) {
+						const dx = x - section.end.x
+						const dy = y - section.end.y
+						const dist = Math.hypot(dx, dy)
 
-  </script>
-</body>
+						if (dist < 15) {
+							// click radius around switch end
+							section.cycleRoute()
+							break
+						}
+					}
+				}
+			})
+      cvs.addEventListener("mousemove", (e) => {
+        const rect = cvs.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        let hoveringSwitch = false;
+
+        for (const section of network.sections.values()) {
+          if (section instanceof SwitchSection) {
+            const dx = x - section.end.x;
+            const dy = y - section.end.y;
+            const dist = Math.hypot(dx, dy);
+
+            if (dist < 15) { // same radius as click
+              hoveringSwitch = true;
+              section.isHovered = true
+              break;
+            } else {
+              section.isHovered = false
+            }
+          }
+        }
+
+        cvs.style.cursor = hoveringSwitch ? "pointer" : "default";
+      });
+		</script>
+	</body>
 </html>
