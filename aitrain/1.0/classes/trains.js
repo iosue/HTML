@@ -23,6 +23,8 @@ export class Train {
 		this.accelRate = 25 // units per second²
 		this.decelRate = 50 // units per second²
 		this.manualControl = true // enable keyboard control
+		this.gearChanging = false
+		this.gearChangeTarget = null
 	}
 
 	get frontDist() {
@@ -32,22 +34,45 @@ export class Train {
 		return this.s - (1 / 2 - this.overhangRatio) * this.carLength
 	}
 
-	setGearForward(isForward) {
-		this.forward = isForward
+	setGearForward(isForward,prevSpeed) {
+		// Begin gear change only if direction is actually changing
+		if (this.forward !== isForward && !this.gearChanging) {
+			this.gearChanging = true
+			this.gearChangeTarget = isForward
+			this.targetSpeed = 0 // apply full brake
+      this.prevSpeed = prevSpeed
+		}
 	}
 
 	update(dt) {
 		if (this.manualControl) {
-			if (this.speed < this.targetSpeed)
-				this.speed = Math.min(
-					this.speed + this.accelRate * dt,
-					this.targetSpeed,
-				)
-			else if (this.speed > this.targetSpeed)
-				this.speed = Math.max(
-					this.speed - this.decelRate * dt,
-					this.targetSpeed,
-				)
+      this.braking = this.activeBraking
+			if (this.gearChanging) {
+				// braking phase
+				if (this.speed > 0) {
+					this.speed = Math.max(this.speed - this.decelRate * dt, 0)
+          this.braking = true
+				} else {
+					// once stopped, flip gear and resume acceleration
+					this.forward = this.gearChangeTarget
+					this.gearChanging = false
+					this.targetSpeed = this.prevSpeed
+				}
+			} else {
+				// normal throttle logic
+				if (this.speed < this.targetSpeed) {
+					this.speed = Math.min(
+						this.speed + this.accelRate * dt,
+						this.targetSpeed,
+					)
+				} else if (this.speed > this.targetSpeed) {
+					this.speed = Math.max(
+						this.speed - this.decelRate * dt,
+						this.targetSpeed,
+					)
+          this.braking = true
+        }
+			}
 		}
 
 		const ds = (this.forward ? 1 : -1) * this.speed * dt
@@ -171,75 +196,85 @@ export class Train {
 		ctx.translate(cx, cy)
 		ctx.rotate(angle)
 
-    const lights={
-      true:"#cc8",
-      false:"#800"
-    }
-    // --- Directional glow setup ---
-    const beamLength = 24 // how far the glow extends
-    const beamSpread = 8  // beam width
-    const glowColorHead = lights[this.forward]
-    const glowColorTail = lights[!this.forward]
+		const lights = {
+			head: "#cc8",
+			tail: "#800",
+      brake: "#c00"
+		}
+		// --- Directional glow setup ---
+		const beamLength = 30 // how far the glow extends
+		const beamSpread = 10 // beam width
+		const glowColorHead = this.forward?lights.head:this.braking?lights.brake:lights.tail
+		const glowColorTail = !this.forward?lights.head:this.braking?lights.brake:lights.tail
 
-    // headlights (forward gear)
-      const fGrad = ctx.createLinearGradient(
-        this.carLength/2, 0,
-        this.carLength/2 + beamLength, 0
-      )
-      fGrad.addColorStop(0, glowColorHead)
-      fGrad.addColorStop(1, "transparent")
-      ctx.fillStyle = fGrad
-      ctx.beginPath()
-      ctx.ellipse((1/2)*this.carLength +8+ beamLength/2, 0, beamLength, beamSpread, 0, 0, Math.PI*2)
-      ctx.fill()
+		// headlights (forward gear)
+		const fGrad = ctx.createLinearGradient(this.carLength/2,0, this.carLength/2+beamLength,0)
+		fGrad.addColorStop(0, glowColorHead)
+		fGrad.addColorStop(1, "transparent")
+		ctx.fillStyle = fGrad
+		ctx.beginPath()
+		ctx.ellipse(
+			this.carLength/2 + 10 + beamLength/2, 0,
+			beamLength, beamSpread, 0, 0, Math.PI * 2)
+		ctx.fill()
 
-    // taillights (reverse gear)
-      const rGrad = ctx.createLinearGradient(
-        -this.carLength/2, 0,
-        -this.carLength/2 - beamLength, 0
-      )
-      rGrad.addColorStop(0, glowColorTail)
-      rGrad.addColorStop(1, "transparent")
-      ctx.fillStyle = rGrad
-      ctx.beginPath()
-      ctx.ellipse(-8 - (1/2)*this.carLength - beamLength/2, 0, beamLength, beamSpread, 0, 0, Math.PI*2)
-      ctx.fill()
+		// taillights (reverse gear)
+		const rGrad = ctx.createLinearGradient(-this.carLength/2,0, -this.carLength/2-beamLength,0)
+		rGrad.addColorStop(0, glowColorTail)
+		rGrad.addColorStop(1, "transparent")
+		ctx.fillStyle = rGrad
+		ctx.beginPath()
+		ctx.ellipse(-10 - this.carLength/2 - beamLength/2, 0,
+			beamLength, beamSpread, 0, 0, Math.PI * 2 )
+		ctx.fill()
 
 		// body
 		ctx.fillStyle = "#666"
-		ctx.fillRect(-this.carLength / 2, -width / 2, this.carLength, width)
+		ctx.strokeStyle = "#444"
+		ctx.lineWidth = 1.2
+		ctx.beginPath()
+		ctx.rect(-this.carLength / 2, -width / 2, this.carLength, width)
+		ctx.stroke()
+		ctx.fill()
+		ctx.beginPath()
+		ctx.rect(
+			(-this.carLength * 1.6) / 4,
+			(-width * 1.2) / 2,
+			(this.carLength * 1.2) / 4,
+			width * 1.2,
+		)
+		ctx.stroke()
+		ctx.fill()
 
-// --- Bogie rotation lines ---
-ctx.strokeStyle = "#999"
-ctx.lineWidth = 1.2
+		// Compute tangent angles at bogie world positions
+		const frontPoint = this.getPointAlongPath(this.frontDist)
+		const rearPoint = this.getPointAlongPath(this.rearDist)
+		const frontAngle = this.getSectionAtDistance(
+			this.frontDist,
+		).getTangentAngleAtWorldPosition(frontPoint)
+		const rearAngle = this.getSectionAtDistance(
+			this.rearDist,
+		).getTangentAngleAtWorldPosition(rearPoint)
 
-// Compute tangent angles at bogie world positions
-const frontPoint = this.getPointAlongPath(this.frontDist)
-const rearPoint  = this.getPointAlongPath(this.rearDist)
-const frontAngle = this.getSectionAtDistance(this.frontDist)
-  .getTangentAngleAtWorldPosition(frontPoint)
-const rearAngle = this.getSectionAtDistance(this.rearDist)
-  .getTangentAngleAtWorldPosition(rearPoint)
+		// --- Front bogie ---
+		ctx.save()
+		ctx.translate((1 / 2 - this.overhangRatio) * this.carLength, 0) // move to bogie position
+		ctx.rotate(frontAngle - angle) // rotate relative to car body
+		ctx.beginPath()
+		ctx.moveTo(0, -width / 2.5)
+		ctx.lineTo(0, +width / 2.5)
+		ctx.stroke()
+		ctx.restore()
 
-// --- Front bogie ---
-ctx.save()
-ctx.translate((1/2 - this.overhangRatio) * this.carLength, 0) // move to bogie position
-ctx.rotate(frontAngle - angle) // rotate relative to car body
-ctx.beginPath()
-ctx.moveTo(0, -width / 2)
-ctx.lineTo(0, +width / 2)
-ctx.stroke()
-ctx.restore()
-
-// --- Rear bogie ---
-ctx.save()
-ctx.translate(-(1/2 - this.overhangRatio) * this.carLength, 0)
-ctx.rotate(rearAngle - angle)
-ctx.beginPath()
-ctx.moveTo(0, -width / 2)
-ctx.lineTo(0, +width / 2)
-ctx.stroke()
-ctx.restore()
+		// --- Rear bogie ---
+		ctx.save()
+		ctx.translate(-(1 / 2 - this.overhangRatio) * this.carLength, 0)
+		ctx.rotate(rearAngle - angle)
+		ctx.beginPath()
+		ctx.moveTo(0, -width / 2.5)
+		ctx.lineTo(0, +width / 2.5)
+		ctx.stroke()
+		ctx.restore()
 
 		ctx.restore()
 	}

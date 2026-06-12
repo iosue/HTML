@@ -23,35 +23,47 @@
 				TrackSection,
 				CurvedTrackSection,
 				SwitchSection,
+				NewStraight,
+				NewCurve,
 			} from "./classes/tracks.js"
 			import { Train } from "./classes/trains.js"
 			import { TrackNetwork } from "./classes/network.js"
 
 			const Camera = { x: 0, y: 0, z: 1, v: 10 / 9 }
+			const A="A", B="B"
 
 			const cvs = document.createElement("canvas")
-			cvs.id = "yard"
-			cvs.width = innerWidth
-			cvs.height = innerHeight
-			document.body.appendChild(cvs)
+					cvs.id = "yard"
+					cvs.width = innerWidth
+					cvs.height = innerHeight
+				document.body.appendChild(cvs)
 			const ctx = cvs.getContext("2d")
 
 			const network = new TrackNetwork()
 
-			network.addSection(new TrackSection("A", 50, 200, 0, 150, network))
-			network.addSection(new SwitchSection("S", 0, 0, 0, 10, network))
-			network.addSection(new CurvedTrackSection("B", 0, 0, 0, 100, Math.PI/4, network))
-			network.addSection(new CurvedTrackSection("C", 0, 0, 0, 100, -Math.PI/4, network))
-			network.addSection(new CurvedTrackSection("D", 0, 0, 0, 41.4, Math.PI*1/2, network))
+			network.addSection(new NewStraight(network,'NS1',0,0,0*Math.PI/180,100,'salmon'))
+			network.addSection(new NewCurve(   network,'NC1',0,0,0*Math.PI/180,100,30*Math.PI/180))
+			network.addSection(new NewCurve(
+				network,'NC2', 0, 0, 0,
+				100, 30*Math.PI/180, 0, 'green')
+			)
+			network.newConnectSections('NS1','B','NC1','A')
+			network.newConnectSections('NC1','B','NC2','A')
 
-			network.connectSections(network.get("A"), network.get("S"))
-			network.connectSections(network.get("S"), network.get("B"))
-			network.connectSections(network.get("S"), network.get("C"))
-			network.connectSections(network.get("C"), network.get("D"))
-			network.get("S").setRoute(1)
+// 			const A=network.addSection(new TrackSection("A", 50, 200, 15*Math.PI/180, 140, network,'green'))
+// 			// const S=network.addSection(new SwitchSection("S", 0, 0, 0, 10, network))
+// 			const B=network.addSection(new CurvedTrackSection("B", 0, 0, 0, 100, Math.PI/4, network))
+// 			// const C=network.addSection(new CurvedTrackSection("C", 0, 0, 0, 100, -Math.PI/4, network))
+// 			// network.addSection(new CurvedTrackSection("D", 0, 0, 0, 41.4, Math.PI*3/2, network))
 
-			// Train
-			const train=network.addTrain(new Train("T1", network.get("A"), 100, network))
+// network.connectSections(A, "end", B, "end")
+// // network.connectSections(S, S.end, B, B.start)
+// // network.connectSections(S, S.end, C, C.end)
+// // network.connectSections(switch1, switch1.end, curve1, curve1.start)
+
+
+// 			// Train
+// 			network.addTrain(new Train("T1", network.getTrack("A"), 100, network))
 
 			// Animation loop
 			let last = performance.now()
@@ -61,6 +73,9 @@
 
 				cvs.width = innerWidth
 				cvs.height = innerHeight
+
+				ctx.translate(innerWidth/2,innerHeight/2)
+
 				network.update(dt)
 				network.draw(ctx)
 
@@ -113,6 +128,7 @@
 			})
 
 			window.addEventListener("keydown", e => {
+				const train=network.getTrain("T1")
 				switch (e.code) {
 					case "KeyW":
 					case "ArrowUp":
@@ -120,19 +136,26 @@
 						break
 					case "KeyS":
 					case "ArrowDown":
+					case "Space":
 						train.targetSpeed = 0
+						train.activeBraking = true
 						break
 					case "Tab":
 						e.preventDefault()
-						train.setGearForward(!train.forward)
+						train.setGearForward(!train.forward, train.speed)
 						break
 				}
 			})
 
 			window.addEventListener("keyup", e => {
+				const train=network.getTrain("T1")
 				if (e.code === "KeyW" || e.code === "ArrowUp" || e.code === "KeyS" || e.code === "ArrowDown") {
 					// optional: coast when released
 					train.targetSpeed = train.speed
+				}
+				if (e.code === "KeyS" || e.code === "ArrowDown" || e.code === "Space") {
+					// optional: coast when released
+					train.activeBraking = false
 				}
 			})
 		</script>

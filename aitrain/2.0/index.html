@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0"
+		/>
+		<title>Document</title>
+		<style>
+			:root {
+				color-scheme: dark;
+			}
+			canvas {
+				position: fixed;
+				inset: 0;
+			}
+		</style>
+	</head>
+	<body>
+		<script type="module">
+			import { deg } from './helpers.js'
+			import {
+        Point,
+				StraightTrack,
+				CurvedTrack,
+			} from "./classes/track.js"
+			import {
+        RailNetwork
+			} from "./classes/network.js"
+
+			const Camera = { x: 0, y: 0, z: 1, v: 10 / 9 }
+
+			const cvs = document.createElement("canvas")
+					cvs.id = "yard"
+					cvs.width = innerWidth
+					cvs.height = innerHeight
+				document.body.appendChild(cvs)
+			const ctx = cvs.getContext("2d")
+
+			const network=new RailNetwork()
+
+			let last = performance.now()
+			function loop(now = performance.now()) {
+				const dt = (now - last) / 1000
+				last = now
+				cvs.width = innerWidth
+				cvs.height = innerHeight
+				ctx.translate(innerWidth/2,innerHeight/2)
+
+				network.addTrack(new StraightTrack('S1',0,0,deg(0)))
+				network.addTrack(new StraightTrack('S2',50,0,deg(0)))
+
+				network.addTrack(new CurvedTrack('C1',0,0,deg(-20),deg(20),200))
+
+				network.connectPoints('S2A','S1B')
+
+				network.draw(ctx)
+				document.title = now
+				// requestAnimationFrame(loop)
+				console.log(...network.points.values())
+			}
+			loop()
+
+
+			// cvs.addEventListener("click", e => {
+			// 	const rect = cvs.getBoundingClientRect()
+			// 	const x = e.clientX - rect.left
+			// 	const y = e.clientY - rect.top
+
+			// 	// Find clicked switch
+			// 	for (const section of network.sections.values()) {
+			// 		if (section instanceof SwitchSection) {
+			// 			const dx = x - section.end.x
+			// 			const dy = y - section.end.y
+			// 			const dist = Math.hypot(dx, dy)
+
+			// 			if (dist < 15) {
+			// 				// click radius around switch end
+			// 				section.cycleRoute()
+			// 				break
+			// 			}
+			// 		}
+			// 	}
+			// })
+			// cvs.addEventListener("mousemove", e => {
+			// 	const rect = cvs.getBoundingClientRect()
+			// 	const x = e.clientX - rect.left
+			// 	const y = e.clientY - rect.top
+			// 	let hoveringSwitch = false
+			// 	for (const section of network.sections.values()) {
+			// 		if (section instanceof SwitchSection) {
+			// 			const dx = x - section.end.x
+			// 			const dy = y - section.end.y
+			// 			const dist = Math.hypot(dx, dy)
+			// 			if (dist < 15) {
+			// 				// same radius as click
+			// 				hoveringSwitch = true
+			// 				section.isHovered = true
+			// 				break
+			// 			} else {
+			// 				section.isHovered = false
+			// 			}
+			// 		}
+			// 	}
+			// 	cvs.style.cursor = hoveringSwitch ? "pointer" : "default"
+			// })
+			// window.addEventListener("keydown", e => {
+			// 	const train=network.getTrain("T1")
+			// 	switch (e.code) {
+			// 		case "KeyW":
+			// 		case "ArrowUp":
+			// 			train.targetSpeed = train.maxSpeed
+			// 			break
+			// 		case "KeyS":
+			// 		case "ArrowDown":
+			// 		case "Space":
+			// 			train.targetSpeed = 0
+			// 			train.activeBraking = true
+			// 			break
+			// 		case "Tab":
+			// 			e.preventDefault()
+			// 			train.setGearForward(!train.forward, train.speed)
+			// 			break
+			// 	}
+			// })
+			// window.addEventListener("keyup", e => {
+			// 	const train=network.getTrain("T1")
+			// 	if (e.code === "KeyW" || e.code === "ArrowUp" || e.code === "KeyS" || e.code === "ArrowDown") {
+			// 		// optional: coast when released
+			// 		train.targetSpeed = train.speed
+			// 	}
+			// 	if (e.code === "KeyS" || e.code === "ArrowDown" || e.code === "Space") {
+			// 		// optional: coast when released
+			// 		train.activeBraking = false
+			// 	}
+			// })
+		</script>
+	</body>
+</html>
