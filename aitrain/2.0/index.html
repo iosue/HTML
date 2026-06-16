@@ -115,9 +115,9 @@
 
 				network.addTrack(new StraightTrack('S511'))
 				network.connectPoints('S511A','C14B')
+
 				network.addTrack(new StraightTrack('S512'))
 				network.connectPoints('S512A','S511B')
-
 				network.addTrack(new CurvedTrack('C21','R'))
 				network.connectPoints('C21A','S512B')
 				network.addTrack(new CurvedTrack('C22','L'))
@@ -130,6 +130,15 @@
 				network.addTrack(new StraightTrack('S30'))
 				network.connectPoints('S30A','C32B')
 
+				network.mergePoints('C22B','S30B')
+
+				network.addTrack(new CurvedTrack('C23','L'))
+				network.connectPoints('C23A','S30B')
+				network.addTrack(new CurvedTrack('C24','R'))
+				network.connectPoints('C24A','C23B')
+				network.addTrack(new StraightTrack('S517'))
+				network.connectPoints('S517A','C24B')
+
 				network.addTrack(new StraightTrack('S40'))
 				network.connectPoints('S40A','S30B')
 				network.addTrack(new CurvedTrack('C33','L'))
@@ -137,21 +146,8 @@
 				network.addTrack(new CurvedTrack('C34','R'))
 				network.connectPoints('C34A','C33B')
 
-				network.addTrack(new CurvedTrack('C23','L'))
-				network.connectPoints('C23A','C22B')
-				network.addTrack(new CurvedTrack('C24','R'))
-				network.connectPoints('C24A','C23B')
+				network.mergePoints('S517B','C34B')
 
-				// network.addTrack(new StraightTrack('S513'))
-				// network.connectPoints('S513A','S512B')
-				// network.addTrack(new StraightTrack('S514'))
-				// network.connectPoints('S514A','S513B')
-				// network.addTrack(new StraightTrack('S515'))
-				// network.connectPoints('S515A','S514B')
-				// network.addTrack(new StraightTrack('S516'))
-				// network.connectPoints('S516A','S515B')
-				network.addTrack(new StraightTrack('S517'))
-				network.connectPoints('S517A','C24B')
 				network.addTrack(new StraightTrack('S518'))
 				network.connectPoints('S518A','C34B')
 
@@ -182,7 +178,7 @@
 
 				scale = 0.75
 				ctx.scale(scale,scale)
-				ctx.globalAlpha = 0.25
+				ctx.globalAlpha = 0.75
 
 				ctx.translate(-400,-200)
 
@@ -204,17 +200,16 @@
 				for (const point of network.points.values()) {
 					if (point) {
 						ctx.save()
-						// ctx.translate(point.x,point.y)
-						// ctx.rotate(Math.PI/2)
 						const m = ctx.getTransform().inverse().transformPoint(new DOMPoint(e.x, e.y));
 						ctx.restore()
 						const dist = Math.hypot(point.x - m.x, point.y - m.y)
 						if (dist < settings.clickRadius) {
-							if (m.x < point.x && point.in.size>1) {
+							const local = point.toLocal(m.x, m.y)
+							if (local.x < 0 && point.in.size>1) {
 								network.hoveredPoint = [point,'in']
 								break
 							}
-							if (m.x > point.x && point.out.size>1) {
+							if (local.x > 0 && point.out.size>1) {
 								network.hoveredPoint = [point,'out']
 								break
 							}

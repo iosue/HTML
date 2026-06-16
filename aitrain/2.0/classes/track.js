@@ -10,6 +10,17 @@ export class Point {
     this.y = y
     this.a = a
   }
+  toLocal(wx, wy) {
+    const dx = wx - this.x
+    const dy = wy - this.y
+    const cos = Math.cos(-this.a)
+    const sin = Math.sin(-this.a)
+    return {
+      x: dx * cos - dy * sin,
+      y: dx * sin + dy * cos,
+    }
+  }
+
   switch(dir="in") {
     switch (dir) {
       case "in":{
@@ -39,35 +50,6 @@ export class Point {
   }
 
   draw(ctx,network) {
-    ctx.save()
-    ctx.fillStyle = ctx.strokeStyle = 
-        this.in.size==0 ? "salmon" :
-        this.in.size==2 ? "cyan" : "grey"
-      ctx.translate(this.x,this.y)
-      ctx.rotate(this.a)
-      ctx.beginPath()
-        ctx.arc(0,0,3,0,Math.PI*2)
-        ctx.moveTo(0,-9)
-        ctx.lineTo(0,+9)
-      ctx.stroke()
-    ctx.fillStyle = ctx.strokeStyle = 
-        this.out.size==0 ? "salmon" :
-        this.out.size==2 ? "cyan" : "grey"
-      ctx.beginPath()
-        ctx.arc(0,0,6,Math.PI*3/2,Math.PI*1/2)
-      ctx.stroke()
-
-      ctx.globalAlpha=1.2
-
-      ctx.lineWidth=4
-      ctx.strokeStyle="#000"
-      ctx.fillStyle="#fff"
-      ctx.textAlign="center"
-      ctx.textBaseline="middle"
-      ctx.strokeText(this.id,0,0)
-      ctx.fillText(this.id,0,0)
-    ctx.restore()
-
     if (this.in.size>1) {
       if (network.hoveredPoint?.[0] == this && network.hoveredPoint?.[1] == "in") {
         ctx.save()
@@ -117,10 +99,40 @@ export class Point {
     if (this.in.size<=1 && this.out.size<=1) {
       ctx.save()
       ctx.beginPath()
-      ctx.arc(this.x,this.y,settings.clickRadius/2,0,Math.PI*2)
+      ctx.arc(this.x,this.y,settings.clickRadius*1/4,0,Math.PI*2)
       ctx.lineWidth=4
-      ctx.strokeStyle="#444"
-      ctx.stroke()
+      ctx.fillStyle="#281f18"
+      ctx.fill()
+      ctx.restore()
+    }
+    if (settings.showLabels) {
+      ctx.save()
+      ctx.fillStyle = ctx.strokeStyle = 
+          this.in.size==0 ? "salmon" :
+          this.in.size==2 ? "cyan" : "grey"
+        ctx.translate(this.x,this.y)
+        ctx.rotate(this.a)
+        ctx.beginPath()
+          ctx.arc(0,0,3,0,Math.PI*2)
+          ctx.moveTo(0,-9)
+          ctx.lineTo(0,+9)
+        ctx.stroke()
+      ctx.fillStyle = ctx.strokeStyle = 
+          this.out.size==0 ? "salmon" :
+          this.out.size==2 ? "cyan" : "grey"
+        ctx.beginPath()
+          ctx.arc(0,0,6,Math.PI*3/2,Math.PI*1/2)
+        ctx.stroke()
+  
+        ctx.globalAlpha=1.2
+  
+        ctx.lineWidth=4
+        ctx.strokeStyle="#000"
+        ctx.fillStyle="cyan"
+        ctx.textAlign="center"
+        ctx.textBaseline="middle"
+        ctx.strokeText(this.id,0,0)
+        ctx.fillText(this.id,0,0)
       ctx.restore()
     }
   }
@@ -205,24 +217,26 @@ export class StraightTrack extends Track {
         ctx.lineWidth=settings.trackWidth
       ctx.stroke()
 
-      // ctx.save()
-      //   ctx.globalAlpha=1.5
-      //   ctx.beginPath()
-      //     ctx.moveTo(this.length/2-5+10,-10)
-      //     ctx.lineTo(this.length/2+5+10,+0.)
-      //     ctx.lineTo(this.length/2-5+10,+10)
-      //     ctx.strokeStyle=this.length==100?'red':'orange'
-      //     ctx.lineWidth=1
-      //   ctx.stroke()
-
-      //   ctx.lineWidth=2
-      //   ctx.strokeStyle="#000"
-      //   ctx.fillStyle="#ff8"
-      //   ctx.textAlign="center"
-      //   ctx.textBaseline="middle"
-      //   ctx.strokeText(this.id, this.length/2, 0)
-      //   ctx.fillText(this.id, this.length/2, 0)
-      // ctx.restore()
+      if (settings.showLabels) {
+        ctx.save()
+          ctx.globalAlpha=1.5
+          ctx.beginPath()
+            ctx.moveTo(this.length/2-5+10,-10)
+            ctx.lineTo(this.length/2+5+10,+0.)
+            ctx.lineTo(this.length/2-5+10,+10)
+            ctx.strokeStyle=this.length==100?'red':'orange'
+            ctx.lineWidth=1
+          ctx.stroke()
+  
+          ctx.lineWidth=2
+          ctx.strokeStyle="#000"
+          ctx.fillStyle="#ff8"
+          ctx.textAlign="center"
+          ctx.textBaseline="middle"
+          ctx.strokeText(this.id, this.length/2, 0)
+          ctx.fillText(this.id, this.length/2, 0)
+        ctx.restore()
+      }
 
       ctx.beginPath()
       ctx.moveTo(this.length,0)
@@ -346,28 +360,30 @@ export class CurvedTrack extends Track {
         ctx.strokeStyle = '#666'
       ctx.stroke()
 
-      // ctx.globalAlpha=0.2
-      // ctx.save()
-      //   ctx.rotate(this.sweep/2)
-      //   ctx.translate(this.radius,0)
-      //   ctx.rotate(Math.PI/2+(this.sweep<0)*Math.PI)
-
-      //   ctx.beginPath()
-      //     ctx.moveTo(-5+10,-10)
-      //     ctx.lineTo(+5+10,+0.)
-      //     ctx.lineTo(-5+10,+10)
-      //     ctx.strokeStyle='yellow'
-      //     ctx.lineWidth=1
-      //   ctx.stroke()
-
-      //   ctx.lineWidth=2
-      //   ctx.strokeStyle="#000"
-      //   ctx.fillStyle="#f88"
-      //   ctx.textAlign="center"
-      //   ctx.textBaseline="middle"
-      //   ctx.strokeText(this.id, 0, 0)
-      //   ctx.fillText(this.id, 0, 0)
-      // ctx.restore()
+      if (settings.showLabels) {
+        ctx.globalAlpha=1
+        ctx.save()
+          ctx.rotate(this.sweep/2)
+          ctx.translate(this.radius,0)
+          ctx.rotate(Math.PI/2+(this.sweep<0)*Math.PI)
+  
+          ctx.beginPath()
+            ctx.moveTo(-5+10,-10)
+            ctx.lineTo(+5+10,+0.)
+            ctx.lineTo(-5+10,+10)
+            ctx.strokeStyle='yellow'
+            ctx.lineWidth=1
+          ctx.stroke()
+  
+          ctx.lineWidth=2
+          ctx.strokeStyle="#000"
+          ctx.fillStyle="#fff"
+          ctx.textAlign="center"
+          ctx.textBaseline="middle"
+          ctx.strokeText(this.id, 0, 0)
+          ctx.fillText(this.id, 0, 0)
+        ctx.restore()
+      }
 
       ctx.beginPath()
       ctx.moveTo(this.radius*Math.cos(this.sweep),this.radius*Math.sin(this.sweep))
