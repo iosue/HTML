@@ -25,12 +25,14 @@ export class RailNetwork {
     if (!this.points.has(p?.id)) throw new Error(`Point p="${p}" not found`)
     if (!this.points.has(q?.id)) throw new Error(`Point q="${q}" not found`)
     p.out.values().forEach(track=>{
-      track.setA(q)
+      track.setA(q,0)
       q.out.add(track)
+      q.activeOut = track
     })
     p.in.values().forEach(track=>{
-      track.setB(q)
+      track.setB(q,0)
       q.in.add(track)
+      q.activeIn = track
     })
     this.deletePoint(p)
   }
@@ -43,10 +45,12 @@ export class RailNetwork {
     p.out.values().forEach(track=>{
       track.setA(q,1)
       q.out.add(track)
+      q.activeOut = track
     })
     p.in.values().forEach(track=>{
       track.setB(q,1)
       q.in.add(track)
+      q.activeIn = track
     })
     this.points.delete(p.id)
   }
@@ -59,14 +63,15 @@ export class RailNetwork {
     this.tracks.delete(track.id)
   }
   deletePoint(point) {
-    console.warn(point.in.size)
-    console.warn(point.out.size)
+    // if (point.in.size>0) console.warn('deleting',point.id,'which has',point.in.size,'in')
+    // if (point.out.size>0)console.warn('deleting',point.id,'which has',point.out.size,'out')
     this.points.delete(point.id)
   }
 
   draw(ctx) {
-    this.tracks.values().forEach(t=>t.draw?.(ctx))
-    this.points.values().forEach(p=>p.draw?.(ctx))
-    this.trains.values().forEach(t=>t.draw?.(ctx))
+    this.tracks.values().forEach(t=>t.draw(ctx))
+    this.points.values().forEach(p=>p.redrawActiveTracks(ctx))
+    this.points.values().forEach(p=>p.draw(ctx,this))
+    this.trains.values().forEach(t=>t.draw(ctx))
   }
 }

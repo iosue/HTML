@@ -20,14 +20,19 @@
 	<body>
 		<script type="module">
 			import { deg } from './helpers.js'
+			import * as settings from './defaults.js'
 			import {
         Point,
 				StraightTrack,
 				CurvedTrack,
 			} from "./classes/track.js"
+			import { RailNetwork } from "./classes/network.js"
 			import {
-        RailNetwork
-			} from "./classes/network.js"
+        Bogie,
+				Traction,
+				Car,
+				Engine
+			} from "./classes/train.js"
 
 			const Camera = { x: 0, y: 0, z: 1, v: 10 / 9 }
 
@@ -39,6 +44,131 @@
 			const ctx = cvs.getContext("2d")
 
 			const network=new RailNetwork()
+				network.addTrack(new StraightTrack('S11',100,0,0,deg(0)))
+				network.addTrack(new StraightTrack('S112'))
+				network.connectPoints('S112A','S11B')
+				network.addTrack(new StraightTrack('S113'))
+				network.connectPoints('S113A','S112B')
+				network.addTrack(new StraightTrack('S114'))
+				network.connectPoints('S114A','S113B')
+				network.addTrack(new StraightTrack('S115'))
+				network.connectPoints('S115A','S114B')
+				network.addTrack(new StraightTrack('S116'))
+				network.connectPoints('S116A','S115B')
+				network.addTrack(new StraightTrack('S117'))
+				network.connectPoints('S117A','S116B')
+				network.addTrack(new StraightTrack('S118'))
+				network.connectPoints('S118A','S117B')
+
+				network.addTrack(new CurvedTrack('C1','R'))
+				network.connectPoints('C1A','S11A')
+
+				network.addTrack(new CurvedTrack('C2','L'))
+				network.connectPoints('C2A','C1B')
+				network.addTrack(new StraightTrack('S23'))
+				network.connectPoints('S23A','C2B')
+				network.addTrack(new StraightTrack('S24'))
+				network.connectPoints('S24A','S23B')
+				network.addTrack(new StraightTrack('S25'))
+				network.connectPoints('S25A','S24B')
+				network.addTrack(new StraightTrack('S26'))
+				network.connectPoints('S26A','S25B')
+				network.addTrack(new CurvedTrack('C7','L'))
+				network.connectPoints('C7A','S26B')
+
+
+				network.addTrack(new StraightTrack('S2',115.470053837925))
+				network.connectPoints('S2A','C1B')
+
+				network.addTrack(new CurvedTrack('C3','L'))
+				network.connectPoints('C3A','S2B')
+				network.addTrack(new StraightTrack('S33'))
+				network.connectPoints('S33A','C3B')
+				network.addTrack(new StraightTrack('S34'))
+				network.connectPoints('S34A','S33B')
+
+				network.addTrack(new CurvedTrack('C6','L'))
+				network.connectPoints('C6A','S34B')
+
+				network.addTrack(new StraightTrack('S7',115.470053837925))
+				network.connectPoints('S7A','C6B')
+
+				network.mergePoints('S7B','C7B')
+
+				network.addTrack(new CurvedTrack('C8','R'))
+				network.connectPoints('C8A','C7B')
+
+				network.mergePoints('C8B','S118B')
+
+				network.addTrack(new CurvedTrack('C9','R'))
+				network.connectPoints('C9A','S118B')
+				network.addTrack(new CurvedTrack('C10','R'))
+				network.connectPoints('C10A','C9B')
+				network.addTrack(new CurvedTrack('C11','R'))
+				network.connectPoints('C11A','C10B')
+				network.addTrack(new CurvedTrack('C12','R'))
+				network.connectPoints('C12A','C11B')
+				network.addTrack(new CurvedTrack('C13','R'))
+				network.connectPoints('C13A','C12B')
+				network.addTrack(new CurvedTrack('C14','R'))
+				network.connectPoints('C14A','C13B')
+
+				network.addTrack(new StraightTrack('S511'))
+				network.connectPoints('S511A','C14B')
+				network.addTrack(new StraightTrack('S512'))
+				network.connectPoints('S512A','S511B')
+
+				network.addTrack(new CurvedTrack('C21','R'))
+				network.connectPoints('C21A','S512B')
+				network.addTrack(new CurvedTrack('C22','L'))
+				network.connectPoints('C22A','C21B')
+
+				network.addTrack(new CurvedTrack('C31','R'))
+				network.connectPoints('C31A','S511B')
+				network.addTrack(new CurvedTrack('C32','L'))
+				network.connectPoints('C32A','C31B')
+				network.addTrack(new StraightTrack('S30'))
+				network.connectPoints('S30A','C32B')
+
+				network.addTrack(new StraightTrack('S40'))
+				network.connectPoints('S40A','S30B')
+				network.addTrack(new CurvedTrack('C33','L'))
+				network.connectPoints('C33A','S40B')
+				network.addTrack(new CurvedTrack('C34','R'))
+				network.connectPoints('C34A','C33B')
+
+				network.addTrack(new CurvedTrack('C23','L'))
+				network.connectPoints('C23A','C22B')
+				network.addTrack(new CurvedTrack('C24','R'))
+				network.connectPoints('C24A','C23B')
+
+				// network.addTrack(new StraightTrack('S513'))
+				// network.connectPoints('S513A','S512B')
+				// network.addTrack(new StraightTrack('S514'))
+				// network.connectPoints('S514A','S513B')
+				// network.addTrack(new StraightTrack('S515'))
+				// network.connectPoints('S515A','S514B')
+				// network.addTrack(new StraightTrack('S516'))
+				// network.connectPoints('S516A','S515B')
+				network.addTrack(new StraightTrack('S517'))
+				network.connectPoints('S517A','C24B')
+				network.addTrack(new StraightTrack('S518'))
+				network.connectPoints('S518A','C34B')
+
+				network.addTrack(new CurvedTrack('C15','R'))
+				network.connectPoints('C15A','S518B')
+				network.addTrack(new CurvedTrack('C16','R'))
+				network.connectPoints('C16A','C15B')
+				network.addTrack(new CurvedTrack('C17','R'))
+				network.connectPoints('C17A','C16B')
+				network.addTrack(new CurvedTrack('C18','R'))
+				network.connectPoints('C18A','C17B')
+				network.addTrack(new CurvedTrack('C19','R'))
+				network.connectPoints('C19A','C18B')
+				network.addTrack(new CurvedTrack('C20','R'))
+				network.connectPoints('C20A','C19B')
+
+				network.mergePoints('C20B','S11A')
 
 			let last = performance.now()
 			function loop(now = performance.now()) {
@@ -48,63 +178,52 @@
 				cvs.height = innerHeight
 				ctx.translate(innerWidth/2,innerHeight/2)
 
-				network.addTrack(new StraightTrack('S1',0,0,deg(0)))
-				network.addTrack(new StraightTrack('S2',50,0,deg(0)))
+				let scale=100
 
-				network.addTrack(new CurvedTrack('C1',0,0,deg(-20),deg(20),200))
+				scale = 0.75
+				ctx.scale(scale,scale)
+				ctx.globalAlpha = 0.25
 
-				network.connectPoints('S2A','S1B')
+				ctx.translate(-400,-200)
 
 				network.draw(ctx)
 				document.title = now
-				// requestAnimationFrame(loop)
-				console.log(...network.points.values())
+				requestAnimationFrame(loop)
 			}
 			loop()
 
+			cvs.addEventListener("click", e => {
+				if (network.hoveredPoint) {
+					const point=network.hoveredPoint[0]
+					point.switch(network.hoveredPoint[1],network)
+				}
+			})
 
-			// cvs.addEventListener("click", e => {
-			// 	const rect = cvs.getBoundingClientRect()
-			// 	const x = e.clientX - rect.left
-			// 	const y = e.clientY - rect.top
+			cvs.addEventListener("mousemove", e => {
+				network.hoveredPoint = null
+				for (const point of network.points.values()) {
+					if (point) {
+						ctx.save()
+						// ctx.translate(point.x,point.y)
+						// ctx.rotate(Math.PI/2)
+						const m = ctx.getTransform().inverse().transformPoint(new DOMPoint(e.x, e.y));
+						ctx.restore()
+						const dist = Math.hypot(point.x - m.x, point.y - m.y)
+						if (dist < settings.clickRadius) {
+							if (m.x < point.x && point.in.size>1) {
+								network.hoveredPoint = [point,'in']
+								break
+							}
+							if (m.x > point.x && point.out.size>1) {
+								network.hoveredPoint = [point,'out']
+								break
+							}
+						}
+					}
+				}
+				cvs.style.cursor = network.hoveredPoint ? "pointer" : "default"
+			})
 
-			// 	// Find clicked switch
-			// 	for (const section of network.sections.values()) {
-			// 		if (section instanceof SwitchSection) {
-			// 			const dx = x - section.end.x
-			// 			const dy = y - section.end.y
-			// 			const dist = Math.hypot(dx, dy)
-
-			// 			if (dist < 15) {
-			// 				// click radius around switch end
-			// 				section.cycleRoute()
-			// 				break
-			// 			}
-			// 		}
-			// 	}
-			// })
-			// cvs.addEventListener("mousemove", e => {
-			// 	const rect = cvs.getBoundingClientRect()
-			// 	const x = e.clientX - rect.left
-			// 	const y = e.clientY - rect.top
-			// 	let hoveringSwitch = false
-			// 	for (const section of network.sections.values()) {
-			// 		if (section instanceof SwitchSection) {
-			// 			const dx = x - section.end.x
-			// 			const dy = y - section.end.y
-			// 			const dist = Math.hypot(dx, dy)
-			// 			if (dist < 15) {
-			// 				// same radius as click
-			// 				hoveringSwitch = true
-			// 				section.isHovered = true
-			// 				break
-			// 			} else {
-			// 				section.isHovered = false
-			// 			}
-			// 		}
-			// 	}
-			// 	cvs.style.cursor = hoveringSwitch ? "pointer" : "default"
-			// })
 			// window.addEventListener("keydown", e => {
 			// 	const train=network.getTrain("T1")
 			// 	switch (e.code) {
