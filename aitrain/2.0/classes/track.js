@@ -22,20 +22,13 @@ export class Point {
   }
 
   switch(dir="in") {
-    switch (dir) {
-      case "in":{
-        let tracks = [...this.in.values()]
-        let i = tracks.indexOf(this.activeIn)
-        let j = (i+1)%tracks.length
-        this.activeIn = tracks[j]
-      } break
-      case "out":{
-        let tracks = [...this.out.values()]
-        let i = tracks.indexOf(this.activeOut)
-        let j = (i+1)%tracks.length
-        this.activeOut = tracks[j]
-      } break
-    }
+    let tracks = [...this[dir].values()]
+    let occupiedTrack = tracks.reduce((a,b)=>a||b.occupied?b:0,false)
+    if (occupiedTrack)
+      return console.warn(this.id,dir,'occupied on',occupiedTrack.id)
+    let i = tracks.indexOf(this[{in:"activeIn",out:"activeOut"}[dir]])
+    let j = (i+1)%tracks.length
+    this[{in:"activeIn",out:"activeOut"}[dir]] = tracks[j]
   }
 
   redrawActiveTracks(ctx) {
@@ -97,12 +90,22 @@ export class Point {
       }
     }
     if (this.in.size<=1 && this.out.size<=1) {
+      // ctx.save()
+      // ctx.beginPath()
+      // ctx.arc(this.x,this.y,settings.clickRadius*1/4,0,Math.PI*2)
+      // ctx.lineWidth=4
+      // ctx.fillStyle="#281f18"
+      // ctx.fill()
+      // ctx.restore()
       ctx.save()
       ctx.beginPath()
-      ctx.arc(this.x,this.y,settings.clickRadius*1/4,0,Math.PI*2)
-      ctx.lineWidth=4
-      ctx.fillStyle="#281f18"
-      ctx.fill()
+      ctx.translate(this.x,this.y)
+      ctx.rotate(this.a)
+      ctx.moveTo(0,-settings.clickRadius*1.5/2)
+      ctx.lineTo(0,+settings.clickRadius*1.5/2)
+      ctx.lineWidth = 2
+      ctx.strokeStyle = "#864"
+      ctx.stroke()
       ctx.restore()
     }
     if (settings.showLabels) {
@@ -135,6 +138,40 @@ export class Point {
         ctx.fillText(this.id,0,0)
       ctx.restore()
     }
+
+    if (this.in.size==0 || this.out.size==0) {
+      ctx.save()
+      ctx.textAlign="center"
+      ctx.textBaseline="middle"
+        ctx.save()
+          ctx.translate(this.x,this.y)
+          ctx.rotate(this.a)
+          ctx.beginPath()
+            ctx.arc(0,0,settings.clickRadius,0,Math.PI*2)
+            ctx.strokeStyle="red"
+          ctx.stroke()
+        ctx.restore()
+        if (this.in.size==0) {
+          ctx.save()
+            ctx.translate(this.x,this.y)
+            ctx.rotate(this.a)
+            ctx.beginPath()
+              ctx.fillStyle='red'
+              ctx.fillText('IN = 0',0,-24)
+          ctx.restore()
+        }
+        if (this.out.size==0) {
+          ctx.save()
+            ctx.translate(this.x,this.y)
+            ctx.rotate(this.a)
+            ctx.beginPath()
+              ctx.fillStyle='red'
+              ctx.fillText('OUT = 0',0,+24)
+          ctx.restore()
+        }
+      ctx.restore()
+    }
+
   }
 }
 
@@ -146,20 +183,29 @@ export class Track {
 }
 
 export class StraightTrack extends Track {
-  constructor(id, l=settings.standardLength, x=0, y=0, a=0) {
+  constructor(id, sw=false, l=settings.standardLength, x=0, y=0, a=0) {
     super(id)
     this.id = id
-    this.length=l
+    this.switch = sw
+    this.length = l
     const A = new Point(x, y, a, `${this.id}A`),
           B = new Point(
-            x + l*Math.cos(a),
-            y + l*Math.sin(a),
+            x + this.length*Math.cos(a),
+            y + this.length*Math.sin(a),
             a, `${this.id}B`
           )
     A.out.add(this)
     B.in.add(this)
     this.A = A
     this.B = B
+  }
+
+  posAt(t) {
+    return {
+      x: this.A.x + this.length * t * Math.cos(this.A.a),
+      y: this.A.y + this.length * t * Math.sin(this.A.a),
+      a: this.A.a || this.B.a,
+    }
   }
 
   setA(point, merge=false) {
@@ -204,7 +250,8 @@ export class StraightTrack extends Track {
         ctx.moveTo(0,0)
         ctx.lineTo(this.length,0)
         ctx.strokeStyle='#864'
-        ctx.setLineDash([2,this.length/10 - 2])
+        // ctx.setLineDash([2,this.length/10 - 2])
+        ctx.setLineDash([1,this.length/10 - 2,1,0])
         ctx.lineWidth=settings.trackWidth*2
       ctx.stroke()
 
@@ -212,8 +259,8 @@ export class StraightTrack extends Track {
         ctx.moveTo(0,0)
         ctx.lineTo(this.length,0)
         ctx.setLineDash([])
-        ctx.lineCap = "round"
-        ctx.strokeStyle='#666'
+        ctx.lineCap = settings.trackLineCap
+        ctx.strokeStyle=this.switch?'#6aa':'#666'
         ctx.lineWidth=settings.trackWidth
       ctx.stroke()
 
@@ -253,11 +300,12 @@ export class StraightTrack extends Track {
 
 
 export class CurvedTrack extends Track {
-  constructor(id, s=deg(30), r=settings.standardLength*2, x=0, y=0, a=deg(0)) {
+  constructor(id, s='L', sw=false, r=settings.standardLength*2, x=0, y=0, a=deg(0)) {
     super(id)
     this.id = id
-    this.radius=r
-    this.sweep=(s=="L"?-1:1)*deg(30)
+    this.switch = sw
+    this.radius = r
+    this.sweep = (s=="L"?-1:1)*deg(30)
     this.A = new Point(x, y, a, `${this.id}A`)
     this.O = {
       x: x + r * Math.cos(a + (this.sweep>0 ? Math.PI/2 : -Math.PI/2)),
@@ -275,28 +323,14 @@ export class CurvedTrack extends Track {
 		this.length = r * Math.abs(this.sweep)
 	}
 
-	recomputeGeometry() {
-		const { x: startX, y: startY } = this.start
-		const heading = this.heading
-		const radius = this.radius
-		const sweepAngle = this.sweepAngle
+  posAt(t) {
+    return {
+      x: this.O.x + this.radius * Math.cos(this.O.a + this.sweep * t),
+      y: this.O.y + this.radius * Math.sin(this.O.a + this.sweep * t),
+      a: this.O.a + (this.sweep>0?1:-1)*Math.PI/2 + this.sweep * t
+    }
+  }
 
-		const normalAngle = heading + (sweepAngle > 0 ? Math.PI / 2 : -Math.PI / 2)
-		this.center = {
-			x: startX + radius * Math.cos(normalAngle),
-			y: startY + radius * Math.sin(normalAngle),
-		}
-
-		this.startAngle = heading - (sweepAngle > 0 ? Math.PI / 2 : -Math.PI / 2)
-		this.endAngle = this.startAngle + sweepAngle
-
-		this.end = {
-			x: this.center.x + radius * Math.cos(this.endAngle),
-			y: this.center.y + radius * Math.sin(this.endAngle),
-		}
-
-		this.length = radius * Math.abs(sweepAngle)
-	}
 
   setA(point, merge=false) {
     this.A = point
@@ -348,16 +382,17 @@ export class CurvedTrack extends Track {
       ctx.beginPath()
         ctx.arc(0,0,this.radius,0,this.sweep,this.sweep<0)
         ctx.strokeStyle='#864'
-        ctx.setLineDash([2,settings.standardLength*2*deg(30)/10-2])
+        // ctx.setLineDash([2,settings.standardLength*2*deg(30)/10-2])
+        ctx.setLineDash([1,settings.standardLength*2*deg(30)/10-2,1,0])
         ctx.lineWidth=settings.trackWidth*2
       ctx.stroke()
 
       ctx.beginPath()
         ctx.arc(0,0,this.radius,0,this.sweep,this.sweep<0)
         ctx.setLineDash([])
-        ctx.lineCap = "round"
+        ctx.lineCap = settings.trackLineCap
         ctx.lineWidth = settings.trackWidth
-        ctx.strokeStyle = '#666'
+        ctx.strokeStyle=this.switch?'#6aa':'#666'
       ctx.stroke()
 
       if (settings.showLabels) {

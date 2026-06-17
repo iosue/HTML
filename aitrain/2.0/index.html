@@ -35,6 +35,7 @@
 			} from "./classes/train.js"
 
 			const Camera = { x: 0, y: 0, z: 1, v: 10 / 9 }
+			let pause=false
 
 			const cvs = document.createElement("canvas")
 					cvs.id = "yard"
@@ -44,7 +45,10 @@
 			const ctx = cvs.getContext("2d")
 
 			const network=new RailNetwork()
-				network.addTrack(new StraightTrack('S11',100,0,0,deg(0)))
+
+			function complexLoop() {
+				network.addTrack(new StraightTrack('S11',1))
+
 				network.addTrack(new StraightTrack('S112'))
 				network.connectPoints('S112A','S11B')
 				network.addTrack(new StraightTrack('S113'))
@@ -57,27 +61,31 @@
 				network.connectPoints('S116A','S115B')
 				network.addTrack(new StraightTrack('S117'))
 				network.connectPoints('S117A','S116B')
-				network.addTrack(new StraightTrack('S118'))
+				network.addTrack(new StraightTrack('S118',1))
 				network.connectPoints('S118A','S117B')
 
-				network.addTrack(new CurvedTrack('C1','R'))
+				network.addTrack(new CurvedTrack('C1','R',1))
 				network.connectPoints('C1A','S11A')
 
-				network.addTrack(new CurvedTrack('C2','L'))
+				network.addTrack(new CurvedTrack('C2','L',1))
 				network.connectPoints('C2A','C1B')
 				network.addTrack(new StraightTrack('S23'))
 				network.connectPoints('S23A','C2B')
-				network.addTrack(new StraightTrack('S24'))
-				network.connectPoints('S24A','S23B')
-				network.addTrack(new StraightTrack('S25'))
-				network.connectPoints('S25A','S24B')
+					network.addTrack(new StraightTrack('S24'))
+					network.connectPoints('S24A','S23B')
+					network.addTrack(new StraightTrack('S25'))
+					network.connectPoints('S25A','S24B')
+					// network.addTrack(new StraightTrack('S24'))
+					// network.connectPoints('S24B','S23B')
+					// network.addTrack(new StraightTrack('S25'))
+					// network.mergePoints('S25A','S24A')
 				network.addTrack(new StraightTrack('S26'))
 				network.connectPoints('S26A','S25B')
-				network.addTrack(new CurvedTrack('C7','L'))
+				network.addTrack(new CurvedTrack('C7','L',1))
 				network.connectPoints('C7A','S26B')
 
 
-				network.addTrack(new StraightTrack('S2',115.470053837925))
+				network.addTrack(new StraightTrack('S2',1,115.470053837925))
 				network.connectPoints('S2A','C1B')
 
 				network.addTrack(new CurvedTrack('C3','L'))
@@ -90,12 +98,12 @@
 				network.addTrack(new CurvedTrack('C6','L'))
 				network.connectPoints('C6A','S34B')
 
-				network.addTrack(new StraightTrack('S7',115.470053837925))
+				network.addTrack(new StraightTrack('S7',1,115.470053837925))
 				network.connectPoints('S7A','C6B')
 
 				network.mergePoints('S7B','C7B')
 
-				network.addTrack(new CurvedTrack('C8','R'))
+				network.addTrack(new CurvedTrack('C8','R',1))
 				network.connectPoints('C8A','C7B')
 
 				network.mergePoints('C8B','S118B')
@@ -116,34 +124,34 @@
 				network.addTrack(new StraightTrack('S511'))
 				network.connectPoints('S511A','C14B')
 
-				network.addTrack(new StraightTrack('S512'))
+				network.addTrack(new StraightTrack('S512',1))
 				network.connectPoints('S512A','S511B')
 				network.addTrack(new CurvedTrack('C21','R'))
 				network.connectPoints('C21A','S512B')
-				network.addTrack(new CurvedTrack('C22','L'))
+				network.addTrack(new CurvedTrack('C22','L',1))
 				network.connectPoints('C22A','C21B')
 
-				network.addTrack(new CurvedTrack('C31','R'))
+				network.addTrack(new CurvedTrack('C31','R',1))
 				network.connectPoints('C31A','S511B')
 				network.addTrack(new CurvedTrack('C32','L'))
 				network.connectPoints('C32A','C31B')
-				network.addTrack(new StraightTrack('S30'))
+				network.addTrack(new StraightTrack('S30',1))
 				network.connectPoints('S30A','C32B')
 
 				network.mergePoints('C22B','S30B')
 
-				network.addTrack(new CurvedTrack('C23','L'))
+				network.addTrack(new CurvedTrack('C23','L',1))
 				network.connectPoints('C23A','S30B')
 				network.addTrack(new CurvedTrack('C24','R'))
 				network.connectPoints('C24A','C23B')
-				network.addTrack(new StraightTrack('S517'))
+				network.addTrack(new StraightTrack('S517',1))
 				network.connectPoints('S517A','C24B')
 
-				network.addTrack(new StraightTrack('S40'))
+				network.addTrack(new StraightTrack('S40',1))
 				network.connectPoints('S40A','S30B')
 				network.addTrack(new CurvedTrack('C33','L'))
 				network.connectPoints('C33A','S40B')
-				network.addTrack(new CurvedTrack('C34','R'))
+				network.addTrack(new CurvedTrack('C34','R',1))
 				network.connectPoints('C34A','C33B')
 
 				network.mergePoints('S517B','C34B')
@@ -165,6 +173,292 @@
 				network.connectPoints('C20A','C19B')
 
 				network.mergePoints('C20B','S11A')
+			}
+			
+			function inglenook() {
+				network.addTrack(new StraightTrack('M1'))
+				network.addTrack(new StraightTrack('M2'))
+				network.addTrack(new StraightTrack('M3'))
+				network.addTrack(new StraightTrack('M4'))
+				network.connectPoints('M2A','M1B')
+				network.connectPoints('M3A','M2B')
+				network.connectPoints('M4A','M3B')
+
+				network.addTrack(new StraightTrack('S11'))
+				network.connectPoints('S11A','M4B')
+
+				network.addTrack(new StraightTrack('L1'))
+				network.addTrack(new StraightTrack('L2'))
+				network.addTrack(new StraightTrack('L3'))
+				network.addTrack(new StraightTrack('L4'))
+				network.addTrack(new StraightTrack('L5'))
+				network.connectPoints('L1A','S11B')
+				network.connectPoints('L2A','L1B')
+				network.connectPoints('L3A','L2B')
+				network.connectPoints('L4A','L3B')
+				network.connectPoints('L5A','L4B')
+
+				network.addTrack(new CurvedTrack('S12',"R"))
+				network.connectPoints('S12A','M4B')
+
+				network.addTrack(new CurvedTrack('S21',"L"))
+				network.connectPoints('S21A','S12B')
+
+				network.addTrack(new StraightTrack('P1'))
+				network.addTrack(new StraightTrack('P2'))
+				network.addTrack(new StraightTrack('P3'))
+				network.connectPoints('P1A','S21B')
+				network.connectPoints('P2A','P1B')
+				network.connectPoints('P3A','P2B')
+
+				network.addTrack(new StraightTrack('S22'))
+				network.connectPoints('S22A','S12B')
+
+				network.addTrack(new StraightTrack('Q1'))
+				network.addTrack(new StraightTrack('Q2'))
+				network.addTrack(new StraightTrack('Q3'))
+				network.connectPoints('Q1A','S22B')
+				network.connectPoints('Q2A','Q1B')
+				network.connectPoints('Q3A','Q2B')
+
+			}
+			
+			function timeSaver() {
+				network.addTrack(new StraightTrack('M1',0,200))
+
+				network.addTrack(new StraightTrack('M2',0,200))
+				network.connectPoints('M2A','M1B')
+
+				network.addTrack(new StraightTrack('SWM',1,200))
+				network.connectPoints('SWMA','M2B')
+				network.addTrack(new CurvedTrack('SWS','R',1))
+				network.connectPoints('SWSA','M2B')
+				
+				network.addTrack(new StraightTrack('SCM',1,200))
+				network.connectPoints('SCMA','SWMB')
+				network.addTrack(new CurvedTrack('SCN','L',1))
+				network.connectPoints('SCNA','SWMB')
+				
+				network.addTrack(new StraightTrack('M3',0,200))
+				network.connectPoints('M3A','SCMB')
+
+				network.addTrack(new StraightTrack('SEM',1,200))
+				network.connectPoints('SEMA','M3B')
+				
+				network.addTrack(new StraightTrack('M4',0,200))
+				network.connectPoints('M4A','SEMB')
+
+				network.addTrack(new StraightTrack('M5',0,200))
+				network.connectPoints('M5A','M4B')
+
+				network.addTrack(new CurvedTrack('SSM','L',1))
+				network.connectPoints('SSMA','SWSB')
+
+				network.addTrack(new StraightTrack('SSS',1,200))
+				network.mergePoints('SSSB','SSMB')
+				network.addTrack(new StraightTrack('S2',0,200))
+				network.mergePoints('S2B','SSSA')
+				network.addTrack(new StraightTrack('S1',0,200))
+				network.mergePoints('S1B','S2A')
+
+				network.addTrack(new StraightTrack('S3',0,200))
+				network.connectPoints('S3A','SSMB')
+				network.addTrack(new StraightTrack('S4',0,200))
+				network.connectPoints('S4A','S3B')
+				network.addTrack(new CurvedTrack('S5','L',1))
+				network.connectPoints('S5A','S4B')
+
+				network.addTrack(new CurvedTrack('SES','R',1))
+				network.connectPoints('SESA','S5B')
+				network.mergePoints('SESB','SEMB')
+				
+				network.addTrack(new CurvedTrack('SNC','R',1))
+				network.connectPoints('SNCA','SCNB')
+				network.addTrack(new StraightTrack('SNN',1,200))
+				network.mergePoints('SNNB','SNCB')
+
+				network.addTrack(new StraightTrack('N3',0,200))
+				network.mergePoints('N3B','SNNA')
+				network.addTrack(new StraightTrack('N2',0,200))
+				network.mergePoints('N2B','N3A')
+				network.addTrack(new StraightTrack('N1',0,200))
+				network.mergePoints('N1B','N2A')
+
+				network.addTrack(new StraightTrack('N4',0,200))
+				network.connectPoints('N4A','SNCB')
+				network.addTrack(new StraightTrack('N5',0,200))
+				network.connectPoints('N5A','N4B')
+				network.addTrack(new StraightTrack('N6',0,200))
+				network.connectPoints('N6A','N5B')
+
+			}
+
+			function turnAround() {
+				network.addTrack(new StraightTrack('M'))
+
+				network.addTrack(new CurvedTrack('SR2','L'))
+				network.connectPoints('SR2A','MB')
+				network.addTrack(new CurvedTrack('SR1','R'))
+				network.connectPoints('SR1A','MB')
+
+				network.addTrack(new CurvedTrack('CR1','R'))
+				network.connectPoints('CR1A','SR1B')
+
+				network.addTrack(new CurvedTrack('CR2','L'))
+				network.connectPoints('CR2A','CR1B')
+				network.addTrack(new CurvedTrack('CR3','L'))
+				network.connectPoints('CR3A','CR2B')
+				network.addTrack(new CurvedTrack('CR4','L'))
+				network.connectPoints('CR4A','CR3B')
+				network.addTrack(new CurvedTrack('CR5','L'))
+				network.connectPoints('CR5A','CR4B')
+				network.addTrack(new CurvedTrack('CR6','L'))
+				network.connectPoints('CR6A','CR5B')
+
+				network.addTrack(new CurvedTrack('CR7','L'))
+				network.connectPoints('CR7A','CR6B')
+				network.addTrack(new CurvedTrack('CR8','L'))
+				network.connectPoints('CR8A','CR7B')
+				network.addTrack(new CurvedTrack('CR9','L'))
+				network.connectPoints('CR9A','CR8B')
+				network.addTrack(new CurvedTrack('CR10','L'))
+				network.connectPoints('CR10A','CR9B')
+				network.addTrack(new CurvedTrack('CR11','L'))
+				network.connectPoints('CR11A','CR10B')
+
+				network.addTrack(new CurvedTrack('CR12','R'))
+				network.connectPoints('CR12A','CR11B')
+
+				network.reverseConnectPoints('CR12B','SR2B')
+
+
+				// network.addTrack(new CurvedTrack('SL2','L'))
+				// network.connectPoints('SL2A','MA')
+				// network.addTrack(new CurvedTrack('SL1','R'))
+				// network.connectPoints('SL1A','MA')
+
+				// network.addTrack(new CurvedTrack('CL1','R'))
+				// network.connectPoints('CL1A','SL1B')
+
+				// network.addTrack(new CurvedTrack('CL2','L'))
+				// network.connectPoints('CL2A','CL1B')
+				// network.addTrack(new CurvedTrack('CL3','L'))
+				// network.connectPoints('CL3A','CL2B')
+				// network.addTrack(new CurvedTrack('CL4','L'))
+				// network.connectPoints('CL4A','CL3B')
+				// network.addTrack(new CurvedTrack('CL5','L'))
+				// network.connectPoints('CL5A','CL4B')
+				// network.addTrack(new CurvedTrack('CL6','L'))
+				// network.connectPoints('CL6A','CL5B')
+
+				// network.addTrack(new CurvedTrack('CL7','L'))
+				// network.connectPoints('CL7A','CL6B')
+				// network.addTrack(new CurvedTrack('CL8','L'))
+				// network.connectPoints('CL8A','CL7B')
+				// network.addTrack(new CurvedTrack('CL9','L'))
+				// network.connectPoints('CL9A','CL8B')
+				// network.addTrack(new CurvedTrack('CL10','L'))
+				// network.connectPoints('CL10A','CL9B')
+				// network.addTrack(new CurvedTrack('CL11','L'))
+				// network.connectPoints('CL11A','CL10B')
+
+				// network.addTrack(new CurvedTrack('CL12','R'))
+				// network.connectPoints('CL12A','CL11B')
+
+				// network.reverseConnectPoints('CL12B','SL2B')
+
+				// console.log(network.points.get('S2B'))
+			}
+
+			function newTurnAround() {
+				network.addTrack(new StraightTrack('M'))
+
+				network.addTrack(new CurvedTrack('SR2','L'))
+				network.new_connectPoints('SR2','A','M','B')
+				network.addTrack(new CurvedTrack('SR1','R'))
+				network.connectPoints('SR1A','MB')
+
+				network.addTrack(new CurvedTrack('CR1','R'))
+				network.connectPoints('CR1A','SR1B')
+
+				network.addTrack(new CurvedTrack('CR2','L'))
+				network.connectPoints('CR2A','CR1B')
+				network.addTrack(new CurvedTrack('CR3','L'))
+				network.connectPoints('CR3A','CR2B')
+				network.addTrack(new CurvedTrack('CR4','L'))
+				network.connectPoints('CR4A','CR3B')
+				network.addTrack(new CurvedTrack('CR5','L'))
+				network.connectPoints('CR5A','CR4B')
+				network.addTrack(new CurvedTrack('CR6','L'))
+				network.connectPoints('CR6A','CR5B')
+
+				network.addTrack(new CurvedTrack('CR7','L'))
+				network.connectPoints('CR7A','CR6B')
+				network.addTrack(new CurvedTrack('CR8','L'))
+				network.connectPoints('CR8A','CR7B')
+				network.addTrack(new CurvedTrack('CR9','L'))
+				network.connectPoints('CR9A','CR8B')
+				network.addTrack(new CurvedTrack('CR10','L'))
+				network.connectPoints('CR10A','CR9B')
+				network.addTrack(new CurvedTrack('CR11','L'))
+				network.connectPoints('CR11A','CR10B')
+
+				network.addTrack(new CurvedTrack('CR12','R'))
+				network.connectPoints('CR12A','CR11B')
+
+				network.reverseConnectPoints('CR12B','SR2B')
+
+
+				// network.addTrack(new CurvedTrack('SL2','L'))
+				// network.connectPoints('SL2A','MA')
+				// network.addTrack(new CurvedTrack('SL1','R'))
+				// network.connectPoints('SL1A','MA')
+
+				// network.addTrack(new CurvedTrack('CL1','R'))
+				// network.connectPoints('CL1A','SL1B')
+
+				// network.addTrack(new CurvedTrack('CL2','L'))
+				// network.connectPoints('CL2A','CL1B')
+				// network.addTrack(new CurvedTrack('CL3','L'))
+				// network.connectPoints('CL3A','CL2B')
+				// network.addTrack(new CurvedTrack('CL4','L'))
+				// network.connectPoints('CL4A','CL3B')
+				// network.addTrack(new CurvedTrack('CL5','L'))
+				// network.connectPoints('CL5A','CL4B')
+				// network.addTrack(new CurvedTrack('CL6','L'))
+				// network.connectPoints('CL6A','CL5B')
+
+				// network.addTrack(new CurvedTrack('CL7','L'))
+				// network.connectPoints('CL7A','CL6B')
+				// network.addTrack(new CurvedTrack('CL8','L'))
+				// network.connectPoints('CL8A','CL7B')
+				// network.addTrack(new CurvedTrack('CL9','L'))
+				// network.connectPoints('CL9A','CL8B')
+				// network.addTrack(new CurvedTrack('CL10','L'))
+				// network.connectPoints('CL10A','CL9B')
+				// network.addTrack(new CurvedTrack('CL11','L'))
+				// network.connectPoints('CL11A','CL10B')
+
+				// network.addTrack(new CurvedTrack('CL12','R'))
+				// network.connectPoints('CL12A','CL11B')
+
+				// network.reverseConnectPoints('CL12B','SL2B')
+
+				// console.log(network.points.get('S2B'))
+			}
+
+			// complexLoop()
+			// inglenook()
+			// timeSaver()
+			// turnAround()
+			newTurnAround()
+
+			// network.addBogie(new Bogie('B1',network.tracks.get('C11'),1,'white',2))
+
+			// network.addBogie(new Bogie('B1',network.tracks.get('S11'),1,'white',1.0))
+			// network.addBogie(new Bogie('B2',network.tracks.get('C1'),1,'salmon',1.2))
+
+			// console.log([...network.tracks.values()].map(track=>[track.id,track.A?.id,track.B?.id]))
 
 			let last = performance.now()
 			function loop(now = performance.now()) {
@@ -178,15 +472,16 @@
 
 				scale = 0.75
 				ctx.scale(scale,scale)
-				ctx.globalAlpha = 0.75
+				ctx.globalAlpha = 0.8
 
-				ctx.translate(-400,-200)
+				ctx.translate(-50,0)
 
 				network.draw(ctx)
 				document.title = now
-				requestAnimationFrame(loop)
+				if (!pause) requestAnimationFrame(loop)
 			}
-			loop()
+
+			onload=()=>loop()
 
 			cvs.addEventListener("click", e => {
 				if (network.hoveredPoint) {
@@ -196,27 +491,27 @@
 			})
 
 			cvs.addEventListener("mousemove", e => {
-				network.hoveredPoint = null
 				for (const point of network.points.values()) {
 					if (point) {
 						ctx.save()
 						const m = ctx.getTransform().inverse().transformPoint(new DOMPoint(e.x, e.y));
 						ctx.restore()
 						const dist = Math.hypot(point.x - m.x, point.y - m.y)
-						if (dist < settings.clickRadius) {
+						if (dist < settings.clickRadius*(network.hoveredPoint?2:1)) {
 							const local = point.toLocal(m.x, m.y)
 							if (local.x < 0 && point.in.size>1) {
-								network.hoveredPoint = [point,'in']
+								return network.hoveredPoint = [point,'in']
 								break
 							}
 							if (local.x > 0 && point.out.size>1) {
-								network.hoveredPoint = [point,'out']
+								return network.hoveredPoint = [point,'out']
 								break
 							}
 						}
 					}
 				}
 				cvs.style.cursor = network.hoveredPoint ? "pointer" : "default"
+				network.hoveredPoint = null
 			})
 
 			// window.addEventListener("keydown", e => {
@@ -249,6 +544,13 @@
 			// 		train.activeBraking = false
 			// 	}
 			// })
+
+			window.addEventListener("keyup", e => {
+				if (e.code === "Space") {
+					pause=!pause
+					loop()
+				}
+			})
 		</script>
 	</body>
 </html>
