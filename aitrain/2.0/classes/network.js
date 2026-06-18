@@ -1,4 +1,5 @@
 import { clone } from '../helpers.js'
+import { Point, StraightTrack, CurvedTrack } from './track.js'
 
 export class RailNetwork {
   constructor() {
@@ -26,30 +27,49 @@ export class RailNetwork {
     this.trains.set(train.id,train)
   }
 
-  new_connectPoints(track1,track1end,track2,track2end) {
-    let p = this.points.get(`${track1}${track1end}`),
-        q = this.points.get(`${track2}${track2end}`)
+  connectPoints(track1,track1end,track2,track2end) {
+    let t1 = this.tracks.get(track1),
+        t2 = this.tracks.get(track2),
+        p = t1[track1end],
+        q = t2[track2end]
     if (!p) throw new Error(`Point p="${track1}${track1end}" not found`)
     if (!q) throw new Error(`Point q="${track2}${track2end}" not found`)
 
-    if (track1end == track2end) {
-      throw new Error(['merge',p.id,q.id])
+    if (track1end == "A" && track2end == "A") {
+      console.log('A-A',t1.id,t2.id)
+      t1.reverse = true
+      p.out.values().forEach(output=>{
+        output.track.setA(q,0)
+        q.in.add(output)
+        q.activeIn = output
+      })
+      q.id+='_'+p.id
+      this.deletePoint(p)
+    } else  if (track1end == "B" && track2end == "B") {
+      p.in.values().forEach(input=>{
+        input.track.setB(q,0)
+        q.out.add(input)
+        q.activeOut = input
+      })
+      q.id+='_'+p.id
+      this.deletePoint(p)
     } else {
-      p.out.values().forEach(track=>{
-        track.setA(q,0)
-        q.out.add(track)
-        q.activeOut = track
+      p.out.values().forEach(output=>{
+        output.track.setA(q,0)
+        q.out.add(output)
+        q.activeOut = output
       })
-      p.in.values().forEach(track=>{
-        track.setB(q,0)
-        q.in.add(track)
-        q.activeIn = track
+      p.in.values().forEach(input=>{
+        input.track.setB(q,0)
+        q.in.add(input)
+        q.activeIn = input
       })
+      q.id+='_'+p.id
       this.deletePoint(p)
     }
   }
 
-  connectPoints(p,q) {
+  old_connectPoints(p,q) {
     if (typeof p === 'string') p=this.points.get(p)??p
     if (typeof q === 'string') q=this.points.get(q)??q
     if (!this.points.has(p?.id)) throw new Error(`Point p="${p}" not found`)
@@ -134,6 +154,23 @@ export class RailNetwork {
     // if (point.in.size>0) console.warn('deleting',point.id,'which has',point.in.size,'in')
     // if (point.out.size>0)console.warn('deleting',point.id,'which has',point.out.size,'out')
     this.points.delete(point.id)
+  }
+
+  checkTracks() {
+    this.tracks.forEach(track=>{
+      if (!track.A instanceof Point) throw new Error(`Point ${track.id}-A not defined`)
+      if (!track.B instanceof Point) throw new Error(`Point ${track.id}-B not defined`)
+    })
+    this.points.forEach(point=>{
+      if (point.in.size<1) console.error(`Point ${point.id} missing Inputs`)
+      if (point.out.size<1) console.error(`Point ${point.id} missing Outputs`)
+      point.in.forEach(input=>{
+        if (point.out.has(input))
+          throw new Error(`Point "${point.id}" has Track "${input.track.id}" as both In and Out`)
+      })
+      point.activeIn ??= [...point.in.values()][0]
+      point.activeOut ??= [...point.out.values()][0]
+    })
   }
 
   draw(ctx) {

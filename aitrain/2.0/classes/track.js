@@ -34,11 +34,11 @@ export class Point {
   redrawActiveTracks(ctx) {
     if (this.in.size>1) {
       this.activeIn ??= [...this.in.values()][0]
-      this.activeIn.draw(ctx)
+      this.activeIn.track.draw(ctx)
     }
     if (this.out.size>1) {
       this.activeOut ??= [...this.out.values()][0]
-      this.activeOut.draw(ctx)
+      this.activeOut.track.draw(ctx)
     }
   }
 
@@ -126,9 +126,8 @@ export class Point {
         ctx.beginPath()
           ctx.arc(0,0,6,Math.PI*3/2,Math.PI*1/2)
         ctx.stroke()
-  
-        ctx.globalAlpha=1.2
-  
+
+        ctx.rotate(-Math.PI/2)
         ctx.lineWidth=4
         ctx.strokeStyle="#000"
         ctx.fillStyle="cyan"
@@ -171,7 +170,6 @@ export class Point {
         }
       ctx.restore()
     }
-
   }
 }
 
@@ -188,16 +186,14 @@ export class StraightTrack extends Track {
     this.id = id
     this.switch = sw
     this.length = l
-    const A = new Point(x, y, a, `${this.id}A`),
-          B = new Point(
+    this.A = new Point(x, y, a, `${this.id}-A`),
+    this.B = new Point(
             x + this.length*Math.cos(a),
             y + this.length*Math.sin(a),
-            a, `${this.id}B`
+            a, `${this.id}-B`
           )
-    A.out.add(this)
-    B.in.add(this)
-    this.A = A
-    this.B = B
+    this.A.out.add({track:this, end:'A', reverse:false})
+    this.B.in.add({track:this, end:'B', reverse:false})
   }
 
   posAt(t) {
@@ -306,7 +302,7 @@ export class CurvedTrack extends Track {
     this.switch = sw
     this.radius = r
     this.sweep = (s=="L"?-1:1)*deg(30)
-    this.A = new Point(x, y, a, `${this.id}A`)
+    this.A = new Point(x, y, a, `${this.id}-A`)
     this.O = {
       x: x + r * Math.cos(a + (this.sweep>0 ? Math.PI/2 : -Math.PI/2)),
       y: y + r * Math.sin(a + (this.sweep>0 ? Math.PI/2 : -Math.PI/2)),
@@ -316,10 +312,10 @@ export class CurvedTrack extends Track {
       this.O.x + r * Math.cos(this.O.a + this.sweep),
       this.O.y + r * Math.sin(this.O.a + this.sweep),
       a + this.sweep,
-      `${this.id}B`
+      `${this.id}-B`
     )
-    this.A.out.add(this)
-    this.B.in.add(this)
+    this.A.out.add({track:this, end:'A', reverse:false})
+    this.B.in.add({track:this, end:'B', reverse:false})
 		this.length = r * Math.abs(this.sweep)
 	}
 
