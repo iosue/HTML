@@ -36,33 +36,34 @@ export class RailNetwork {
     if (!q) throw new Error(`Point q="${track2}${track2end}" not found`)
 
     if (track1end == "A" && track2end == "A") {
-      console.log('A-A',t1.id,t2.id)
-      t1.reverse = true
-      p.out.values().forEach(output=>{
+      console.warn('A-A',t1.id,t2.id)
+      t1.reverseA = true
+      p.out.forEach(output=>{
         output.track.setA(q,0)
-        q.in.add(output)
-        q.activeIn = output
+        q.in.push(output)
+        q.activeIn = output.track
       })
       q.id+='_'+p.id
       this.deletePoint(p)
     } else  if (track1end == "B" && track2end == "B") {
-      p.in.values().forEach(input=>{
+      console.warn('B-B',t1.id,t2.id)
+      p.in.forEach(input=>{
         input.track.setB(q,0)
-        q.out.add(input)
-        q.activeOut = input
+        q.out.push(input)
+        q.activeOut = input.track
       })
       q.id+='_'+p.id
       this.deletePoint(p)
     } else {
-      p.out.values().forEach(output=>{
+      p.out.forEach(output=>{
         output.track.setA(q,0)
-        q.out.add(output)
-        q.activeOut = output
+        q.out.push(output)
+        q.activeOut = output.track
       })
-      p.in.values().forEach(input=>{
+      p.in.forEach(input=>{
         input.track.setB(q,0)
-        q.in.add(input)
-        q.activeIn = input
+        q.in.push(input)
+        q.activeIn = input.track
       })
       q.id+='_'+p.id
       this.deletePoint(p)
@@ -144,11 +145,11 @@ export class RailNetwork {
   }
 
   deleteTrack(track) {
-    track.A.in.delete(track)
-    track.A.out.delete(track)
-    track.B.in.delete(track)
-    track.B.out.delete(track)
-    this.tracks.delete(track.id)
+    track.A.in .splice(track.A.in.indexOf(track),1)
+    track.A.out.splice(track.A.out.indexOf(track),1)
+    track.B.in .splice(track.B.in.indexOf(track),1)
+    track.B.out.splice(track.B.out.indexOf(track),1)
+    this.tracks.splice(this.tracks.indexOf(track),1)
   }
   deletePoint(point) {
     // if (point.in.size>0) console.warn('deleting',point.id,'which has',point.in.size,'in')
@@ -162,14 +163,14 @@ export class RailNetwork {
       if (!track.B instanceof Point) throw new Error(`Point ${track.id}-B not defined`)
     })
     this.points.forEach(point=>{
-      if (point.in.size<1) console.error(`Point ${point.id} missing Inputs`)
-      if (point.out.size<1) console.error(`Point ${point.id} missing Outputs`)
+      if (point.in.length<1) console.error(`Point ${point.id} missing Inputs`)
+      if (point.out.length<1) console.error(`Point ${point.id} missing Outputs`)
       point.in.forEach(input=>{
-        if (point.out.has(input))
+        if (point.out.find(t=>t.track==input.track))
           throw new Error(`Point "${point.id}" has Track "${input.track.id}" as both In and Out`)
       })
-      point.activeIn ??= [...point.in.values()][0]
-      point.activeOut ??= [...point.out.values()][0]
+      point.activeIn ??= point.in[0]?.track
+      point.activeOut ??= point.out[0]?.track
     })
   }
 

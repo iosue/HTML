@@ -410,39 +410,39 @@
 
 
 				network.addTrack(new CurvedTrack('SL2','L',0,200,0,150))
-				// network.connectPoints('SL2','A','M','A')
-				// network.addTrack(new CurvedTrack('SL1','R'))
-				// network.connectPoints('SL1','A','M','A')
+				network.connectPoints('SL2','A','M','A')
+				network.addTrack(new CurvedTrack('SL1','R'))
+				network.connectPoints('SL1','A','M','A')
 
-				// network.addTrack(new CurvedTrack('CL1','R'))
-				// network.connectPoints('CL1','A','SL1','B')
+				network.addTrack(new CurvedTrack('CL1','R'))
+				network.connectPoints('CL1','A','SL1','B')
 
-				// network.addTrack(new CurvedTrack('CL2','L'))
-				// network.connectPoints('CL2','A','CL1','B')
-				// network.addTrack(new CurvedTrack('CL3','L'))
-				// network.connectPoints('CL3','A','CL2','B')
-				// network.addTrack(new CurvedTrack('CL4','L'))
-				// network.connectPoints('CL4','A','CL3','B')
-				// network.addTrack(new CurvedTrack('CL5','L'))
-				// network.connectPoints('CL5','A','CL4','B')
-				// network.addTrack(new CurvedTrack('CL6','L'))
-				// network.connectPoints('CL6','A','CL5','B')
+				network.addTrack(new CurvedTrack('CL2','L'))
+				network.connectPoints('CL2','A','CL1','B')
+				network.addTrack(new CurvedTrack('CL3','L'))
+				network.connectPoints('CL3','A','CL2','B')
+				network.addTrack(new CurvedTrack('CL4','L'))
+				network.connectPoints('CL4','A','CL3','B')
+				network.addTrack(new CurvedTrack('CL5','L'))
+				network.connectPoints('CL5','A','CL4','B')
+				network.addTrack(new CurvedTrack('CL6','L'))
+				network.connectPoints('CL6','A','CL5','B')
 
-				// network.addTrack(new CurvedTrack('CL7','L'))
-				// network.connectPoints('CL7','A','CL6','B')
-				// network.addTrack(new CurvedTrack('CL8','L'))
-				// network.connectPoints('CL8','A','CL7','B')
-				// network.addTrack(new CurvedTrack('CL9','L'))
-				// network.connectPoints('CL9','A','CL8','B')
-				// network.addTrack(new CurvedTrack('CL10','L'))
-				// network.connectPoints('CL10','A','CL9','B')
-				// network.addTrack(new CurvedTrack('CL11','L'))
-				// network.connectPoints('CL11','A','CL10','B')
+				network.addTrack(new CurvedTrack('CL7','L'))
+				network.connectPoints('CL7','A','CL6','B')
+				network.addTrack(new CurvedTrack('CL8','L'))
+				network.connectPoints('CL8','A','CL7','B')
+				network.addTrack(new CurvedTrack('CL9','L'))
+				network.connectPoints('CL9','A','CL8','B')
+				network.addTrack(new CurvedTrack('CL10','L'))
+				network.connectPoints('CL10','A','CL9','B')
+				network.addTrack(new CurvedTrack('CL11','L'))
+				network.connectPoints('CL11','A','CL10','B')
 
-				// network.addTrack(new CurvedTrack('CL12','R'))
-				// network.connectPoints('CL12','A','CL11','B')
+				network.addTrack(new CurvedTrack('CL12','R'))
+				network.connectPoints('CL12','A','CL11','B')
 
-				// network.reverseConnectPoints('CL12','B','SL2','B')
+				network.connectPoints('CL12','B','SL2','B')
 
 				// console.log(network.points.get('S2B'))
 
@@ -455,7 +455,7 @@
 			// turnAround()
 			newTurnAround()
 
-			network.addBogie(new Bogie('B1',network.tracks.get('CR12'),1,'white',1))
+			network.addBogie(new Bogie('B1',network.tracks.get('CR12'),1,'white',2))
 
 			// network.addBogie(new Bogie('B1',network.tracks.get('S11'),1,'white',1.0))
 			// network.addBogie(new Bogie('B2',network.tracks.get('C1'),1,'salmon',1.2))
@@ -472,11 +472,11 @@
 
 				let scale=100
 
-				scale = 1
+				scale = 1.75
 				ctx.scale(scale,scale)
 				ctx.globalAlpha = 0.75
 
-				ctx.translate(-250,0)
+				ctx.translate(-50,0)
 
 				network.draw(ctx)
 				document.title = now

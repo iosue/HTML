@@ -16,93 +16,153 @@ export class Bogie {
   get a() {return this.track.posAt(this.trackPosition).a}
 
 
-  old_update() {
-    this.trackPosition += this.direction * this.speed/this.track.length
-    if (this.trackPosition > 1) {
-      // console.log(this.track.B)
-      let nextTrack
-      if (this.track.B.reversedPoint) {
-        this.direction -= this.direction*2
-        console.log('\nthis.track.B',this.track.B)
-        console.log('this.direction',this.direction)
-        console.log('this.track.B.activeIn',this.track.B.activeIn,[...this.track.B.in.values()][0])
-        console.log('[...this.track.B.in.values()].map(t=>t.id)',[...this.track.B.in.values()].map(t=>t.id))
-        console.log('this.track.B.activeOut',this.track.A.activeOut,[...this.track.A.out.values()][0])
-        console.log('[...this.track.B.out.values()].map(t=>t.id)',[...this.track.B.out.values()].map(t=>t.id))
-        nextTrack = this.direction>0 ?
-          this.track.B.activeIn ?? [...this.track.B.in.values()][0] :
-          this.track.A.activeOut ?? [...this.track.A.out.values()][0]
-        console.log(this.track.id,'next=',nextTrack)
-      } else {
-        nextTrack = this.direction>0 ?
-          this.track.B.activeOut ?? [...this.track.B.out.values()][0] :
-          this.track.A.activeIn ?? [...this.track.A.in.values()][0]
-      }
-      this.track.occupied = false
-      this.track = nextTrack
-      this.track.occupied = true
-    }
-    // if (this.trackPosition < 0) debugger
-    this.trackPosition++
-    this.trackPosition %= 1
-  }
+  // old_update() {
+  //   this.trackPosition += this.direction * this.speed/this.track.length
+  //   if (this.trackPosition > 1) {
+  //     // console.log(this.track.B)
+  //     let nextTrack
+  //     if (this.track.B.reversedPoint) {
+  //       this.direction -= this.direction*2
+  //       console.log('\nthis.track.B',this.track.B)
+  //       console.log('this.direction',this.direction)
+  //       console.log('this.track.B.activeIn',this.track.B.activeIn,[...this.track.B.in.values()][0])
+  //       console.log('[...this.track.B.in.values()].map(t=>t.id)',[...this.track.B.in.values()].map(t=>t.id))
+  //       console.log('this.track.B.activeOut',this.track.A.activeOut,[...this.track.A.out.values()][0])
+  //       console.log('[...this.track.B.out.values()].map(t=>t.id)',[...this.track.B.out.values()].map(t=>t.id))
+  //       nextTrack = this.direction>0 ?
+  //         this.track.B.activeIn ?? [...this.track.B.in.values()][0] :
+  //         this.track.A.activeOut ?? [...this.track.A.out.values()][0]
+  //       console.log(this.track.id,'next=',nextTrack)
+  //     } else {
+  //       nextTrack = this.direction>0 ?
+  //         this.track.B.activeOut ?? [...this.track.B.out.values()][0] :
+  //         this.track.A.activeIn ?? [...this.track.A.in.values()][0]
+  //     }
+  //     this.track.occupied = false
+  //     this.track = nextTrack
+  //     this.track.occupied = true
+  //   }
+  //   // if (this.trackPosition < 0) debugger
+  //   this.trackPosition++
+  //   this.trackPosition %= 1
+  // }
 
-  interrim_update() {
-    this.trackPosition += this.direction * this.speed/this.track.length
-    console.log('-----------')
-    // if (this.trackPosition > 1) {
-    //   // console.log('trackPosition > 1')
-    //   if (this.direction > 0) {
-    //     if (this.track.B.in.has(this.track) && this.track.B.out.has(this.track)) {
-    //       throw new Error([`${this.track.id} is listed as BOTH 'in' and 'out' of ${this.track.B.id}`])
-    //     } else if (this.track.B.in.has(this.track)) {
-    //       // console.log('this.track.B.in.has(this.track)')
-    //       let nextTrack = this.track.B.activeOut ?? [...this.track.B.out.values()][0]
-    //       // console.log('next track:',nextTrack)
-    //       this.track = nextTrack
-    //     } else if (this.track.B.out.has(this.track)) {
-    //       // console.log('this.track.B.out.has(this.track)')
-    //       let nextTrack = this.track.B.activeIn ?? [...this.track.B.in.values()][0]
-    //       // console.log('next track:',nextTrack)
-    //       this.track = nextTrack
-    //       this.direction -= 2*this.direction
-    //       // console.log(this.direction)
-    //     } else {
-    //       throw new Error([`${this.track.id} not associated with ${this.track.B.id}`])
-    //     }
-    //   } else {
-    //     console.log('trackPosition > 1')
-    //     console.log('direction',this.direction)
-    //   }
-    // } else if (this.trackPosition < 0) {
-    //   if (this.direction < 0) {
-    //     if (this.track.A.out.has(this.track) && this.track.A.in.has(this.track)) {
-    //       throw new Error([`${this.track.id} is listed as BOTH 'in' and 'out' of ${this.track.A.id}`])
-    //     } else if (this.track.A.in.has(this.track)) {
-    //       console.log('this.track.A.in.has(this.track)')
-    //       // let nextTrack = this.track.A.activeOut ?? [...this.track.A.out.values()][0]
-    //       console.log('next track:',nextTrack)
-    //       // this.track = nextTrack
-    //     } else if (this.track.A.out.has(this.track)) {
-    //       console.log('this.track.A.out.has(this.track)')
-    //       // let nextTrack = this.track.A.activeIn ?? [...this.track.A.in.values()][0]
-    //       console.log('next track:',nextTrack)
-    //       // this.track = nextTrack
-    //       // this.direction -= 2*this.direction
-    //       console.log(this.direction)
-    //     } else {
-    //       throw new Error([`${this.track.id} not associated with ${this.track.A.id}`])
-    //     }
-    //   } else {
-    //     console.log('trackPosition < 0')
-    //     console.log('direction',this.direction)
-    //   }
-    // }
-    this.trackPosition++
-    this.trackPosition %= 1
-  }
+  // interrim_update() {
+  //   this.trackPosition += this.direction * this.speed/this.track.length
+  //   console.log('-----------')
+  //   // if (this.trackPosition > 1) {
+  //   //   // console.log('trackPosition > 1')
+  //   //   if (this.direction > 0) {
+  //   //     if (this.track.B.in.has(this.track) && this.track.B.out.has(this.track)) {
+  //   //       throw new Error([`${this.track.id} is listed as BOTH 'in' and 'out' of ${this.track.B.id}`])
+  //   //     } else if (this.track.B.in.has(this.track)) {
+  //   //       // console.log('this.track.B.in.has(this.track)')
+  //   //       let nextTrack = this.track.B.activeOut ?? [...this.track.B.out.values()][0]
+  //   //       // console.log('next track:',nextTrack)
+  //   //       this.track = nextTrack
+  //   //     } else if (this.track.B.out.has(this.track)) {
+  //   //       // console.log('this.track.B.out.has(this.track)')
+  //   //       let nextTrack = this.track.B.activeIn ?? [...this.track.B.in.values()][0]
+  //   //       // console.log('next track:',nextTrack)
+  //   //       this.track = nextTrack
+  //   //       this.direction -= 2*this.direction
+  //   //       // console.log(this.direction)
+  //   //     } else {
+  //   //       throw new Error([`${this.track.id} not associated with ${this.track.B.id}`])
+  //   //     }
+  //   //   } else {
+  //   //     console.log('trackPosition > 1')
+  //   //     console.log('direction',this.direction)
+  //   //   }
+  //   // } else if (this.trackPosition < 0) {
+  //   //   if (this.direction < 0) {
+  //   //     if (this.track.A.out.has(this.track) && this.track.A.in.has(this.track)) {
+  //   //       throw new Error([`${this.track.id} is listed as BOTH 'in' and 'out' of ${this.track.A.id}`])
+  //   //     } else if (this.track.A.in.has(this.track)) {
+  //   //       console.log('this.track.A.in.has(this.track)')
+  //   //       // let nextTrack = this.track.A.activeOut ?? [...this.track.A.out.values()][0]
+  //   //       console.log('next track:',nextTrack)
+  //   //       // this.track = nextTrack
+  //   //     } else if (this.track.A.out.has(this.track)) {
+  //   //       console.log('this.track.A.out.has(this.track)')
+  //   //       // let nextTrack = this.track.A.activeIn ?? [...this.track.A.in.values()][0]
+  //   //       console.log('next track:',nextTrack)
+  //   //       // this.track = nextTrack
+  //   //       // this.direction -= 2*this.direction
+  //   //       console.log(this.direction)
+  //   //     } else {
+  //   //       throw new Error([`${this.track.id} not associated with ${this.track.A.id}`])
+  //   //     }
+  //   //   } else {
+  //   //     console.log('trackPosition < 0')
+  //   //     console.log('direction',this.direction)
+  //   //   }
+  //   // }
+  //   this.trackPosition++
+  //   this.trackPosition %= 1
+  // }
 
-  interrim_2_update() {
+  // interrim_2_update() {
+  //   this.trackPosition += this.direction * this.speed/this.track.length
+  //   console.log('-----------',this.trackPosition)
+  //   if (this.trackPosition > 1) {
+  //     console.log('trackPosition > 1')
+  //     if (this.direction > 0) {
+  //       console.log('direction',this.direction)
+  //       console.log(this.track.B)
+  //       if (this.track.B.in.has(this.track) && this.track.B.out.has(this.track)) {
+  //         throw new Error([`${this.track.id} is listed as BOTH 'in' and 'out' of ${this.track.B.id}`])
+  //       } else if (this.track.B.in.has(this.track)) {
+  //         console.log('this.track.B.in.has(this.track)')
+  //         let nextTrack = this.track.B.activeOut ?? [...this.track.B.out.values()][0]
+  //         console.log('next track:',nextTrack)
+  //         this.track = nextTrack
+  //       } else if (this.track.B.out.has(this.track)) {
+  //         console.log('this.track.B.out.has(this.track)')
+  //         let nextTrack = this.track.B.activeIn ?? [...this.track.B.in.values()][0]
+  //         console.log('next track:',nextTrack)
+  //         this.track = nextTrack
+  //         this.direction -= 2*this.direction
+  //         this.trackPosition = 1 - this.trackPosition%1
+  //         console.log(this.direction, this.trackPosition)
+  //       } else {
+  //         throw new Error([`${this.track.id} not associated with ${this.track.B.id}`])
+  //       }
+  //     } else {
+  //       console.log('direction',this.direction)
+  //     }
+  //   } else if (this.trackPosition < 0) {
+  //     this.trackPosition++
+  //     console.log(this.track.id,'this.trackPosition',this.trackPosition)
+  //     if (this.direction < 0) {
+  //       console.log('direction',this.direction)
+  //       console.log(this.track.A.id)
+  //       if (this.track.A.out.has(this.track) && this.track.A.in.has(this.track)) {
+  //         throw new Error([`${this.track.id} is listed as BOTH 'in' and 'out' of ${this.track.B.id}`])
+  //       } else if (this.track.A.in.has(this.track)) {
+  //         console.warn('this.track.B.in.has(this.track)')
+  //         let nextTrack = this.track.B.activeOut ?? [...this.track.B.out.values()][0]
+  //         console.warn('next track:',nextTrack)
+  //         // this.track = nextTrack
+  //       } else if (this.track.A.out.has(this.track)) {
+  //         console.log('this.track.A.out.has(this.track)')
+  //         let nextTrack = this.track.A.activeIn ?? [...this.track.A.in.values()][0]
+  //         console.log('next track:',nextTrack)
+  //         this.track = nextTrack
+  //         // this.direction -= 2*this.direction
+  //         // console.log(this.direction)
+  //       } else {
+  //         throw new Error([`${this.track.id} not associated with ${this.track.A.id}`])
+  //       }
+  //     } else {
+  //       console.log('direction',this.direction)
+  //     }
+  //   }
+  //   this.trackPosition %= 1
+  // }
+
+  update() {
+    console.log('===========',this.trackPosition)
     this.trackPosition += this.direction * this.speed/this.track.length
     console.log('-----------',this.trackPosition)
     if (this.trackPosition > 1) {
@@ -110,112 +170,51 @@ export class Bogie {
       if (this.direction > 0) {
         console.log('direction',this.direction)
         console.log(this.track.B)
-        if (this.track.B.in.has(this.track) && this.track.B.out.has(this.track)) {
+        if (
+          this.track.B.in.find(t=>t.track==this.track) &&
+          this.track.B.out.find(t=>t.track==this.track)
+        ) {
           throw new Error([`${this.track.id} is listed as BOTH 'in' and 'out' of ${this.track.B.id}`])
-        } else if (this.track.B.in.has(this.track)) {
-          console.log('this.track.B.in.has(this.track)')
-          let nextTrack = this.track.B.activeOut ?? [...this.track.B.out.values()][0]
-          console.log('next track:',nextTrack)
-          this.track = nextTrack
-        } else if (this.track.B.out.has(this.track)) {
-          console.log('this.track.B.out.has(this.track)')
-          let nextTrack = this.track.B.activeIn ?? [...this.track.B.in.values()][0]
-          console.log('next track:',nextTrack)
-          this.track = nextTrack
+        } else if (this.track.B.in.find(t=>t.track==this.track)) {
+          console.log('this.track.B.in has this.track')
+          console.warn('COMPLETED')
+          this.track = this.track.B.activeOut
+        } else if (this.track.B.out.find(t=>t.track==this.track)) {
+          console.log('this.track.B.out has this.track')
+          console.warn('COMPLETED')
+          this.track = this.track.B.activeIn
           this.direction -= 2*this.direction
           this.trackPosition = 1 - this.trackPosition%1
-          console.log(this.direction, this.trackPosition)
         } else {
           throw new Error([`${this.track.id} not associated with ${this.track.B.id}`])
         }
       } else {
         console.log('direction',this.direction)
+        console.warn('TO BE COMPLETED')
       }
     } else if (this.trackPosition < 0) {
-      this.trackPosition++
-      console.log(this.track.id,'this.trackPosition',this.trackPosition)
+      // console.log(this.track.id,'this.trackPosition',this.trackPosition)
+      // this.trackPosition++
+      // console.log(this.track.id,'this.trackPosition',this.trackPosition)
       if (this.direction < 0) {
         console.log('direction',this.direction)
         console.log(this.track.A.id)
-        if (this.track.A.out.has(this.track) && this.track.A.in.has(this.track)) {
+        if (
+          this.track.A.in.find(t=>t.track==this.track) && 
+          this.track.A.out.find(t=>t.track==this.track)
+        ) {
           throw new Error([`${this.track.id} is listed as BOTH 'in' and 'out' of ${this.track.B.id}`])
-        } else if (this.track.A.in.has(this.track)) {
+        } else if (this.track.A.in.find(t=>t.track==this.track)) {
           console.warn('this.track.B.in.has(this.track)')
-          let nextTrack = this.track.B.activeOut ?? [...this.track.B.out.values()][0]
-          console.warn('next track:',nextTrack)
-          // this.track = nextTrack
-        } else if (this.track.A.out.has(this.track)) {
-          console.log('this.track.A.out.has(this.track)')
-          let nextTrack = this.track.A.activeIn ?? [...this.track.A.in.values()][0]
-          console.log('next track:',nextTrack)
-          this.track = nextTrack
-          // this.direction -= 2*this.direction
-          // console.log(this.direction)
+          console.warn('TO BE COMPLETED')
+        } else if (this.track.A.out.find(t=>t.track==this.track)) {
+          this.track = this.track.A.activeIn
+          this.trackPosition++
+          throw new Error(this.track.id)
         } else {
           throw new Error([`${this.track.id} not associated with ${this.track.A.id}`])
         }
-      } else {
-        console.log('direction',this.direction)
-      }
-    }
-    this.trackPosition %= 1
-  }
-
-  update() {
-    this.trackPosition += this.direction * this.speed/this.track.length
-    console.log('-----------',this.trackPosition)
-    if (this.trackPosition > 1) {
-      console.log('trackPosition > 1')
-      if (this.direction > 0) {
-        console.log('direction',this.direction)
-        console.warn('TO BE COMPLETED')
-        console.log(this.track.B)
-        if (this.track.B.in.has(this.track) && this.track.B.out.has(this.track)) {
-          throw new Error([`${this.track.id} is listed as BOTH 'in' and 'out' of ${this.track.B.id}`])
-        } else if (this.track.B.in.has(this.track)) {
-          console.log('this.track.B.in.has(this.track)')
-      //     let nextTrack = this.track.B.activeOut ?? [...this.track.B.out.values()][0]
-      //     console.log('next track:',nextTrack)
-      //     this.track = nextTrack
-        } else if (this.track.B.out.has(this.track)) {
-          console.log('this.track.B.out.has(this.track)')
-      //     let nextTrack = this.track.B.activeIn ?? [...this.track.B.in.values()][0]
-      //     console.log('next track:',nextTrack)
-      //     this.track = nextTrack
-      //     this.direction -= 2*this.direction
-      //     this.trackPosition = 1 - this.trackPosition%1
-      //     console.log(this.direction, this.trackPosition)
-        } else {
-          throw new Error([`${this.track.id} not associated with ${this.track.B.id}`])
-        }
-      } else {
-        console.log('direction',this.direction)
-        console.warn('TO BE COMPLETED')
-      }
-    } else if (this.trackPosition < 0) {
-      this.trackPosition++
-      console.log(this.track.id,'this.trackPosition',this.trackPosition)
-      if (this.direction < 0) {
-        console.log('direction',this.direction)
-        console.warn('TO BE COMPLETED')
-        // console.log(this.track.A.id)
-        // if (this.track.A.out.has(this.track) && this.track.A.in.has(this.track)) {
-        //   throw new Error([`${this.track.id} is listed as BOTH 'in' and 'out' of ${this.track.B.id}`])
-        // } else if (this.track.A.in.has(this.track)) {
-        //   console.warn('this.track.B.in.has(this.track)')
-        //   let nextTrack = this.track.B.activeOut ?? [...this.track.B.out.values()][0]
-        //   console.warn('next track:',nextTrack)
-        //   // this.track = nextTrack
-        // } else if (this.track.A.out.has(this.track)) {
-        //   console.log('this.track.A.out.has(this.track)')
-        //   let nextTrack = this.track.A.activeIn ?? [...this.track.A.in.values()][0]
-        //   console.log('next track:',nextTrack)
-        //   this.track = nextTrack
-        //   // this.direction -= 2*this.direction
-        //   // console.log(this.direction)
-        // } else {
-        //   throw new Error([`${this.track.id} not associated with ${this.track.A.id}`])
-        // }
+        // throw new Error()
       } else {
         console.log('direction',this.direction)
         console.warn('TO BE COMPLETED')

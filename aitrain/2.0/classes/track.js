@@ -4,8 +4,8 @@ import { deg, normalizeAngle } from '../helpers.js'
 export class Point {
   constructor(x=0, y=0, a=deg(10), id=crypto.randomUUID()) {
     this.id = id
-    this.in=new Set()
-    this.out=new Set()
+    this.in = []
+    this.out = []
     this.x = x
     this.y = y
     this.a = a
@@ -21,8 +21,9 @@ export class Point {
     }
   }
 
-  switch(dir="in") {
-    let tracks = [...this[dir].values()]
+  switch(dir) {
+    if (!dir) throw new Error('no switch direction defined')
+    let tracks = this[dir]
     let occupiedTrack = tracks.reduce((a,b)=>a||b.occupied?b:0,false)
     if (occupiedTrack)
       return console.warn(this.id,dir,'occupied on',occupiedTrack.id)
@@ -32,18 +33,12 @@ export class Point {
   }
 
   redrawActiveTracks(ctx) {
-    if (this.in.size>1) {
-      this.activeIn ??= [...this.in.values()][0]
-      this.activeIn.track.draw(ctx)
-    }
-    if (this.out.size>1) {
-      this.activeOut ??= [...this.out.values()][0]
-      this.activeOut.track.draw(ctx)
-    }
+    if (this.in.length>1) this.activeIn.draw(ctx)
+    if (this.out.length>1) this.activeOut.draw(ctx)
   }
 
   draw(ctx,network) {
-    if (this.in.size>1) {
+    if (this.in.length>1) {
       if (network.hoveredPoint?.[0] == this && network.hoveredPoint?.[1] == "in") {
         ctx.save()
         ctx.beginPath()
@@ -89,7 +84,7 @@ export class Point {
         ctx.restore()
       }
     }
-    if (this.in.size<=1 && this.out.size<=1) {
+    if (this.in.length<=1 && this.out.size<=1) {
       // ctx.save()
       // ctx.beginPath()
       // ctx.arc(this.x,this.y,settings.clickRadius*1/4,0,Math.PI*2)
@@ -111,8 +106,8 @@ export class Point {
     if (settings.showLabels) {
       ctx.save()
       ctx.fillStyle = ctx.strokeStyle = 
-          this.in.size==0 ? "salmon" :
-          this.in.size==2 ? "cyan" : "grey"
+          this.in.length==0 ? "salmon" :
+          this.in.length==2 ? "cyan" : "grey"
         ctx.translate(this.x,this.y)
         ctx.rotate(this.a)
         ctx.beginPath()
@@ -138,7 +133,7 @@ export class Point {
       ctx.restore()
     }
 
-    if (this.in.size==0 || this.out.size==0) {
+    if (this.in.length==0 || this.out.length==0) {
       ctx.save()
       ctx.textAlign="center"
       ctx.textBaseline="middle"
@@ -150,7 +145,7 @@ export class Point {
             ctx.strokeStyle="red"
           ctx.stroke()
         ctx.restore()
-        if (this.in.size==0) {
+        if (this.in.length==0) {
           ctx.save()
             ctx.translate(this.x,this.y)
             ctx.rotate(this.a)
@@ -159,7 +154,7 @@ export class Point {
               ctx.fillText('IN = 0',0,-24)
           ctx.restore()
         }
-        if (this.out.size==0) {
+        if (this.out.length==0) {
           ctx.save()
             ctx.translate(this.x,this.y)
             ctx.rotate(this.a)
@@ -177,6 +172,8 @@ export class Track {
   constructor(id=crypto.randomUUID()) {
     this.id = id
     this.reverse=false
+    this.reverseA = false
+    this.reverseB = false
   }
 }
 
@@ -192,8 +189,8 @@ export class StraightTrack extends Track {
             y + this.length*Math.sin(a),
             a, `${this.id}-B`
           )
-    this.A.out.add({track:this, end:'A', reverse:false})
-    this.B.in.add({track:this, end:'B', reverse:false})
+    this.A.out.push({track:this, end:'A', reverse:false})
+    this.B.in.push({track:this, end:'B', reverse:false})
   }
 
   posAt(t) {
@@ -204,22 +201,22 @@ export class StraightTrack extends Track {
     }
   }
 
-  setA(point, merge=false) {
-    this.A = point
-    this.reverse = Boolean(merge)
-    const angle = normalizeAngle(point.a + this.reverse*Math.PI)
-    this.B.x = point.x + this.length * Math.cos(angle)
-    this.B.y = point.y + this.length * Math.sin(angle)
-    this.B.a = angle
-  }
-  setB(point, merge=false) {
-    this.B = point
-    // this.reverse = !Boolean(merge)
-    const angle = normalizeAngle(point.a + !merge*Math.PI)
-    this.A.x = point.x - this.length * Math.cos(angle)
-    this.A.y = point.y - this.length * Math.sin(angle)
-    this.A.a = angle
-  }
+  // setA(point, merge=false) {
+  //   this.A = point
+  //   this.reverse = Boolean(merge)
+  //   const angle = normalizeAngle(point.a + this.reverse*Math.PI)
+  //   this.B.x = point.x + this.length * Math.cos(angle)
+  //   this.B.y = point.y + this.length * Math.sin(angle)
+  //   this.B.a = angle
+  // }
+  // setB(point, merge=false) {
+  //   this.B = point
+  //   // this.reverse = !Boolean(merge)
+  //   const angle = normalizeAngle(point.a + !merge*Math.PI)
+  //   this.A.x = point.x - this.length * Math.cos(angle)
+  //   this.A.y = point.y - this.length * Math.sin(angle)
+  //   this.A.a = angle
+  // }
 
   draw(ctx) {
     ctx.save()
@@ -314,8 +311,8 @@ export class CurvedTrack extends Track {
       a + this.sweep,
       `${this.id}-B`
     )
-    this.A.out.add({track:this, end:'A', reverse:false})
-    this.B.in.add({track:this, end:'B', reverse:false})
+    this.A.out.push({track:this, end:'A', reverse:false})
+    this.B.in.push({track:this, end:'B', reverse:false})
 		this.length = r * Math.abs(this.sweep)
 	}
 
@@ -328,11 +325,10 @@ export class CurvedTrack extends Track {
   }
 
 
-  setA(point, merge=false) {
+  setA(point) {
     this.A = point
-    this.reverse = Boolean(merge)
 
-    const angle = normalizeAngle(point.a + this.reverse*Math.PI)
+    const angle = normalizeAngle(point.a + this.reverseA*Math.PI)
 
     this.O.x = point.x + this.radius * Math.cos(angle + (this.sweep>0 ? Math.PI/2 : -Math.PI/2))
     this.O.y = point.y + this.radius * Math.sin(angle + (this.sweep>0 ? Math.PI/2 : -Math.PI/2))
@@ -340,26 +336,26 @@ export class CurvedTrack extends Track {
 
     this.B.x = this.O.x + this.radius * Math.cos(this.O.a + this.sweep)
     this.B.y = this.O.y + this.radius * Math.sin(this.O.a + this.sweep)
-    this.B.a = normalizeAngle(point.a + this.sweep + Math.PI*this.reverse)
+    this.B.a = normalizeAngle(point.a + this.sweep + this.reverseA*Math.PI)
   }
-  setB(point, merge=false) {
+  setB(point) {
     this.B = point
-    this.reverse = Boolean(merge)
-    const angle = normalizeAngle(point.a + !this.reverse*Math.PI + (this.sweep>0 ? Math.PI/2 : -Math.PI/2))
+
+    const angle = normalizeAngle(point.a + !this.reverseA*Math.PI + (this.sweep>0 ? Math.PI/2 : -Math.PI/2))
 
     this.O.x = point.x + this.radius * Math.cos(angle)
     this.O.y = point.y + this.radius * Math.sin(angle)
-    this.O.a = normalizeAngle(angle - this.sweep + (!this.reverse?-1:1)*(this.sweep>0 ? Math.PI : -Math.PI))
+    this.O.a = normalizeAngle(angle - this.sweep + Math.PI*!this.reverseA)
 
     this.A.x = this.O.x + this.radius * Math.cos(this.O.a)
     this.A.y = this.O.y + this.radius * Math.sin(this.O.a)
-    this.A.a = normalizeAngle(point.a - 1*this.sweep + Math.PI*!this.reverse)
+    this.A.a = normalizeAngle(point.a - this.sweep + Math.PI*!this.reverseA)
   }
 
   draw(ctx) {
     ctx.save()
       ctx.translate(this.O.x,this.O.y)
-      ctx.rotate(normalizeAngle(this.O.a + 0*this.reverse*Math.PI))
+      ctx.rotate(this.O.a)
 
       ctx.beginPath()
         ctx.arc(0,0,this.radius,0,this.sweep,this.sweep<0)
