@@ -41,7 +41,7 @@ export class RailNetwork {
       p.out.forEach(output=>{
         output.track.setA(q,0)
         q.in.push(output)
-        q.activeIn = output.track
+        q.activeIn = output
       })
       q.id+='_'+p.id
       this.deletePoint(p)
@@ -50,20 +50,20 @@ export class RailNetwork {
       p.in.forEach(input=>{
         input.track.setB(q,0)
         q.out.push(input)
-        q.activeOut = input.track
+        q.activeOut = input
       })
       q.id+='_'+p.id
       this.deletePoint(p)
     } else {
       p.out.forEach(output=>{
         output.track.setA(q,0)
-        q.out.push(output)
-        q.activeOut = output.track
+        q.out.push({track:output.track,dir:"B",reverse:false})
+        q.activeOut = output
       })
       p.in.forEach(input=>{
         input.track.setB(q,0)
         q.in.push(input)
-        q.activeIn = input.track
+        q.activeIn = input
       })
       q.id+='_'+p.id
       this.deletePoint(p)
@@ -169,8 +169,8 @@ export class RailNetwork {
         if (point.out.find(t=>t.track==input.track))
           throw new Error(`Point "${point.id}" has Track "${input.track.id}" as both In and Out`)
       })
-      point.activeIn ??= point.in[0]?.track
-      point.activeOut ??= point.out[0]?.track
+      point.activeIn ??= point.in[0]
+      point.activeOut ??= point.out[0]
     })
   }
 

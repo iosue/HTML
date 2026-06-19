@@ -33,8 +33,8 @@ export class Point {
   }
 
   redrawActiveTracks(ctx) {
-    if (this.in.length>1) this.activeIn.draw(ctx)
-    if (this.out.length>1) this.activeOut.draw(ctx)
+    if (this.in.length>1) this.activeIn.track.draw(ctx)
+    if (this.out.length>1) this.activeOut.track.draw(ctx)
   }
 
   draw(ctx,network) {

@@ -178,11 +178,12 @@ export class Bogie {
         } else if (this.track.B.in.find(t=>t.track==this.track)) {
           console.log('this.track.B.in has this.track')
           console.warn('COMPLETED')
-          this.track = this.track.B.activeOut
+          this.track = this.track.B.activeOut.track
         } else if (this.track.B.out.find(t=>t.track==this.track)) {
           console.log('this.track.B.out has this.track')
-          console.warn('COMPLETED')
-          this.track = this.track.B.activeIn
+          console.warn('COMPLETE')
+          console.log(this.track.B.activeIn)
+          this.track = this.track.B.activeIn.track
           this.direction -= 2*this.direction
           this.trackPosition = 1 - this.trackPosition%1
         } else {
@@ -206,11 +207,16 @@ export class Bogie {
           throw new Error([`${this.track.id} is listed as BOTH 'in' and 'out' of ${this.track.B.id}`])
         } else if (this.track.A.in.find(t=>t.track==this.track)) {
           console.warn('this.track.B.in.has(this.track)')
-          console.warn('TO BE COMPLETED')
+          console.warn('TO BE COMPLETING')
         } else if (this.track.A.out.find(t=>t.track==this.track)) {
-          this.track = this.track.A.activeIn
+          console.warn('this.track.B.in.has(this.track)')
+          console.warn('COMPLETING',this.track.A.id)
+          this.track = this.track.A.activeIn.track
+          if (this.track.A.activeIn) console.error(this.track.A.activeIn)
+          if (this.track.A.activeOut) console.error(this.track.A.activeOut)
           this.trackPosition++
-          throw new Error(this.track.id)
+          // this.direction -= 2*this.direction
+          // throw new Error(this.track.id)
         } else {
           throw new Error([`${this.track.id} not associated with ${this.track.A.id}`])
         }
