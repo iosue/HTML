@@ -29,8 +29,8 @@ export class Point {
   }
 
   draw(ctx,network) {
+    let hoveredSwitch = network.switches.get(network.hoveredSwitchId)
     if (this.end == "A" && this.merges.size>0) {
-      let hoveredSwitch = network.switches.get(network.hoveredSwitchId)
       if (hoveredSwitch?.points.includes(this)) {
         ctx.save()
         ctx.beginPath()
@@ -167,10 +167,9 @@ export class Track {
 }
 
 export class StraightTrack extends Track {
-  constructor(id, sw=false, l=settings.standardLength, x=0, y=0, a=0) {
+  constructor(id, l=settings.standardLength, x=0, y=0, a=0) {
     super(id)
     this.id = id
-    this.switch = sw
     this.length = l
     this.A = new Point(x, y, a, this.id, "A", `${this.id}-A`),
     this.B = new Point(
@@ -243,7 +242,7 @@ export class StraightTrack extends Track {
         ctx.lineTo(this.length,0)
         ctx.setLineDash([])
         ctx.lineCap = settings.trackLineCap
-        ctx.strokeStyle=this.switch?'#6aa':'#666'
+        ctx.strokeStyle='#666'
         ctx.lineWidth=settings.trackWidth
       ctx.stroke()
 
@@ -283,10 +282,9 @@ export class StraightTrack extends Track {
 
 
 export class CurvedTrack extends Track {
-  constructor(id, s='L', sw=false, r=settings.standardLength*2, x=0, y=0, a=deg(0)) {
+  constructor(id, s='L', r=settings.standardLength*2, x=0, y=0, a=deg(0)) {
     super(id)
     this.id = id
-    this.switch = sw
     this.radius = r
     this.sweep = (s=="L"?-1:1)*deg(30)
     this.A = new Point(x, y, a, this.id, "A", `${this.id}-A`)
@@ -377,7 +375,7 @@ export class CurvedTrack extends Track {
         ctx.setLineDash([])
         ctx.lineCap = settings.trackLineCap
         ctx.lineWidth = settings.trackWidth
-        ctx.strokeStyle=this.switch?'#6aa':'#666'
+        ctx.strokeStyle='#666'
       ctx.stroke()
 
       // track id label
