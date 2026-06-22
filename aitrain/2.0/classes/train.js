@@ -1,4 +1,5 @@
 import { deg } from '../helpers.js'
+import * as settings from '../defaults.js'
 
 export class Bogie {
   constructor(id, track, dir=1, color, speed=1, t=0, car, pos) {
@@ -21,8 +22,12 @@ export class Bogie {
     if (this.direction>0 && this.trackPosition>1) {
       if (this.track.B.connections.size==0) {
         this.trackPosition = 1
-        this.direction = -this.direction
-        console.warn('bounce')
+        if (settings.bounce) {
+          this.direction = -this.direction
+          console.warn('bounce')
+        } else {
+          this.speed = 0
+        }
       } else {
         const prevPoint = this.track.B,
               nextPoint = [...prevPoint.connections.keys()][0]
@@ -45,12 +50,15 @@ export class Bogie {
     if (this.direction<0 && this.trackPosition<0) {
       if (this.track.A.connections.size==0) {
         this.trackPosition = 0
-        this.direction = -this.direction
-        console.warn('bounce')
+        if (settings.bounce) {
+          this.direction = -this.direction
+          console.warn('bounce')
+        } else {
+          this.speed = 0
+        }
       } else {
         const prevPoint = this.track.A,
               nextPoint = [...prevPoint.connections.keys()][0]
-        console.log(this.track.A.connections)
         if (nextPoint.switchId) {
           const sw = network.switches.get(nextPoint.switchId)
           nextPoint = sw.points[sw.currentIndex]

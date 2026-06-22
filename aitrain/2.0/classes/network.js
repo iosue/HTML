@@ -42,7 +42,6 @@ export class RailNetwork {
       cloneConnections(p,q)
     }
     function cloneConnections(a,b) {
-      // console.log(a.id,a.connections,a.merges,b.id,b.connections,b.merges)
       b.connections.forEach((dir,connection)=>{
         if (connection && connection!=a) {
           a.merges.set(connection, dir)
@@ -56,8 +55,6 @@ export class RailNetwork {
         }
       })
       a.connections.set(b, 1)
-      // console.log(a.id,a.connections,a.merges,b.id,b.connections,b.merges)
-      // console.log('---------')
     }
   }
 
@@ -76,7 +73,6 @@ export class RailNetwork {
         checked.push(...points)
       }
     })
-    console.log(this)
   }
 
   draw(ctx) {
