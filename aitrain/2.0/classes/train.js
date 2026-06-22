@@ -162,6 +162,33 @@ export class Bogie {
   // }
 
   update() {
+    //  ->  >  -> 000
+    this.trackPosition > 1
+    this.trackPosition--
+
+
+    //  ->  >  <- 001
+
+
+    //  ->  <  -> 010
+
+
+    //  ->  <  <- 011
+
+
+    //  <-  >  -> 100
+
+
+    //  <-  >  <- 101
+
+
+    //  <-  <  -> 110
+
+
+    //  <-  <  <- 111
+  }
+
+  old_update() {
     console.log('===========',this.trackPosition)
     this.trackPosition += this.direction * this.speed/this.track.length
     console.log('-----------',this.trackPosition)

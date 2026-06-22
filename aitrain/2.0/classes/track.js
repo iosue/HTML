@@ -2,13 +2,15 @@ import * as settings from '../defaults.js'
 import { deg, normalizeAngle } from '../helpers.js'
 
 export class Point {
-  constructor(x=0, y=0, a=deg(10), id=crypto.randomUUID()) {
+  constructor(x=0, y=0, a=deg(10), track, end, id=crypto.randomUUID()) {
     this.id = id
-    this.in = []
-    this.out = []
     this.x = x
     this.y = y
     this.a = a
+    this.trackId = track
+    this.end = end
+    this.connections = new Map()
+    this.merges = new Map()
   }
   toLocal(wx, wy) {
     const dx = wx - this.x
@@ -21,48 +23,15 @@ export class Point {
     }
   }
 
-  switch(dir) {
-    if (!dir) throw new Error('no switch direction defined')
-    let tracks = this[dir]
-    let occupiedTrack = tracks.reduce((a,b)=>a||b.occupied?b:0,false)
-    if (occupiedTrack)
-      return console.warn(this.id,dir,'occupied on',occupiedTrack.id)
-    let i = tracks.indexOf(this[{in:"activeIn",out:"activeOut"}[dir]])
-    let j = (i+1)%tracks.length
-    this[{in:"activeIn",out:"activeOut"}[dir]] = tracks[j]
-  }
-
-  redrawActiveTracks(ctx) {
-    if (this.in.length>1) this.activeIn.track.draw(ctx)
-    if (this.out.length>1) this.activeOut.track.draw(ctx)
+  switch(sw) {
+    sw.currentIndex++
+    sw.currentIndex %= sw.points.length
   }
 
   draw(ctx,network) {
-    if (this.in.length>1) {
-      if (network.hoveredPoint?.[0] == this && network.hoveredPoint?.[1] == "in") {
-        ctx.save()
-        ctx.beginPath()
-        ctx.translate(this.x,this.y)
-        ctx.rotate(this.a)
-        ctx.arc(0,0,settings.clickRadius*3/2,Math.PI*1/2,Math.PI*3/2)
-        ctx.lineWidth=4
-        ctx.strokeStyle="goldenrod"
-        ctx.stroke()
-        ctx.restore()
-      } else {
-        ctx.save()
-        ctx.beginPath()
-        ctx.translate(this.x,this.y)
-        ctx.rotate(this.a)
-        ctx.arc(0,0,settings.clickRadius*2/2,Math.PI*1/2,Math.PI*3/2)
-        ctx.lineWidth=4
-        ctx.strokeStyle="goldenrod"
-        ctx.stroke()
-        ctx.restore()
-      }
-    }
-    if (this.out.size>1) {
-      if (network.hoveredPoint?.[0] == this && network.hoveredPoint?.[1] == "out") {
+    if (this.end == "A" && this.merges.size>0) {
+      let hoveredSwitch = network.switches.get(network.hoveredSwitchId)
+      if (hoveredSwitch?.points.includes(this)) {
         ctx.save()
         ctx.beginPath()
         ctx.translate(this.x,this.y)
@@ -84,68 +53,74 @@ export class Point {
         ctx.restore()
       }
     }
-    if (this.in.length<=1 && this.out.size<=1) {
-      // ctx.save()
-      // ctx.beginPath()
-      // ctx.arc(this.x,this.y,settings.clickRadius*1/4,0,Math.PI*2)
-      // ctx.lineWidth=4
-      // ctx.fillStyle="#281f18"
-      // ctx.fill()
-      // ctx.restore()
-      ctx.save()
-      ctx.beginPath()
-      ctx.translate(this.x,this.y)
-      ctx.rotate(this.a)
-      ctx.moveTo(0,-settings.clickRadius*1.5/2)
-      ctx.lineTo(0,+settings.clickRadius*1.5/2)
-      ctx.lineWidth = 2
-      ctx.strokeStyle = "#864"
-      ctx.stroke()
-      ctx.restore()
+    if (this.end == "B" && this.merges.size>0) {
+      if (hoveredSwitch?.points.includes(this)) {
+        ctx.save()
+        ctx.beginPath()
+        ctx.translate(this.x,this.y)
+        ctx.rotate(this.a)
+        ctx.arc(0,0,settings.clickRadius*3/2,Math.PI*1/2,Math.PI*3/2)
+        ctx.lineWidth=4
+        ctx.strokeStyle="goldenrod"
+        ctx.stroke()
+        ctx.restore()
+      } else {
+        ctx.save()
+        ctx.beginPath()
+        ctx.translate(this.x,this.y)
+        ctx.rotate(this.a)
+        ctx.arc(0,0,settings.clickRadius*2/2,Math.PI*1/2,Math.PI*3/2)
+        ctx.lineWidth=4
+        ctx.strokeStyle="goldenrod"
+        ctx.stroke()
+        ctx.restore()
+      }
     }
     if (settings.showLabels) {
       ctx.save()
-      ctx.fillStyle = ctx.strokeStyle = 
-          this.in.length==0 ? "salmon" :
-          this.in.length==2 ? "cyan" : "grey"
+      ctx.strokeStyle = 
+          this.connections.size==0 ? "salmon" :
+          this.connections.size==2 ? "cyan" : "grey"
         ctx.translate(this.x,this.y)
         ctx.rotate(this.a)
         ctx.beginPath()
-          ctx.arc(0,0,3,0,Math.PI*2)
+          ctx.arc(0,0,3,-Math.PI/2,Math.PI/2)
           ctx.moveTo(0,-9)
           ctx.lineTo(0,+9)
         ctx.stroke()
-      ctx.fillStyle = ctx.strokeStyle = 
-          this.out.size==0 ? "salmon" :
-          this.out.size==2 ? "cyan" : "grey"
-        ctx.beginPath()
-          ctx.arc(0,0,6,Math.PI*3/2,Math.PI*1/2)
-        ctx.stroke()
-
+        if (this.connections.size<1) {
+          ctx.strokeStyle = "salmon"
+          ctx.beginPath()
+            let D = this.end=="A"?1:-1
+            ctx.arc(0,0,6,D*Math.PI/2,-D*Math.PI/2)
+          ctx.stroke()
+        }
         ctx.rotate(-Math.PI/2)
         ctx.lineWidth=4
         ctx.strokeStyle="#000"
         ctx.fillStyle="cyan"
-        ctx.textAlign="center"
+        ctx.textAlign=this.id[this.id.length-1]=="A"?"left":"right"
         ctx.textBaseline="middle"
-        ctx.strokeText(this.id,0,0)
-        ctx.fillText(this.id,0,0)
+        ctx.strokeText(this.id,this.id[this.id.length-1]=="A"?35:-35,0)
+        ctx.fillText(this.id,this.id[this.id.length-1]=="A"?35:-35,0)
       ctx.restore()
     }
 
-    if (this.in.length==0 || this.out.length==0) {
-      ctx.save()
-      ctx.textAlign="center"
-      ctx.textBaseline="middle"
+    if (this.connections.size<1) {
+      if (this.end=="A") {
         ctx.save()
-          ctx.translate(this.x,this.y)
-          ctx.rotate(this.a)
-          ctx.beginPath()
-            ctx.arc(0,0,settings.clickRadius,0,Math.PI*2)
-            ctx.strokeStyle="red"
-          ctx.stroke()
-        ctx.restore()
-        if (this.in.length==0) {
+        ctx.textAlign="center"
+        ctx.textBaseline="middle"
+          ctx.save()
+            ctx.translate(this.x,this.y)
+            ctx.rotate(this.a)
+            ctx.beginPath()
+              ctx.arc(0,0,settings.clickRadius,Math.PI/2,-Math.PI/2)
+              ctx.strokeStyle="#f00f"
+              ctx.fillStyle="#f004"
+            ctx.stroke()
+            ctx.fill()
+          ctx.restore()
           ctx.save()
             ctx.translate(this.x,this.y)
             ctx.rotate(this.a)
@@ -153,8 +128,22 @@ export class Point {
               ctx.fillStyle='red'
               ctx.fillText('IN = 0',0,-24)
           ctx.restore()
-        }
-        if (this.out.length==0) {
+        ctx.restore()
+      }
+      if (this.end=="B") {
+        ctx.save()
+        ctx.textAlign="center"
+        ctx.textBaseline="middle"
+          ctx.save()
+            ctx.translate(this.x,this.y)
+            ctx.rotate(this.a)
+            ctx.beginPath()
+              ctx.arc(0,0,settings.clickRadius,-Math.PI/2,+Math.PI/2)
+              ctx.strokeStyle="#f00f"
+              ctx.fillStyle="#f004"
+            ctx.stroke()
+            ctx.fill()
+          ctx.restore()
           ctx.save()
             ctx.translate(this.x,this.y)
             ctx.rotate(this.a)
@@ -162,8 +151,8 @@ export class Point {
               ctx.fillStyle='red'
               ctx.fillText('OUT = 0',0,+24)
           ctx.restore()
-        }
-      ctx.restore()
+        ctx.restore()
+      }
     }
   }
 }
@@ -183,14 +172,12 @@ export class StraightTrack extends Track {
     this.id = id
     this.switch = sw
     this.length = l
-    this.A = new Point(x, y, a, `${this.id}-A`),
+    this.A = new Point(x, y, a, this.id, "A", `${this.id}-A`),
     this.B = new Point(
             x + this.length*Math.cos(a),
             y + this.length*Math.sin(a),
-            a, `${this.id}-B`
+            a, this.id, "B", `${this.id}-B`
           )
-    this.A.out.push({track:this, end:'A', reverse:false})
-    this.B.in.push({track:this, end:'B', reverse:false})
   }
 
   posAt(t) {
@@ -201,22 +188,25 @@ export class StraightTrack extends Track {
     }
   }
 
-  // setA(point, merge=false) {
-  //   this.A = point
-  //   this.reverse = Boolean(merge)
-  //   const angle = normalizeAngle(point.a + this.reverse*Math.PI)
-  //   this.B.x = point.x + this.length * Math.cos(angle)
-  //   this.B.y = point.y + this.length * Math.sin(angle)
-  //   this.B.a = angle
-  // }
-  // setB(point, merge=false) {
-  //   this.B = point
-  //   // this.reverse = !Boolean(merge)
-  //   const angle = normalizeAngle(point.a + !merge*Math.PI)
-  //   this.A.x = point.x - this.length * Math.cos(angle)
-  //   this.A.y = point.y - this.length * Math.sin(angle)
-  //   this.A.a = angle
-  // }
+  setA(point, direction) {
+    this.A.x = point.x
+    this.A.y = point.y
+    this.A.a = normalizeAngle(point.a + (direction<0?Math.PI:0))
+
+    this.B.x = this.A.x + this.length * Math.cos(this.A.a)
+    this.B.y = this.A.y + this.length * Math.sin(this.A.a)
+    this.B.a = this.A.a
+  }
+
+  setB(point, direction) {
+    this.B.x = point.x
+    this.B.y = point.y
+    this.B.a = normalizeAngle(point.a + (direction<0?Math.PI:0))
+
+    this.A.x = this.B.x - this.length * Math.cos(this.B.a)
+    this.A.y = this.B.y - this.length * Math.sin(this.B.a)
+    this.A.a = this.B.a
+  }
 
   draw(ctx) {
     ctx.save()
@@ -299,7 +289,7 @@ export class CurvedTrack extends Track {
     this.switch = sw
     this.radius = r
     this.sweep = (s=="L"?-1:1)*deg(30)
-    this.A = new Point(x, y, a, `${this.id}-A`)
+    this.A = new Point(x, y, a, this.id, "A", `${this.id}-A`)
     this.O = {
       x: x + r * Math.cos(a + (this.sweep>0 ? Math.PI/2 : -Math.PI/2)),
       y: y + r * Math.sin(a + (this.sweep>0 ? Math.PI/2 : -Math.PI/2)),
@@ -308,11 +298,8 @@ export class CurvedTrack extends Track {
     this.B = new Point(
       this.O.x + r * Math.cos(this.O.a + this.sweep),
       this.O.y + r * Math.sin(this.O.a + this.sweep),
-      a + this.sweep,
-      `${this.id}-B`
+      a + this.sweep, this.id, "B", `${this.id}-B`
     )
-    this.A.out.push({track:this, end:'A', reverse:false})
-    this.B.in.push({track:this, end:'B', reverse:false})
 		this.length = r * Math.abs(this.sweep)
 	}
 
@@ -325,31 +312,34 @@ export class CurvedTrack extends Track {
   }
 
 
-  setA(point) {
-    this.A = point
+  setA(point,direction) {
+    this.A.x = point.x
+    this.A.y = point.y
+    this.A.a = point.a + (direction<0?Math.PI:0)
 
-    const angle = normalizeAngle(point.a + this.reverseA*Math.PI)
-
-    this.O.x = point.x + this.radius * Math.cos(angle + (this.sweep>0 ? Math.PI/2 : -Math.PI/2))
-    this.O.y = point.y + this.radius * Math.sin(angle + (this.sweep>0 ? Math.PI/2 : -Math.PI/2))
-    this.O.a = normalizeAngle(angle + (this.sweep<0 ? Math.PI/2 : -Math.PI/2))
+    this.O.x = this.A.x + this.radius * Math.cos(this.A.a + (this.sweep>0 ? Math.PI/2 : -Math.PI/2))
+    this.O.y = this.A.y + this.radius * Math.sin(this.A.a + (this.sweep>0 ? Math.PI/2 : -Math.PI/2))
+    this.O.a = normalizeAngle(this.A.a + (this.sweep<0 ? Math.PI/2 : -Math.PI/2))
 
     this.B.x = this.O.x + this.radius * Math.cos(this.O.a + this.sweep)
     this.B.y = this.O.y + this.radius * Math.sin(this.O.a + this.sweep)
-    this.B.a = normalizeAngle(point.a + this.sweep + this.reverseA*Math.PI)
+    this.B.a = normalizeAngle(this.A.a + this.sweep)
   }
-  setB(point) {
-    this.B = point
 
-    const angle = normalizeAngle(point.a + !this.reverseA*Math.PI + (this.sweep>0 ? Math.PI/2 : -Math.PI/2))
+  setB(point,direction) {
+    this.B.x = point.x
+    this.B.y = point.y
+    this.B.a = point.a + (direction<0?Math.PI:0)
 
-    this.O.x = point.x + this.radius * Math.cos(angle)
-    this.O.y = point.y + this.radius * Math.sin(angle)
-    this.O.a = normalizeAngle(angle - this.sweep + Math.PI*!this.reverseA)
+    const angle = this.B.a + (this.sweep>0 ? Math.PI/2 : -Math.PI/2)
+
+    this.O.x = this.B.x + this.radius * Math.cos(angle)
+    this.O.y = this.B.y + this.radius * Math.sin(angle)
+    this.O.a = normalizeAngle(point.a - this.sweep + ((direction*this.sweep)<0 ? Math.PI/2 : -Math.PI/2))
 
     this.A.x = this.O.x + this.radius * Math.cos(this.O.a)
-    this.A.y = this.O.y + this.radius * Math.sin(this.O.a)
-    this.A.a = normalizeAngle(point.a - this.sweep + Math.PI*!this.reverseA)
+    this.A.y = this.O.y + this.radius * Math.sin(this.O.a) + 0
+    this.A.a = normalizeAngle(this.B.a - this.sweep)
   }
 
   draw(ctx) {
@@ -357,6 +347,7 @@ export class CurvedTrack extends Track {
       ctx.translate(this.O.x,this.O.y)
       ctx.rotate(this.O.a)
 
+      // black background
       ctx.beginPath()
         ctx.arc(0,0,this.radius,0,this.sweep,this.sweep<0)
         ctx.strokeStyle='#000'
@@ -364,6 +355,7 @@ export class CurvedTrack extends Track {
         ctx.lineWidth=settings.trackWidth*4
       ctx.stroke()
 
+      // dirt/gravel
       ctx.beginPath()
         ctx.arc(0,0,this.radius,0,this.sweep,this.sweep<0)
         ctx.strokeStyle='#281f18'
@@ -371,14 +363,15 @@ export class CurvedTrack extends Track {
         ctx.lineWidth=settings.trackWidth*3
       ctx.stroke()
 
+      // rail ties
       ctx.beginPath()
         ctx.arc(0,0,this.radius,0,this.sweep,this.sweep<0)
         ctx.strokeStyle='#864'
-        // ctx.setLineDash([2,settings.standardLength*2*deg(30)/10-2])
         ctx.setLineDash([1,settings.standardLength*2*deg(30)/10-2,1,0])
         ctx.lineWidth=settings.trackWidth*2
       ctx.stroke()
 
+      // iron
       ctx.beginPath()
         ctx.arc(0,0,this.radius,0,this.sweep,this.sweep<0)
         ctx.setLineDash([])
@@ -387,6 +380,7 @@ export class CurvedTrack extends Track {
         ctx.strokeStyle=this.switch?'#6aa':'#666'
       ctx.stroke()
 
+      // track id label
       if (settings.showLabels) {
         ctx.globalAlpha=1
         ctx.save()
@@ -412,6 +406,7 @@ export class CurvedTrack extends Track {
         ctx.restore()
       }
 
+      // track direction label
       ctx.beginPath()
       ctx.moveTo(this.radius*Math.cos(this.sweep),this.radius*Math.sin(this.sweep))
     ctx.restore()
@@ -422,9 +417,8 @@ export class CurvedTrack extends Track {
       ctx.stroke()
     ctx.restore()
 
-
+    // // track curve origin
     // ctx.save()
-    //   // console.log(this.O)
     //   ctx.beginPath()
     //   ctx.arc(this.O.x,this.O.y,4,0,Math.PI*2)
     //   ctx.fillStyle='salmon'
