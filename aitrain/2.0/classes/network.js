@@ -43,7 +43,6 @@ export class RailNetwork {
     }
     function cloneConnections(a,b) {
       // console.log(a.id,a.connections,a.merges,b.id,b.connections,b.merges)
-      a.activeConnection = [b,1]
       b.connections.forEach((dir,connection)=>{
         if (connection && connection!=a) {
           a.merges.set(connection, dir)
@@ -72,25 +71,24 @@ export class RailNetwork {
       if (point.merges.size>0) {
         let points = [point,...point.merges.keys()]
         let switchId = points.map(t=>t.id).join('_')
+        points.forEach(point=>point.switchId=switchId)
         this.switches.set(switchId,{points,currentIndex:0})
         checked.push(...points)
       }
     })
+    console.log(this)
   }
 
   draw(ctx) {
     this.tracks.values().forEach(t=>t.draw(ctx))
-
     this.switches.values().forEach(s=>{
       let activePoint = s.points[s.currentIndex]
       let activeTrack = this.tracks.get(activePoint.trackId)
       activeTrack.draw(ctx,this)
     })
     this.points.values().forEach(p=>p.draw(ctx,this))
-
-    this.bogies.values().forEach(t=>t.update())
-    this.bogies.values().forEach(t=>t.draw(ctx))
-
+    this.bogies.values().forEach(b=>b.update(this))
     this.trains.values().forEach(t=>t.draw(ctx))
+    this.bogies.values().forEach(b=>b.draw(ctx))
   }
 }

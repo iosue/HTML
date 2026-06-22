@@ -23,9 +23,21 @@ export class Point {
     }
   }
 
-  switch(sw) {
-    sw.currentIndex++
-    sw.currentIndex %= sw.points.length
+  switch(sw,network) {
+    let blocked=false
+    sw.points.forEach(point=>{
+      let track = network.tracks.get(point.trackId)
+      network.bogies.values().forEach(bogie=>{
+        if (bogie.track == track) {
+          blocked = true
+          console.warn(`track ${track.id} occupied by bogie.id @ ${bogie.trackPosition}`)
+        }
+      })
+    })
+    if (!blocked) {
+      sw.currentIndex++
+      sw.currentIndex %= sw.points.length
+    }
   }
 
   draw(ctx,network) {

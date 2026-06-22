@@ -47,10 +47,10 @@
 			const network=new RailNetwork()
 
 			function complexLoop() {
-				network.addTrack(new StraightTrack('S11'))
+				network.addTrack(new StraightTrack('S111'))
 
 				network.addTrack(new StraightTrack('S112'))
-				network.connectPoints('S112','A','S11','B')
+				network.connectPoints('S112','A','S111','B')
 				network.addTrack(new StraightTrack('S113'))
 				network.connectPoints('S113','A','S112','B')
 				network.addTrack(new StraightTrack('S114'))
@@ -121,7 +121,7 @@
 				network.connectPoints('C19','A','C18','B')
 				network.addTrack(new CurvedTrack('C20','R'))
 				network.connectPoints('C20','A','C19','B')
-				network.connectPoints('C20','B','S11','A')
+				network.connectPoints('C20','B','S111','A')
 
 				network.addTrack(new CurvedTrack('AD1','R'))
 				network.connectPoints('AD1','A','C20','B')
@@ -475,7 +475,7 @@
 				network.connectPoints('CR12','B','SR2','A')
 
 
-				network.addTrack(new CurvedTrack('SL2','R',0,200,0,150))
+				network.addTrack(new CurvedTrack('SL2','R'))
 				network.connectPoints('SL2','B','M','A')
 				network.addTrack(new CurvedTrack('SL1','R'))
 				network.connectPoints('SL1','A','M','A')
@@ -518,7 +518,7 @@
 			}
 
 			function circle() {
-				network.addTrack(new CurvedTrack('J01','R',undefined,undefined,50,-200))
+				network.addTrack(new CurvedTrack('J01','R'))
 				network.addTrack(new CurvedTrack('J02','R'))
 				network.connectPoints('J02','A','J01','B')
 				network.addTrack(new CurvedTrack('J03','R'))
@@ -529,6 +529,8 @@
 
 				network.addTrack(new CurvedTrack('J05','R'))
 				network.connectPoints('J05','B','J02','B')
+
+				// network.connectPoints('J05','A','J04','B')
 
 				// network.addTrack(new CurvedTrack('J06','R'))
 				// network.connectPoints('J06','A','J05','B')
@@ -563,16 +565,16 @@
 				// console.log(network)
 			}
 
-			complexLoop()
+			// complexLoop()
 			// inglenook()
 			// timeSaver()
 			// turnAround()
 			// newTurnAround()
 			// thirdTurnAround()
-			// circle()
+			circle()
 			// test()
 
-			// network.addBogie(new Bogie('B1',network.tracks.get('CR11'),1,'white',1))
+			network.addBogie(new Bogie('B1',network.tracks.get('J01'),1,'white',1))
 
 			// network.addBogie(new Bogie('B1',network.tracks.get('S11'),1,'white',1.0))
 			// network.addBogie(new Bogie('B2',network.tracks.get('C1'),1,'salmon',1.2))
@@ -593,7 +595,7 @@
 				ctx.scale(scale,scale)
 				ctx.globalAlpha = 0.75
 
-				ctx.translate(-400,-200)
+				ctx.translate(-50,0)
 
 				network.draw(ctx)
 				document.title = now
@@ -606,7 +608,7 @@
 				if (network.hoveredSwitchId) {
 					let sw = network.switches.get(network.hoveredSwitchId)
 					let point = sw.points[sw.currentIndex]
-					point.switch(sw)
+					point.switch(sw,network)
 				}
 			})
 
@@ -618,10 +620,10 @@
 					let point = sw.points[sw.currentIndex]
 					const dist = Math.hypot(point.x - m.x, point.y - m.y)
 					const local = point.toLocal(m.x, m.y)
-					if (dist < settings.clickRadius*(network.hoveredSwitchId?3/2:1) && local.x > 0) {
+					if (dist < settings.clickRadius*(network.hoveredSwitchId?3/2:1) && local.x*{A:1,B:-1}[point.end] > 0) {
 						network.hoveredSwitchId = id
 						break
-					} else {
+					} else if (network.hoveredSwitchId==id) {
 						network.hoveredSwitchId = null
 					}
 				}
