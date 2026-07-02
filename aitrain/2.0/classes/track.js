@@ -30,7 +30,7 @@ export class Point {
       network.bogies.values().forEach(bogie=>{
         if (bogie.track == track) {
           blocked = true
-          console.warn(`track ${track.id} occupied by bogie.id @ ${bogie.trackPosition}`)
+          console.warn(`track ${track.id} occupied by ${bogie.id} @ ${bogie.trackPosition}`)
         }
       })
     })
@@ -40,74 +40,59 @@ export class Point {
     }
   }
 
-  draw(ctx,network) {
-    let hoveredSwitch = network.switches.get(network.hoveredSwitchId)
+  draw(ctx) {
+    let hoveredSwitch = this.network.switches.get(this.network.hoveredSwitchId)
     if (this.end == "A" && this.merges.size>0) {
       if (hoveredSwitch?.points.includes(this)) {
         ctx.save()
-        ctx.beginPath()
-        ctx.translate(this.x,this.y)
-        ctx.rotate(this.a)
-        ctx.arc(0,0,settings.clickRadius*3/2,-Math.PI/2,+Math.PI/2)
-        ctx.lineWidth=4
-        ctx.strokeStyle="greenyellow"
-        ctx.stroke()
+          ctx.beginPath()
+          ctx.translate(this.x,this.y)
+          ctx.rotate(this.a)
+          ctx.arc(0,0,settings.clickRadius*3/2,-Math.PI/2,+Math.PI/2)
+          ctx.lineWidth=4
+          ctx.strokeStyle="greenyellow"
+          ctx.stroke()
         ctx.restore()
       } else {
         ctx.save()
-        ctx.beginPath()
-        ctx.translate(this.x,this.y)
-        ctx.rotate(this.a)
-        ctx.arc(0,0,settings.clickRadius*2/2,-Math.PI/2,+Math.PI/2)
-        ctx.lineWidth=4
-        ctx.strokeStyle="yellowgreen"
-        ctx.stroke()
+          ctx.beginPath()
+          ctx.translate(this.x,this.y)
+          ctx.rotate(this.a)
+          ctx.arc(0,0,settings.clickRadius*2/2,-Math.PI/2,+Math.PI/2)
+          ctx.lineWidth=4
+          ctx.strokeStyle="#fff2"
+          ctx.stroke()
         ctx.restore()
       }
     }
     if (this.end == "B" && this.merges.size>0) {
       if (hoveredSwitch?.points.includes(this)) {
         ctx.save()
-        ctx.beginPath()
-        ctx.translate(this.x,this.y)
-        ctx.rotate(this.a)
-        ctx.arc(0,0,settings.clickRadius*3/2,Math.PI*1/2,Math.PI*3/2)
-        ctx.lineWidth=4
-        ctx.strokeStyle="goldenrod"
-        ctx.stroke()
+          ctx.beginPath()
+          ctx.translate(this.x,this.y)
+          ctx.rotate(this.a)
+          ctx.arc(0,0,settings.clickRadius*3/2,Math.PI*1/2,Math.PI*3/2)
+          ctx.lineWidth=4
+          ctx.strokeStyle="goldenrod"
+          ctx.stroke()
         ctx.restore()
       } else {
         ctx.save()
-        ctx.beginPath()
-        ctx.translate(this.x,this.y)
-        ctx.rotate(this.a)
-        ctx.arc(0,0,settings.clickRadius*2/2,Math.PI*1/2,Math.PI*3/2)
-        ctx.lineWidth=4
-        ctx.strokeStyle="goldenrod"
-        ctx.stroke()
+          ctx.beginPath()
+          ctx.translate(this.x,this.y)
+          ctx.rotate(this.a)
+          ctx.arc(0,0,settings.clickRadius*2/2,Math.PI*1/2,Math.PI*3/2)
+          ctx.lineWidth=4
+          ctx.strokeStyle="#fff2"
+          ctx.stroke()
         ctx.restore()
       }
     }
     if (settings.showLabels) {
       ctx.save()
-      ctx.strokeStyle = 
-          this.connections.size==0 ? "salmon" :
-          this.connections.size==2 ? "cyan" : "grey"
+      ctx.strokeStyle = "grey"
         ctx.translate(this.x,this.y)
-        ctx.rotate(this.a)
-        ctx.beginPath()
-          ctx.arc(0,0,3,-Math.PI/2,Math.PI/2)
-          ctx.moveTo(0,-9)
-          ctx.lineTo(0,+9)
-        ctx.stroke()
-        if (this.connections.size<1) {
-          ctx.strokeStyle = "salmon"
-          ctx.beginPath()
-            let D = this.end=="A"?1:-1
-            ctx.arc(0,0,6,D*Math.PI/2,-D*Math.PI/2)
-          ctx.stroke()
-        }
-        ctx.rotate(-Math.PI/2)
+        ctx.rotate(this.a-Math.PI/2)
         ctx.lineWidth=4
         ctx.strokeStyle="#000"
         ctx.fillStyle="cyan"
@@ -118,53 +103,81 @@ export class Point {
       ctx.restore()
     }
 
+    if (this.connections.size>0) {
+      const that = [...this.connections.keys()][0],
+            dx = that.x-this.x,
+            dy = that.y-this.y,
+            dist = Math.hypot(dx,dy),
+            angle = Math.atan2(dy,dx)
+      ctx.save()
+        ctx.beginPath()
+          ctx.translate(this.x,this.y)
+          ctx.rotate(angle)
+            ctx.moveTo(0,1.5)
+            ctx.lineTo(dist,1.5)
+          ctx.setLineDash([4])
+          ctx.strokeStyle = 'salmon'
+        ctx.stroke()
+      ctx.restore()
+    } else {
+      ctx.save()
+        ctx.translate(this.x,this.y)
+        ctx.rotate(this.a)
+        ctx.textAlign = "center"
+        ctx.textBaseline = "middle"
+        let side = this.end=="A"?1:-1
+        ctx.save()
+          ctx.beginPath()
+            ctx.rect(-side*20,-settings.trackWidth*2,side*20,settings.trackWidth*4)
+            ctx.fillStyle="#000"
+          ctx.fill()
+          ctx.beginPath()
+            ctx.arc(-side*20,0,settings.trackWidth*2,side*Math.PI/2,-side*Math.PI/2)
+          ctx.fill()
+          ctx.beginPath()
+            ctx.rect(-side*20,-settings.trackWidth*3/2,side*20,settings.trackWidth*3)
+            ctx.fillStyle="#281f18"
+          ctx.fill()
+          ctx.beginPath()
+            ctx.arc(-side*20,0,settings.trackWidth*3/2,side*Math.PI/2,-side*Math.PI/2)
+          ctx.fill()
+          ctx.beginPath()
+            ctx.rect(-side,-settings.trackWidth,side*1,settings.trackWidth*2)
+            ctx.fillStyle="#864"
+          ctx.fill()
+          ctx.beginPath()
+            ctx.rect(-side*6,-settings.trackWidth/2,side*6,settings.trackWidth)
+            ctx.fillStyle="#666"
+          ctx.fill()
+        ctx.restore()
+      ctx.restore()
+    }
+  }
+  drawStops(ctx) {
     if (this.connections.size<1) {
-      if (this.end=="A") {
+      ctx.save()
+        ctx.globalAlpha = 1
+        ctx.translate(this.x,this.y)
+        ctx.rotate(this.a)
+        ctx.textAlign = "center"
+        ctx.textBaseline = "middle"
+        ctx.shadowColor = "black"
+        ctx.shadowBlur = 4
+        let side = this.end=="A"?1:-1
         ctx.save()
-        ctx.textAlign="center"
-        ctx.textBaseline="middle"
-          ctx.save()
-            ctx.translate(this.x,this.y)
-            ctx.rotate(this.a)
-            ctx.beginPath()
-              ctx.arc(0,0,settings.clickRadius,Math.PI/2,-Math.PI/2)
-              ctx.strokeStyle="#f00f"
-              ctx.fillStyle="#f004"
-            ctx.stroke()
-            ctx.fill()
-          ctx.restore()
-          ctx.save()
-            ctx.translate(this.x,this.y)
-            ctx.rotate(this.a)
-            ctx.beginPath()
-              ctx.fillStyle='red'
-              ctx.fillText('IN = 0',0,-24)
-          ctx.restore()
+          ctx.beginPath()
+            ctx.rect(-side*24,-settings.trackWidth+4,side*8,-settings.trackWidth/2)
+            ctx.fillStyle="#555"
+          ctx.fill()
+          ctx.beginPath()
+            ctx.rect(-side*24,settings.trackWidth-4,side*8,+settings.trackWidth/2)
+          ctx.fill()
+          ctx.beginPath()
+            ctx.rect(-side*16,-2*settings.trackWidth+3,side*4,4*settings.trackWidth-6)
+            ctx.fillStyle="#864"
+          ctx.fill()
         ctx.restore()
-      }
-      if (this.end=="B") {
-        ctx.save()
-        ctx.textAlign="center"
-        ctx.textBaseline="middle"
-          ctx.save()
-            ctx.translate(this.x,this.y)
-            ctx.rotate(this.a)
-            ctx.beginPath()
-              ctx.arc(0,0,settings.clickRadius,-Math.PI/2,+Math.PI/2)
-              ctx.strokeStyle="#f00f"
-              ctx.fillStyle="#f004"
-            ctx.stroke()
-            ctx.fill()
-          ctx.restore()
-          ctx.save()
-            ctx.translate(this.x,this.y)
-            ctx.rotate(this.a)
-            ctx.beginPath()
-              ctx.fillStyle='red'
-              ctx.fillText('OUT = 0',0,+24)
-          ctx.restore()
-        ctx.restore()
-      }
+      ctx.restore()
     }
   }
 }
@@ -172,9 +185,35 @@ export class Point {
 export class Track {
   constructor(id=crypto.randomUUID()) {
     this.id = id
-    this.reverse=false
+    this.reverse = false
     this.reverseA = false
     this.reverseB = false
+  }
+  get prevTrack() {
+    let connection = [...this.A.connections.keys()][0]
+    if (this.A.connections.size>1) {
+      let sw = connection.network.switches.get(connection.switchId)
+      connection = sw.points[sw.currentIndex]
+    }
+    if (!connection) throw new Error(`Track ${this.id} has no previous track to snap a car to.`)
+    console.log(this.A.end,connection.end)
+    return {
+      id: connection.trackId,
+      dir: this.A.end==connection.end?-1:1
+    }
+  }
+  get nextTrack() {
+    let connection = [...this.B.connections.keys()][0]
+    if (this.B.connections.size>1) {
+      let sw = connection.network.switches.get(connection.switchId)
+      connection = sw.points[sw.currentIndex]
+    }
+    if (!connection) throw new Error(`Track ${this.id} has no previous track to snap a car to.`)
+    console.log(this.B.end,connection.end)
+    return {
+      id: connection.trackId,
+      dir: this.B.end==connection.end?-1:1
+    }
   }
 }
 
@@ -191,7 +230,7 @@ export class StraightTrack extends Track {
           )
   }
 
-  posAt(t) {
+  cartPosAt(t) {
     return {
       x: this.A.x + this.length * t * Math.cos(this.A.a),
       y: this.A.y + this.length * t * Math.sin(this.A.a),
@@ -219,6 +258,13 @@ export class StraightTrack extends Track {
     this.A.a = this.B.a
   }
 
+  chordLengthAtPos(t=0) {
+    return t*this.length
+  }
+  positionAtDist(d=0) {
+    return d/this.length
+  }
+
   draw(ctx) {
     ctx.save()
       ctx.translate(this.A.x,this.A.y)
@@ -244,7 +290,6 @@ export class StraightTrack extends Track {
         ctx.moveTo(0,0)
         ctx.lineTo(this.length,0)
         ctx.strokeStyle='#864'
-        // ctx.setLineDash([2,this.length/10 - 2])
         ctx.setLineDash([1,this.length/10 - 2,1,0])
         ctx.lineWidth=settings.trackWidth*2
       ctx.stroke()
@@ -282,13 +327,6 @@ export class StraightTrack extends Track {
       ctx.beginPath()
       ctx.moveTo(this.length,0)
     ctx.restore()
-    ctx.save()
-      ctx.lineTo(this.B.x,this.B.y)
-      ctx.setLineDash([2])
-      ctx.strokeStyle = "goldenrod"
-      ctx.stroke()
-
-    ctx.restore()
   }
 }
 
@@ -313,7 +351,7 @@ export class CurvedTrack extends Track {
 		this.length = r * Math.abs(this.sweep)
 	}
 
-  posAt(t) {
+  cartPosAt(t) {
     return {
       x: this.O.x + this.radius * Math.cos(this.O.a + this.sweep * t),
       y: this.O.y + this.radius * Math.sin(this.O.a + this.sweep * t),
@@ -351,6 +389,15 @@ export class CurvedTrack extends Track {
     this.A.y = this.O.y + this.radius * Math.sin(this.O.a) + 0
     this.A.a = normalizeAngle(this.B.a - this.sweep)
   }
+
+  chordLengthAtPos(t=0) {
+    return 2*this.radius*Math.sin(t*this.sweep/2)
+  }
+
+  positionAtDist(d=0) {
+    return 2*Math.asin(d/2,this.radius)/this.sweep
+  }
+
 
   draw(ctx) {
     ctx.save()
@@ -420,12 +467,6 @@ export class CurvedTrack extends Track {
       ctx.beginPath()
       ctx.moveTo(this.radius*Math.cos(this.sweep),this.radius*Math.sin(this.sweep))
     ctx.restore()
-    ctx.save()
-      ctx.lineTo(this.B.x,this.B.y)
-      ctx.setLineDash([3]);
-      ctx.strokeStyle = "goldenrod"
-      ctx.stroke()
-    ctx.restore()
 
     // // track curve origin
     // ctx.save()
@@ -443,4 +484,38 @@ export class CurvedTrack extends Track {
     //   ctx.stroke()
     // ctx.restore()
   }
+}
+
+export class ParkingSpot{ 
+  constructor(color,trackId) {
+    this.color = color
+    this.trackId = trackId
+  }
+  get track() {
+    return this.network.tracks.get(this.trackId)
+  }
+  check(ctx) {
+    const matchingCar = this.network.cars.get(this.color)
+    let parked = matchingCar?.A.trackId == this.trackId
+              && matchingCar?.B.trackId == this.trackId
+
+
+    const dx = this.track.B.x-this.track.A.x,
+          dy = this.track.B.y-this.track.A.y,
+          length = Math.hypot(dx,dy),
+          angle = Math.atan2(dy,dx)
+    ctx.save()
+    ctx.translate(this.track.A.x,this.track.A.y)
+    ctx.rotate(angle)
+    ctx.shadowBlur = 4
+    ctx.shadowColor = parked?this.color:"black"
+    ctx.lineWidth = 4
+    ctx.setLineDash(parked?[]:[5])
+    ctx.strokeStyle = parked?"white":this.color
+    ctx.beginPath()
+    ctx.roundRect(5,-20,length-10,40,10)
+    ctx.stroke()
+    ctx.restore()
+  }
+
 }

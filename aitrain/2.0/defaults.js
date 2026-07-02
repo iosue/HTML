@@ -1,6 +1,10 @@
+export const paused = false
 export const trackWidth = 8
 export const standardLength = 100
+export const longStraight = 115.470053837925
 export const clickRadius = 15
 export const trackLineCap = 'none'
-export const showLabels = true
-export const bounce = true
+export const showLabels = false
+export const bounce = false
+export const carLength = 60
+export const hitchLength = 20

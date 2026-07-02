@@ -28,14 +28,17 @@
 			} from "./classes/track.js"
 			import { RailNetwork } from "./classes/network.js"
 			import {
-        Bogie,
-				Traction,
-				Car,
-				Engine
-			} from "./classes/train.js"
+        Bogie
+			} from "./classes/bogies.js"
+			import {
+				Car, Engine
+			} from "./classes/cars.js"
+			import {
+				Consist, Train
+			} from "./classes/consists.js"
 
 			const Camera = { x: 0, y: 0, z: 1, v: 10 / 9 }
-			let pause = false
+			let pause = settings.paused
 
 			const cvs = document.createElement("canvas")
 					cvs.id = "yard"
@@ -141,7 +144,7 @@
 				network.connectPoints('AD8','A','AD7','B')
 				network.connectPoints('AD8','B','C9','A')
 
-				network.addTrack(new StraightTrack('Y1',115.470053837925))
+				network.addTrack(new StraightTrack('Y1',settings.longStraight))
 				network.connectPoints('Y1','A','AD1','B')
 
 				network.addTrack(new CurvedTrack('Y2','L'))
@@ -153,7 +156,7 @@
 				network.addTrack(new CurvedTrack('Y5','L'))
 				network.connectPoints('Y5','A','Y4','B')
 
-				network.addTrack(new StraightTrack('Y6',115.470053837925))
+				network.addTrack(new StraightTrack('Y6',settings.longStraight))
 				network.connectPoints('Y6','A','Y5','B')
 				network.connectPoints('Y6','B','AD8','A')
 
@@ -209,73 +212,81 @@
 			}
 			
 			function timeSaver() {
-				network.addTrack(new StraightTrack('M1',0,200))
+				network.addTrack(new StraightTrack('M1',undefined,0,200))
 
-				network.addTrack(new StraightTrack('M2',0,200))
+				network.addTrack(new StraightTrack('M2'))
 				network.connectPoints('M2','A','M1','B')
 
-				network.addTrack(new StraightTrack('SWM',1,200))
-				network.connectPoints('SWMA','M2B')
-				network.addTrack(new CurvedTrack('SWS','R',1))
-				network.connectPoints('SWSA','M2B')
+				network.addTrack(new StraightTrack('SWM'))
+				network.connectPoints('SWM','A','M2','B')
+				network.addTrack(new CurvedTrack('SWS','R'))
+				network.connectPoints('SWS','A','M2','B')
 				
-				network.addTrack(new StraightTrack('SCM',1,200))
-				network.connectPoints('SCMA','SWMB')
-				network.addTrack(new CurvedTrack('SCN','L',1))
-				network.connectPoints('SCNA','SWMB')
-				
-				network.addTrack(new StraightTrack('M3',0,200))
-				network.connectPoints('M3A','SCMB')
+				network.addTrack(new StraightTrack('M3'))
+				network.connectPoints('M3','A','SWM','B')
 
-				network.addTrack(new StraightTrack('SEM',1,200))
-				network.connectPoints('SEMA','M3B')
-				
-				network.addTrack(new StraightTrack('M4',0,200))
-				network.connectPoints('M4A','SEMB')
+				network.addTrack(new StraightTrack('SCM'))
+				network.connectPoints('SCM','A','M3','B')
+				network.addTrack(new CurvedTrack('SCN','L'))
+				network.connectPoints('SCN','A','M3','B')
 
-				network.addTrack(new StraightTrack('M5',0,200))
-				network.connectPoints('M5','A','M4','B')
+				network.addTrack(new StraightTrack('M4'))
+				network.connectPoints('M4','B','SCM','B')
 
-				network.addTrack(new CurvedTrack('SSM','L',1))
-				network.connectPoints('SSMA','SWSB')
+				network.addTrack(new StraightTrack('M5'))
+				network.connectPoints('M5','A','M4','A')
 
-				network.addTrack(new StraightTrack('SSS',1,200))
-				network.mergePoints('SSSB','SSMB')
-				network.addTrack(new StraightTrack('S2',0,200))
-				network.mergePoints('S2B','SSSA')
-				network.addTrack(new StraightTrack('S1',0,200))
-				network.mergePoints('S1B','S2A')
+				network.addTrack(new CurvedTrack('SSM','L'))
+				network.connectPoints('SSM','A','SWS','B')
 
-				network.addTrack(new StraightTrack('S3',0,200))
-				network.connectPoints('S3A','SSMB')
-				network.addTrack(new StraightTrack('S4',0,200))
+				network.addTrack(new StraightTrack('S3'))
+				network.connectPoints('S3','A','SSM','B')
+				network.addTrack(new StraightTrack('S4'))
 				network.connectPoints('S4','A','S3','B')
-				network.addTrack(new CurvedTrack('S5','L',1))
+				network.addTrack(new CurvedTrack('S5','L'))
 				network.connectPoints('S5','A','S4','B')
 
-				network.addTrack(new CurvedTrack('SES','R',1))
-				network.connectPoints('SESA','S5B')
-				network.mergePoints('SESB','SEMB')
+				network.addTrack(new StraightTrack('SSS'))
+				network.connectPoints('SSS','B','S3','A')
+
+				network.addTrack(new StraightTrack('S2'))
+				network.connectPoints('S2','B','SSS','A')
+				network.addTrack(new StraightTrack('S1'))
+				network.connectPoints('S1','B','S2','A')
+
+				network.addTrack(new CurvedTrack('SES','R'))
+				network.connectPoints('SES','A','S5','B')
 				
-				network.addTrack(new CurvedTrack('SNC','R',1))
-				network.connectPoints('SNCA','SCNB')
-				network.addTrack(new StraightTrack('SNN',1,200))
-				network.mergePoints('SNNB','SNCB')
+				network.addTrack(new CurvedTrack('SNC','R'))
+				network.connectPoints('SNC','A','SCN','B')
 
-				network.addTrack(new StraightTrack('N3',0,200))
-				network.mergePoints('N3B','SNNA')
-				network.addTrack(new StraightTrack('N2',0,200))
-				network.mergePoints('N2B','N3A')
-				network.addTrack(new StraightTrack('N1',0,200))
-				network.mergePoints('N1B','N2A')
-
-				network.addTrack(new StraightTrack('N4',0,200))
-				network.connectPoints('N4A','SNCB')
-				network.addTrack(new StraightTrack('N5',0,200))
+				network.addTrack(new StraightTrack('N4'))
+				network.connectPoints('N4','A','SNC','B')
+				network.addTrack(new StraightTrack('N5'))
 				network.connectPoints('N5','A','N4','B')
-				network.addTrack(new StraightTrack('N6',0,200))
+				network.addTrack(new StraightTrack('N6'))
 				network.connectPoints('N6','A','N5','B')
 
+				network.addTrack(new StraightTrack('SNN'))
+				network.connectPoints('SNN','B','N4','A')
+
+				network.addTrack(new StraightTrack('N3'))
+				network.connectPoints('N3','B','SNN','A')
+				network.addTrack(new StraightTrack('N2'))
+				network.connectPoints('N2','B','N3','A')
+				network.addTrack(new StraightTrack('N1'))
+				network.connectPoints('N1','B','N2','A')
+
+				network.addTrack(new StraightTrack('SEM'))
+				network.connectPoints('SEM','A','M5','B')
+
+				network.addTrack(new StraightTrack('M6'))
+				network.connectPoints('M6','A','SEM','B')
+				network.connectPoints('M6','A','SES','B')
+				network.addTrack(new StraightTrack('M7'))
+				network.connectPoints('M7','A','M6','B')
+
+				network.checkNetwork()
 			}
 
 			function turnAround() {
@@ -437,7 +448,7 @@
 			}
 
 			function thirdTurnAround() {
-				network.addTrack(new StraightTrack('M'))
+				network.addTrack(new StraightTrack('M',undefined,350,200))
 
 				network.addTrack(new CurvedTrack('SR2','R'))
 				network.connectPoints('SR2','B','M','B')
@@ -517,8 +528,8 @@
 				network.checkNetwork()
 			}
 
-			function circle() {
-				network.addTrack(new CurvedTrack('J01','R'))
+			function worm() {
+				network.addTrack(new CurvedTrack('J01','R',undefined,400,200))
 				network.addTrack(new CurvedTrack('J02','R'))
 				network.connectPoints('J02','A','J01','B')
 				network.addTrack(new CurvedTrack('J03','R'))
@@ -530,7 +541,7 @@
 				network.addTrack(new CurvedTrack('J05','R'))
 				network.connectPoints('J05','B','J02','B')
 
-				// network.connectPoints('J05','A','J04','B')
+				network.connectPoints('J05','A','J04','B')
 
 				// network.addTrack(new CurvedTrack('J06','R'))
 				// network.connectPoints('J06','A','J05','B')
@@ -567,19 +578,49 @@
 
 			// complexLoop()
 			// inglenook()
-			// timeSaver()
+			timeSaver()
 			// turnAround()
 			// newTurnAround()
 			// thirdTurnAround()
-			circle()
+			// worm()
 			// test()
 
-			network.addBogie(new Bogie('B1',network.tracks.get('J01'),1,'white',1))
-
+			// network.addBogie(new Bogie('B1','A','Car1','Train1',network.tracks.get('S111'),1,'white',0,1))
+				// network.addCar(new Engine('E1','#c80','train1','N3',.2,1,0.8))
+				// network.addCar(new Engine('E2','#c80','train1','N2',.2,1,0.8))
 			// network.addBogie(new Bogie('B1',network.tracks.get('S11'),1,'white',1.0))
 			// network.addBogie(new Bogie('B2',network.tracks.get('C1'),1,'salmon',1.2))
 
+			network.addTrain("Train1","M2",'hsl(100 50 25)')
+			network.activeEngineId="Train1Engine"
+
+			network.addCar("red","N2")
+			network.addCar("yellow","N4")
+			network.addCar("blue","N6")
+			
+			network.addCar("orange","M5")
+			network.addCar("purple","M7")
+			const green = network.addCar("green","S2")
+			
+			network.addParkingSpot("red","N5")
+			network.addParkingSpot("yellow","S1")
+			network.addParkingSpot("blue","N1")
+			
+			network.addParkingSpot("orange","N3")
+			network.addParkingSpot("purple","M1")
+			network.addParkingSpot("green","M4")
+
+			network.addParkingSpot("engine","M7")
+
+			// console.log(network.trains.get('Train1').rearConsist.cars.set(green,1))
+
 			// console.log([...network.tracks.values()].map(track=>[track.id,track.A?.id,track.B?.id]))
+
+			// let hitch = new Hitch(
+			// 	new Bogie(0, 0, deg(-5), 'M2', 'A', crypto.randomUUID()),
+			// 	new Bogie(0, 0, deg(10), 'M1', 'B', crypto.randomUUID())
+			// )
+			// console.log(hitch.dist)
 
 			let last = performance.now()
 			function loop(now = performance.now()) {
@@ -591,11 +632,11 @@
 
 				let scale=100
 
-				scale = 1.5/2
+				scale = 1.75/2
 				ctx.scale(scale,scale)
 				ctx.globalAlpha = 0.75
 
-				ctx.translate(-50,0)
+				ctx.translate(-500,-200)
 
 				network.draw(ctx)
 				document.title = now
@@ -605,7 +646,9 @@
 			onload=()=>loop()
 
 			cvs.addEventListener("click", e => {
-				if (network.hoveredSwitchId) {
+				if (network.hoveredEngineId) {
+					network.activeEngineId = network.hoveredEngineId
+				} else if (network.hoveredSwitchId) {
 					let sw = network.switches.get(network.hoveredSwitchId)
 					let point = sw.points[sw.currentIndex]
 					point.switch(sw,network)
@@ -627,42 +670,68 @@
 						network.hoveredSwitchId = null
 					}
 				}
-				cvs.style.cursor = network.hoveredSwitchId ? "pointer" : "default"
+				for (const [id,train] of network.trains) {
+					ctx.save()
+					const m = ctx.getTransform().inverse().transformPoint(new DOMPoint(e.x, e.y));
+					ctx.restore()
+					const traction = train.engine.A
+					const local = traction.toLocal(m.x, m.y)
+					const dx = traction.x - m.x,
+								dy = traction.y - m.y
+					if (Math.abs(dy)<settings.clickRadius && -10<dx && dx<70) {
+						network.hoveredEngineId = train.engine.id
+						break
+					} else if (network.hoveredEngineId==train.engine.id) {
+						network.hoveredEngineId = null
+					}
+				}
+				cvs.style.cursor = (network.hoveredSwitchId || network.hoveredEngineId) ? "pointer" : "default"
 			})
 
-			// window.addEventListener("keydown", e => {
-			// 	const train=network.getTrain("T1")
-			// 	switch (e.code) {
-			// 		case "KeyW":
-			// 		case "ArrowUp":
-			// 			train.targetSpeed = train.maxSpeed
-			// 			break
-			// 		case "KeyS":
-			// 		case "ArrowDown":
-			// 		case "Space":
-			// 			train.targetSpeed = 0
-			// 			train.activeBraking = true
-			// 			break
-			// 		case "Tab":
-			// 			e.preventDefault()
-			// 			train.setGearForward(!train.forward, train.speed)
-			// 			break
-			// 	}
-			// })
-			// window.addEventListener("keyup", e => {
-			// 	const train=network.getTrain("T1")
-			// 	if (e.code === "KeyW" || e.code === "ArrowUp" || e.code === "KeyS" || e.code === "ArrowDown") {
-			// 		// optional: coast when released
-			// 		train.targetSpeed = train.speed
-			// 	}
-			// 	if (e.code === "KeyS" || e.code === "ArrowDown" || e.code === "Space") {
-			// 		// optional: coast when released
-			// 		train.activeBraking = false
-			// 	}
-			// })
+			window.addEventListener("keydown", e => {
+				const engine=network.engines.get(network.activeEngineId)
+				switch (e.code) {
+					case "KeyW":
+					case "ArrowUp":
+						engine.targetSpeed = engine.maxSpeed*(engine.gearForward?1:-1)
+						break
+					case "KeyS":
+					case "ArrowDown":
+						engine.targetSpeed = 0
+						engine.activeBraking = true
+						break
+					case "Tab":
+						e.preventDefault()
+						if (engine.speed == 0) {
+							engine.gearForward=!engine.gearForward
+							console.log('change direction:',engine.gearForward?"forward":"reverse")
+						} else {
+							console.warn('train in motion, cannot change gear')
+						}
+						break
+					case "ShiftLeft":
+						// optional: coast when released
+						engine.speedLock ??= false
+						engine.speedLock = !engine.speedLock
+						if (engine.speedLock) engine.targetSpeed = engine.speed
+						else engine.targetSpeed = 0
+						break
+				}
+			})
+			window.addEventListener("keyup", e => {
+				const engine=network.engines.get(network.activeEngineId)
+				if (e.code === "KeyW" || e.code === "ArrowUp") {
+					// optional: coast when released
+					if (!engine.speedLock) engine.targetSpeed = 0
+				}
+				if (e.code === "KeyS" || e.code === "ArrowDown") {	
+					// optional: coast when released
+					engine.activeBraking = false
+				}
+			})
 
 			window.addEventListener("keyup", e => {
-				if (e.code === "Space") {
+				if (e.code === "Escape") {
 					pause=!pause
 					loop()
 				}

@@ -1,16 +1,25 @@
-import { Point, StraightTrack, CurvedTrack } from './track.js'
+import { Point, StraightTrack, CurvedTrack, ParkingSpot } from './track.js'
+import { Car, Engine } from './cars.js'
+import { Consist, Train } from './consists.js'
 
 export class RailNetwork {
   constructor() {
     this.tracks = new Map()
+    this.parkingSpots = new Map()
     this.points = new Map()
     this.switches = new Map()
     this.bogies = new Map()
+    this.hitches = new Map()
+    this.cars = new Map()
+    this.engines = new Map()
     this.trains = new Map()
+    this.consists = new Map()
   }
   addTrack(track) {
     track.network = this
     this.tracks.set(track.id,track)
+    track.A.network = this
+    track.B.network = this
     this.points.set(track.A.id,track.A)
     this.points.set(track.B.id,track.B)
   }
@@ -22,7 +31,39 @@ export class RailNetwork {
     bogie.network = this
     this.bogies.set(bogie.id,bogie)
   }
-  addTrain(train) {
+  addCar(color,trackId,t=0.8,dir) {
+  // constructor(network,id,color,trainId,trackId,dir=1,t,speed=0,length=settings.carLength) {
+    const car = new Car(this,color,color,trackId,t,dir)
+    car.A.network = this
+    car.B.network = this
+    this.cars.set(car.id,car)
+    car.initialize()
+    car.consist = new Consist(this,performance.now(),car)
+    this.consists.set(color,car.consist)
+    this.bogies.set(car.A.id,car.A)
+    this.bogies.set(car.B.id,car.B)
+    return car
+  }
+
+  addParkingSpot(color,trackId) {
+    const spot = new ParkingSpot(color,trackId)
+    spot.network = this
+    this.parkingSpots.set(color,spot)
+  }
+
+  addConsist(id,track,dir=1,t,cars) {
+
+  }
+  addTrain(id,trackId,color,dir=1,t,engine,rearConsist=[],foreConsist=[]) {
+    t ??= 0.5+dir*0.3
+    engine ??= new Engine(this,id+'Engine',color,trackId,t,dir)
+    this.engines.set(engine.id,engine)
+    engine.initialize();
+    [...rearConsist,...foreConsist].forEach(car=>{
+      car.network = this
+      this.cars.set(car.id,car)
+    })
+    const train = new Train(this,id,engine,rearConsist,foreConsist)
     train.network = this
     this.trains.set(train.id,train)
   }
@@ -61,7 +102,7 @@ export class RailNetwork {
   checkNetwork() {
     let checked = []
     this.points.forEach(point=>{
-      if (point.connections.length<1) console.error(`Point ${point.id} missing connection`)
+      // if (point.connections.size<1) console.warn(`Point ${point.id} missing connection`)
       if (checked.includes(point)) {
         // console.warn(point, 'already checked')
       } else
@@ -77,14 +118,26 @@ export class RailNetwork {
 
   draw(ctx) {
     this.tracks.values().forEach(t=>t.draw(ctx))
+    this.parkingSpots.values().forEach(p=>p.check(ctx))
     this.switches.values().forEach(s=>{
       let activePoint = s.points[s.currentIndex]
       let activeTrack = this.tracks.get(activePoint.trackId)
       activeTrack.draw(ctx,this)
     })
-    this.points.values().forEach(p=>p.draw(ctx,this))
-    this.bogies.values().forEach(b=>b.update(this))
-    this.trains.values().forEach(t=>t.draw(ctx))
-    this.bogies.values().forEach(b=>b.draw(ctx))
+    this.engines.values().forEach(x=>x.update())
+    this.cars   .values().forEach(x=>x.update())
+    this.points .values().forEach(x=>x.draw(ctx))
+    this.bogies .values().forEach(x=>x.draw(ctx))
+    this.cars   .values().forEach(x=>x.draw(ctx))
+    this.engines.values().forEach(x=>x.draw(ctx))
+    this.hitches.values().forEach(x=>x.draw(ctx))
+    this.points .values().forEach(x=>x.drawStops(ctx))
+    
+    this.consists.values().forEach(x=>x.update(ctx))
+    // this.trains  .values().forEach(x=>x.update(ctx))
+    this.bogies .values().forEach(x=>x.draw(ctx))
+
+    // console.log(this.switches)
   }
+
 }
