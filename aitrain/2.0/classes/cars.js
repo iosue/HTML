@@ -32,82 +32,85 @@ export class Car {
   get track() {return this.network.tracks.get(this.trackId)}
   // get speed() {return this.train.speed}
 
-  snapToTrack(end="B") {
-    const slave = this[end]
-    const master = slave.partner
-    const masterTrackDistance = master.track.chordLengthAtPos(master.trackPosition)
-    if (end=="B" && this.direction>0) {
-      let slaveTrackDistance = masterTrackDistance-this.length
-      if (slaveTrackDistance>0) {
-        slave.trackPosition = slave.track.positionAtDist(slaveTrackDistance)
-      } else {
-        let prevTrack = master.track.prevTrack
-        slave.trackId = prevTrack.id
-        slave.direction *= prevTrack.dir
-        console.log(prevTrack)
-        if (slave.direction<0) {
-          slave.trackPosition = -slave.track.positionAtDist(slaveTrackDistance)
-        } else {
-          slave.trackPosition = 1+slave.track.positionAtDist(slaveTrackDistance)
-        }
-        console.log(slave.trackPosition)
-      }
-    } else if (end=="B" && this.direction<0) {
-      let slaveTrackDistance = masterTrackDistance+this.length
-      if (slaveTrackDistance>0) {
-        slave.trackPosition = slave.track.positionAtDist(slaveTrackDistance)
-      } else {
-        let nextTrack = master.track.nextTrack
-        slave.trackId = nextTrack.id
-        slave.direction *= nextTrack.dir
-        console.log(nextTrack)
-        if (slave.direction<0) {
-          slave.trackPosition = -slave.track.positionAtDist(slaveTrackDistance)
-        } else {
-          slave.trackPosition = 1+slave.track.positionAtDist(slaveTrackDistance)
-        }
-        console.log(slave.trackPosition)
-      }
-    } else if (end=="A" && this.direction>0) {
-      /// TBD
-      let slaveTrackDistance = masterTrackDistance-this.length
-      if (slaveTrackDistance>0) {
-        slave.trackPosition = slave.track.positionAtDist(slaveTrackDistance)
-      } else {
-        let prevTrack = master.track.prevTrack
-        slave.trackId = prevTrack.id
-        slave.direction *= prevTrack.dir
-        console.log(prevTrack)
-        if (slave.direction<0) {
-          slave.trackPosition = -slave.track.positionAtDist(slaveTrackDistance)
-        } else {
-          slave.trackPosition = 1+slave.track.positionAtDist(slaveTrackDistance)
-        }
-        console.log(slave.trackPosition)
-      }
-    } else if (end=="A" && this.direction<0) {
-      /// TBD
-      let slaveTrackDistance = masterTrackDistance+this.length
-      if (slaveTrackDistance>0) {
-        slave.trackPosition = slave.track.positionAtDist(slaveTrackDistance)
-      } else {
-        let nextTrack = master.track.nextTrack
-        slave.trackId = nextTrack.id
-        slave.direction *= nextTrack.dir
-        console.log(nextTrack)
-        if (slave.direction<0) {
-          slave.trackPosition = -slave.track.positionAtDist(slaveTrackDistance)
-        } else {
-          slave.trackPosition = 1+slave.track.positionAtDist(slaveTrackDistance)
-        }
-        console.log(slave.trackPosition)
-      }
-    } else {
-      // console.log(end)
-    }
-  }
+  // snapToTrack(end="B") {
+  //   const slave = this[end]
+  //   const master = slave.partner
+  //   // console.log('master',master.track,end=="B" && this.direction>0)
+  //   const masterTrackDistance = master.track.chordLengthAtPos(master.trackPosition)
+  //   if (end=="B" && this.direction>0) {
+  //     let slaveTrackDistance = masterTrackDistance-this.length
+  //     if (slaveTrackDistance>0) {
+  //       slave.trackId = master.trackId
+  //       slave.trackPosition = slave.track.positionAtDist(slaveTrackDistance)
+  //     } else {
+  //       let prevTrack = master.track.prevTrack
+  //       slave.trackId = prevTrack.id
+  //       slave.direction *= prevTrack.dir
+  //       // console.log(prevTrack)
+  //       if (slave.direction<0) {
+  //         slave.trackPosition = -slave.track.positionAtDist(slaveTrackDistance)
+  //       } else {
+  //         slave.trackPosition = 1+slave.track.positionAtDist(slaveTrackDistance)
+  //       }
+  //       // console.log(slave.trackPosition)
+  //     }
+  //   } else if (end=="B" && this.direction<0) {
+  //     let slaveTrackDistance = masterTrackDistance+this.length
+  //     if (slaveTrackDistance>0) {
+  //       slave.trackPosition = slave.track.positionAtDist(slaveTrackDistance)
+  //     } else {
+  //       let nextTrack = master.track.nextTrack
+  //       slave.trackId = nextTrack.id
+  //       slave.direction *= nextTrack.dir
+  //       console.log(nextTrack)
+  //       if (slave.direction<0) {
+  //         slave.trackPosition = -slave.track.positionAtDist(slaveTrackDistance)
+  //       } else {
+  //         slave.trackPosition = 1+slave.track.positionAtDist(slaveTrackDistance)
+  //       }
+  //       console.log(slave.trackPosition)
+  //     }
+  //   } else if (end=="A" && this.direction>0) {
+  //     /// TBD
+  //     let slaveTrackDistance = masterTrackDistance-this.length
+  //     if (slaveTrackDistance>0) {
+  //       slave.trackPosition = slave.track.positionAtDist(slaveTrackDistance)
+  //     } else {
+  //       let prevTrack = master.track.prevTrack
+  //       slave.trackId = prevTrack.id
+  //       slave.direction *= prevTrack.dir
+  //       console.log(prevTrack)
+  //       if (slave.direction<0) {
+  //         slave.trackPosition = -slave.track.positionAtDist(slaveTrackDistance)
+  //       } else {
+  //         slave.trackPosition = 1+slave.track.positionAtDist(slaveTrackDistance)
+  //       }
+  //       console.log(slave.trackPosition)
+  //     }
+  //   } else if (end=="A" && this.direction<0) {
+  //     /// TBD
+  //     let slaveTrackDistance = masterTrackDistance+this.length
+  //     if (slaveTrackDistance>0) {
+  //       slave.trackPosition = slave.track.positionAtDist(slaveTrackDistance)
+  //     } else {
+  //       let nextTrack = master.track.nextTrack
+  //       slave.trackId = nextTrack.id
+  //       slave.direction *= nextTrack.dir
+  //       console.log(nextTrack)
+  //       if (slave.direction<0) {
+  //         slave.trackPosition = -slave.track.positionAtDist(slaveTrackDistance)
+  //       } else {
+  //         slave.trackPosition = 1+slave.track.positionAtDist(slaveTrackDistance)
+  //       }
+  //       console.log(slave.trackPosition)
+  //     }
+  //   } else {
+  //     // console.log(end)
+  //   }
+  // }
 
   initialize() {
+    return this.B.followBogie(this.A,-this.length)
     return this.snapToTrack("B")
     // console.trace(this.A,this.A.track)
     if (this.direction > 0) {
@@ -158,10 +161,10 @@ export class Car {
     // console.log(this.B)
   }
 
-  update() {
-    this.A.update()
-    this.B.update()
-  }
+  // update() {
+  //   this.A.update()
+  //   this.B.update()
+  // }
 
   stop() {
     this.speed = 0
@@ -179,6 +182,7 @@ export class Car {
       ctx.shadowColor = "black"
       ctx.shadowBlur = 4
       ctx.translate(this.A.x,this.A.y)
+      // console.log(this.id,this.direction)
       ctx.rotate(angle)
       let sideOverhang = 10
       let endOverhang = 11
@@ -193,7 +197,16 @@ export class Car {
         ctx.lineWidth=4
         // ctx.fill()
       ctx.stroke()
-    ctx.restore()
+
+      ctx.beginPath()
+        ctx.moveTo(1.5*endOverhang,0); ctx.lineTo(dist-1.5*endOverhang,0)
+        ctx.moveTo(1.5*endOverhang,0); ctx.lineTo(dist-3.5*endOverhang,-.5*endOverhang)
+        ctx.moveTo(1.5*endOverhang,0); ctx.lineTo(dist-3.5*endOverhang,+.5*endOverhang)
+        ctx.strokeStyle = this.color
+        ctx.lineWidth=2
+      ctx.stroke()
+
+      ctx.restore()
   }
 }
 
@@ -236,7 +249,7 @@ export class Engine extends Car {
       } else if (dV > 0) {
         this.acceleration = +.010
         this.speed = Math.min(this.speed+this.acceleration,0)
-        console.log(this.speed)
+        // console.log(this.speed)
       } else {
         this.acceleration = 0
       }
@@ -247,7 +260,7 @@ export class Engine extends Car {
     }
     if (this.speed == 0) this.speedLock = false
     this.A.update()
-    this.B.update()
+    this.B.followBogie(this.A,-this.length)
   }
 
   draw(ctx) {

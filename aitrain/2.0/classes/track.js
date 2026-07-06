@@ -195,8 +195,8 @@ export class Track {
       let sw = connection.network.switches.get(connection.switchId)
       connection = sw.points[sw.currentIndex]
     }
-    if (!connection) throw new Error(`Track ${this.id} has no previous track to snap a car to.`)
-    console.log(this.A.end,connection.end)
+    if (!connection) return //console.warn(`Track ${this.id} has no previous track to snap a car to.`)
+    // console.log(this.A.end,connection.end)
     return {
       id: connection.trackId,
       dir: this.A.end==connection.end?-1:1
@@ -208,8 +208,8 @@ export class Track {
       let sw = connection.network.switches.get(connection.switchId)
       connection = sw.points[sw.currentIndex]
     }
-    if (!connection) throw new Error(`Track ${this.id} has no previous track to snap a car to.`)
-    console.log(this.B.end,connection.end)
+    if (!connection) return //console.warn(`Track ${this.id} has no previous track to snap a car to.`)
+    // console.log(this.B.end,connection.end)
     return {
       id: connection.trackId,
       dir: this.B.end==connection.end?-1:1
@@ -390,13 +390,12 @@ export class CurvedTrack extends Track {
     this.A.a = normalizeAngle(this.B.a - this.sweep)
   }
 
-  chordLengthAtPos(t=0) {
-    return 2*this.radius*Math.sin(t*this.sweep/2)
-  }
-
-  positionAtDist(d=0) {
-    return 2*Math.asin(d/2,this.radius)/this.sweep
-  }
+chordLengthAtPos(t=0) {
+  return 2*this.radius*Math.sin(t*Math.abs(this.sweep)/2)
+}
+positionAtDist(d=0) {
+  return 2*Math.asin(d/2/this.radius)/Math.abs(this.sweep)
+}
 
 
   draw(ctx) {

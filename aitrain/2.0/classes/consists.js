@@ -5,44 +5,100 @@ import { Car, Engine } from './cars.js'
 
 
 export class Consist {
-  constructor(network,id,car) {
+  constructor(network,id,car,dir) {
     this.network = network
     this.id = id
     this.cars = new Map()
-    this.cars.set(car,1)
+    if (car) this.cars.set(car,dir)
   }
-  get hitchA() {
+  get hitchTail() {
     const endCar = [...this.cars.keys()].toReversed()[0]
-    const endHitch = this.cars[endCar]==1?endCar.A:endCar.B
+    // console.log(this.cars,endCar,this.cars.get(endCar))
+    const endHitch = this.cars.get(endCar)<0?endCar.A:endCar.B
     return endHitch
   }
-  get hitchB() {
+  get hitchHead() {
     const endCar = [...this.cars.keys()][0]
-    const endHitch = this.cars[endCar]==1?endCar.B:endCar.A
+    const endHitch = this.cars.get(endCar)<0?endCar.B:endCar.A
     return endHitch
   }
-  hitch(consist,myEnd,itsEnd) {
-    if (myEnd=="B") {
-      if (itsEnd=="B") consist.cars = consist.cars.toReversed()
-      this.cars.push(...consist.cars)
+  hitch(consist,itsEnd) {
+    let carList = [...consist.cars]
+    let backward = false
+    if (itsEnd=="B") {
+      carList.reverse()
+      backward = true
     }
-    if (myEnd=="A") {
-      if (itsEnd=="A") consist.cars = consist.cars.toReversed()
-      this.cars.unshift(...consist.cars)
-    }
+    // let backward=this.hitchTail.position==consist[`hitch${itsEnd}`].position;
+    [...carList].forEach(([car,dir])=>this.cars.set(car,backward?-dir:dir))
     this.network.consists.delete(consist.id)
   }
 
   update(ctx) {
     let activeEngine = this.network.engines.get(this.network.activeEngineId)
+    if (!this.cars.has(activeEngine)) return this.draw(ctx)
+
+    let carList = [...this.cars]
+    carList.reduce(([prevCar,prevCarDir],[nextCar,nextCarDir])=>{
+      const uBogie = prevCarDir>0?prevCar.B:prevCar.A
+      const [vBogie,wBogie] = nextCarDir?[nextCar.A,nextCar.B]:[nextCar.B,nextCar.A]
+      uBogie.hitched=vBogie.hitched=true
+      vBogie.followBogie(uBogie,-40)
+      if (wBogie.followBogie(vBogie,-60)=="end of track") {
+        activeEngine.speed = 0
+        return this.backPropagate(wBogie,uBogie)
+      }
+    })
+    this.draw(ctx)
+  }
+
+  _update(ctx) {
+    let activeEngine = this.network.engines.get(this.network.activeEngineId)
+    if (this.cars.has(activeEngine)) {
+      // console.log(this.cars);
+      [...this.cars].reduce((prev,next)=>{
+        // console.log(prev,next);
+        let [prevCar,prevDir] = prev,
+            [nextCar,nextDir] = next
+        let prevBogie = prevDir<0?prevCar.A:prevCar.B
+        let [pBogie,qBogie] = nextDir>0?[nextCar.A,nextCar.B]:[nextCar.B,nextCar.A]
+        prevBogie.hitched = true
+        pBogie.hitched = true
+        let dir = prevCar.direction==nextCar.direction?1:-1
+        pBogie.followBogie(prevBogie,40*-dir)
+        if (qBogie.followBogie(pBogie,nextCar.length*dir)=="end of track") {
+          activeEngine.speed = 0
+          return this.backPropagate(qBogie,pBogie)
+        }
+        // console.log(nextCar)
+        return next
+      })
+      this.bumpCheck()
+    }
+    this.draw(ctx)
+  }
+
+  backPropagate(anchor,partner) {
+    anchor.trackPosition = anchor.direction>0?0:1
+    partner.followBogie(anchor,-anchor.car.length);
+    [...this.cars.keys()].toReversed().reduce((prevCar,nextCar)=>{
+      let prevBogie = this.cars.get(prevCar)>0?prevCar.A:prevCar.B
+      let [pBogie,qBogie] = this.cars.get(nextCar)<0?[nextCar.A,nextCar.B]:[nextCar.B,nextCar.A]
+      pBogie.followBogie(prevBogie,-40)
+      qBogie.followBogie(pBogie,-nextCar.length)
+      return nextCar
+    })
+  }
+
+  old_update(ctx) {
+    let activeEngine = this.network.engines.get(this.network.activeEngineId)
     if (this.cars.has(activeEngine)) {
       const engineIndex = [...this.cars.keys()].indexOf(activeEngine)
       if (engineIndex==0) {
         [...this.cars.keys()].reduce((prevCar,nextCar)=>{
-          console.log(this.cars,prevCar,this.cars.get(prevCar),nextCar,this.cars.get(nextCar))
-          let keyBogie = this.cars.get(nextCar)>0?nextCar.A:nextCar.B
-          // console.log(keyBogie,this.cars[nextCar])
-          keyBogie.setRelativeTrackPos(prevCar,40)
+          let prevBogie = this.cars.get(prevCar)<0?prevCar.A:prevCar.B
+          let nextBogie = this.cars.get(nextCar)>0?nextCar.A:nextCar.B
+          nextBogie.setRelativeTrackPos(prevBogie,40)
           return nextCar
         })
       }
@@ -54,47 +110,35 @@ export class Consist {
 
   bumpCheck() {
     this.network.consists.forEach(consist=>{
-      // console.log(consist)
+      // console.log(consist,this)
       if (consist != this) {
-        const dxAA = consist.hitchA.x - this.hitchA.x,
-              dyAA = consist.hitchA.y - this.hitchA.y,
-              distAA = Math.hypot(dxAA,dyAA),
-  
-              dxAB = consist.hitchB.x - this.hitchA.x,
-              dyAB = consist.hitchB.y - this.hitchA.y,
-              distAB = Math.hypot(dxAB,dyAB),
-  
-              dxBA = consist.hitchA.x - this.hitchB.x,
-              dyBA = consist.hitchA.y - this.hitchB.y,
-              distBA = Math.hypot(dxBA,dyBA),
-  
-              dxBB = consist.hitchB.x - this.hitchB.x,
-              dyBB = consist.hitchB.y - this.hitchB.y,
-              distBB = Math.hypot(dxBB,dyBB)
-  
-        if (distAA < 40) {
-          // console.log(this.hitchA,consist.hitchA,distAA)
+        function inRange(a,b) {
+          const dx = b.x - a.x,
+          dy = a.y - a.y
+          let dist = Math.hypot(dx,dy)
+          if (a.trackId==b.trackId || a.track.nextTrack?.id==b.trackId || a.track.prevTrack?.id==b.trackId) return Math.abs(dist) < 40
         }
-        if (distAB < 40) {
-          // console.log(this.hitchA,consist.hitchB,distAB)
+  
+        if (inRange(this.hitchTail,consist.hitchTail)) {
+          console.log(this,'bump a')
+          return this.hitch(consist,"A")
         }
-        if (distBA < 40) {
-          // console.log(this.hitchB,consist.hitchA,distBA)
-        }
-        if (distBB < 40) {
-          // console.log(this.hitchB,consist.hitchB,distBB)
+        if (inRange(this.hitchTail,consist.hitchHead)) {
+          console.log(this,this.hitchHead,'bump b')
+          return this.hitch(consist,"B")
         }
       }
     })
   }
   draw(ctx) {
-    const dx = this.hitchB.x - this.hitchA.x,
-          dy = this.hitchB.y - this.hitchA.y
+    const dx = this.hitchHead.x - this.hitchTail.x,
+          dy = this.hitchHead.y - this.hitchTail.y
     ctx.save()
-    ctx.translate(this.hitchA.x,this.hitchA.y)
+    ctx.translate(this.hitchTail.x,this.hitchTail.y)
     ctx.rotate(Math.atan2(dy,dx))
     ctx.beginPath()
-    ctx.roundRect(-20,-20,Math.hypot(dx,dy)+40,40,20)
+    const p=15
+    ctx.roundRect(-p,-p,Math.hypot(dx,dy)+2*p,2*p,p)
     ctx.fillStyle = "#fff2"
     ctx.strokeStyle = "white"
     ctx.setLineDash([10,5])
@@ -110,8 +154,8 @@ export class Train {
     this.network = network
     this.id = id
     this.engine = engine
-    this.foreConsist = new Consist(network,`${id}Fore`,engine)
-    this.rearConsist = new Consist(network,`${id}Rear`,engine)
+    this.foreConsist = new Consist(network,`${id}Fore`,engine,-1)
+    this.rearConsist = new Consist(network,`${id}Rear`,engine,+1)
   }
 
   update(ctx) {

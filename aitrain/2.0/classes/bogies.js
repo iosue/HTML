@@ -22,6 +22,7 @@ export class Bogie {
   get speed() {return this.car.speed}
 
   toLocal(wx, wy) {
+    // console.error(this,this.a) 
     const dx = wx - this.x
     const dy = wy - this.y
     const cos = Math.cos(-this.a)
@@ -39,7 +40,7 @@ export class Bogie {
     }
   }
 
-  setRelativeTrackPos(prevCar,dist) {
+  old_setRelativeTrackPos(prevCar,dist) {
     console.log(prevCar)
     let trackId,t,dir,speed
 
@@ -100,6 +101,220 @@ export class Bogie {
       this.car.bactialize(`reset pos ${trackId} ${t} ${dir}`)
     }
   }
+
+
+  followBogie(lead,dist) {
+    const leadDistance = lead.track.chordLengthAtPos(lead.trackPosition)
+    let thisDistance = leadDistance + dist*lead.direction
+    if (thisDistance > lead.track.length) {
+      const adjacentTrack = lead.track.nextTrack
+      if (!adjacentTrack) return "end of track"
+      this.trackId = adjacentTrack.id
+      this.direction = (adjacentTrack.dir==1) ? lead.direction : -lead.direction
+      thisDistance = (this.direction==1) ? this.track.length - (thisDistance - lead.track.length) : thisDistance - lead.track.length
+    } else if (thisDistance < 0) {
+      const adjacentTrack = lead.track.prevTrack
+      if (!adjacentTrack) return "end of track"
+      this.trackId = adjacentTrack.id
+      this.direction = (adjacentTrack.dir==1) ? lead.direction : -lead.direction
+      thisDistance = (this.direction==1) ? this.track.length - (0 - thisDistance) : 0 - thisDistance
+    } else {
+      this.trackId = lead.trackId
+      this.direction = lead.direction
+    }
+    this.trackPosition = this.track.positionAtDist(thisDistance)
+  }
+
+  o_followBogie(lead, dist) {
+    const leadForward = lead.direction > 0
+    const thisForward = this.direction > 0
+
+    const leadPos = leadForward ? lead.trackPosition : 1 - lead.trackPosition;
+    const overflow = dist - lead.track.chordLengthAtPos(leadPos);
+    const overshoots = overflow > 0;
+    const adjacentTrack = leadForward ? lead.track.prevTrack : lead.track.nextTrack;
+
+    if (leadForward) {
+      if (thisForward) {
+        if (overshoots) {
+          // '>>o'
+          if (!adjacentTrack) return "end of track"
+          this.trackId = adjacentTrack.id;
+          if (adjacentTrack.dir > 0) {
+            this.trackPosition = this.track.positionAtDist(this.track.length - overflow);
+          } else {
+            this.direction = -lead.direction;
+            this.trackPosition = this.track.positionAtDist(overflow);
+          }
+        } else {
+          // '>>'
+          this.trackId = lead.trackId;
+          this.trackPosition = this.track.positionAtDist(-overflow);
+        }
+      } else {
+        if (overshoots) {
+          // '<>o'
+          if (!adjacentTrack) return "end of track"
+          this.trackId = adjacentTrack.id;
+          this.trackPosition = this.track.positionAtDist(overflow);
+        } else {
+          // '<>'
+          this.direction = lead.direction;
+          this.trackId = lead.trackId;
+          this.trackPosition = this.track.positionAtDist(-overflow);
+        }
+      }
+    } else {
+      if (thisForward) {
+        if (overshoots) {
+          // '><o'
+          if (!adjacentTrack) return "end of track"
+          this.trackId = adjacentTrack.id;
+          this.trackPosition = this.track.positionAtDist(this.track.length - overflow);
+        } else {
+          // '><'
+          this.direction = lead.direction;
+          this.trackId = lead.trackId;
+          this.trackPosition = this.track.positionAtDist(this.track.length + overflow);
+        }
+      } else {
+        if (overshoots) {
+          // '<<o'
+          if (!adjacentTrack) return "end of track"
+          this.trackId = adjacentTrack.id;
+          if (adjacentTrack.dir > 0) {
+            this.trackPosition = this.track.positionAtDist(-overflow);
+          } else {
+            this.direction = -lead.direction;
+            this.trackPosition = this.track.positionAtDist(this.track.length - overflow);
+          }
+        } else {
+          // '<<'
+          this.trackId = lead.trackId;
+          this.trackPosition = this.track.positionAtDist(this.track.length + overflow);
+        }
+      }
+    }
+  }
+
+  // myfollowBogie(lead,dist) {
+  //   const leadForward = lead.direction>0
+  //   const thisForward = this.direction>0
+
+  //   const leadPos = leadForward ? lead.trackPosition : 1-lead.trackPosition
+  //   const overflow = dist-lead.track.chordLengthAtPos(leadPos)
+  //   const overshoots = overflow>0
+  //   const adjacentTrack = leadForward ? lead.track.prevTrack : lead.track.nextTrack
+
+  //   if (leadForward) {
+  //     if (thisForward) {
+  //       if (overshoots) {
+  //         console.log('>>o')
+  //         this.trackId = adjacentTrack?.id
+  //         if (adjacentTrack.dir>0) {
+  //           this.trackPosition = this.track.positionAtDist(this.track.length-overflow)
+  //         } else {
+  //           this.direction = -lead.direction
+  //           this.trackPosition = this.track.positionAtDist(overflow)
+  //         }
+  //       } else {
+  //         console.log('>>')
+  //         this.trackId = lead.trackId
+  //         this.trackPosition = this.track.positionAtDist(-overflow)
+  //       }
+  //     } else {
+  //       if (overshoots) {
+  //         console.log('<>o')
+  //         this.trackId = adjacentTrack?.id
+  //         this.trackPosition = this.track.positionAtDist(overflow)
+  //       } else {
+  //         console.log('<>')
+  //         this.direction = lead.direction
+  //         this.trackId = lead.trackId
+  //         this.trackPosition = this.track.positionAtDist(-overflow)
+  //       }
+  //     }
+  //   } else {
+  //     if (thisForward) {
+  //       if (overshoots) {
+  //         console.log('><o')
+  //         this.trackId = adjacentTrack?.id
+  //         this.trackPosition = this.track.positionAtDist(this.track.length-overflow)
+  //       } else {
+  //         console.log(this.id,'><')
+  //         this.direction = lead.direction
+  //         this.trackId = lead.trackId
+  //         this.trackPosition = this.track.positionAtDist(this.track.length+overflow)
+  //       }
+  //     } else {
+  //       if (overshoots) {
+  //         console.log('<<o')
+  //         this.trackId = adjacentTrack?.id
+  //         if (adjacentTrack.dir>0) {
+  //           this.trackPosition = this.track.positionAtDist(-overflow)
+  //         } else {
+  //           this.direction = -lead.direction
+  //           this.trackPosition = this.track.positionAtDist(this.track.length-overflow)
+  //         }
+  //       } else {
+  //         console.log('<<')
+  //         this.trackId = lead.trackId
+  //         this.trackPosition = this.track.positionAtDist(this.track.length+overflow)
+  //       }
+  //     }
+  //   }
+  // }
+
+  // _followBogie(relativeBogie,offsetDistance) {
+  //   console.log(relativeBogie.direction)
+  //   if (this.direction == relativeBogie.direction) {
+  //     if (relativeBogie.direction>0) {
+  //       const relativeTrackDistance = relativeBogie.track.length*(0+relativeBogie.trackPosition)
+  //       const overflow = offsetDistance - relativeTrackDistance
+  //       if (overflow>0) {
+  //         if (this.track.direction==relativeBogie.track.direction) {
+  //           this.trackId = relativeBogie.track.prevTrack.id
+  //           this.trackPosition = 1 - overflow / this.track.length
+  //         } else {
+  //           console.warn('wrap')
+  //         }
+  //       } else {
+  //         this.trackId = relativeBogie.trackId
+  //         this.trackPosition = 0 - overflow / this.track.length
+  //       }
+  //     } else {
+  //       const relativeTrackDistance = relativeBogie.track.length*(1-relativeBogie.trackPosition)
+  //       const overflow = offsetDistance - relativeTrackDistance
+  //       if (overflow>0) {
+  //         this.trackId = relativeBogie.track.nextTrack.id
+  //         this.trackPosition = 1 - overflow / this.track.length
+  //       } else {
+  //         this.trackId = relativeBogie.trackId
+  //         this.trackPosition = 0 - overflow / this.track.length
+  //         this.direction -= 2*this.direction
+  //       }
+  //     }
+  //   } else {
+  //     console.error('reverse')
+  //   }
+  // }
+
+  // setRelativeTrackPos(prevBogie,dist) {
+    
+  //   // console.log(prevBogie.trackPosition*prevBogie.track.length)
+  //   if (prevBogie.direction>0) {
+  //     if (prevBogie.trackPosition*prevBogie.track.length>prevBogie.car.length) {
+  //       console.log('standard shift')
+  //       this.trackId = prevBogie.trackId
+  //       this.trackPosition = prevBogie.trackPosition - dist/100
+  //     } else {
+  //       this.trackId = prevBogie.track.prevTrack.id
+  //       this.trackPosition = prevBogie.trackPosition - dist/100 + 1
+  //     }
+  //   }
+  //   this.car.snapToTrack("B")
+  //   // console.log(this.partner)
+  // }
 
   update() {
     this.trackPosition += this.direction * this.speed/this.track.length

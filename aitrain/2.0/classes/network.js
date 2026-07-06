@@ -31,15 +31,16 @@ export class RailNetwork {
     bogie.network = this
     this.bogies.set(bogie.id,bogie)
   }
-  addCar(color,trackId,t=0.8,dir) {
-  // constructor(network,id,color,trainId,trackId,dir=1,t,speed=0,length=settings.carLength) {
+  addCar(color,trackId,dir=1,t) {
+    t ??= 0.5+dir*0.3
     const car = new Car(this,color,color,trackId,t,dir)
     car.A.network = this
     car.B.network = this
     this.cars.set(car.id,car)
     car.initialize()
-    car.consist = new Consist(this,performance.now(),car)
-    this.consists.set(color,car.consist)
+    let id=color+performance.now()
+    car.consist = new Consist(this,id,car,dir)
+    this.consists.set(id,car.consist)
     this.bogies.set(car.A.id,car.A)
     this.bogies.set(car.B.id,car.B)
     return car
@@ -51,9 +52,6 @@ export class RailNetwork {
     this.parkingSpots.set(color,spot)
   }
 
-  addConsist(id,track,dir=1,t,cars) {
-
-  }
   addTrain(id,trackId,color,dir=1,t,engine,rearConsist=[],foreConsist=[]) {
     t ??= 0.5+dir*0.3
     engine ??= new Engine(this,id+'Engine',color,trackId,t,dir)
@@ -125,7 +123,7 @@ export class RailNetwork {
       activeTrack.draw(ctx,this)
     })
     this.engines.values().forEach(x=>x.update())
-    this.cars   .values().forEach(x=>x.update())
+    // this.cars   .values().forEach(x=>x.update())
     this.points .values().forEach(x=>x.draw(ctx))
     this.bogies .values().forEach(x=>x.draw(ctx))
     this.cars   .values().forEach(x=>x.draw(ctx))
@@ -134,7 +132,7 @@ export class RailNetwork {
     this.points .values().forEach(x=>x.drawStops(ctx))
     
     this.consists.values().forEach(x=>x.update(ctx))
-    // this.trains  .values().forEach(x=>x.update(ctx))
+    this.trains  .values().forEach(x=>x.update(ctx))
     this.bogies .values().forEach(x=>x.draw(ctx))
 
     // console.log(this.switches)

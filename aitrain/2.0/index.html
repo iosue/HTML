@@ -27,15 +27,9 @@
 				CurvedTrack,
 			} from "./classes/track.js"
 			import { RailNetwork } from "./classes/network.js"
-			import {
-        Bogie
-			} from "./classes/bogies.js"
-			import {
-				Car, Engine
-			} from "./classes/cars.js"
-			import {
-				Consist, Train
-			} from "./classes/consists.js"
+			import { Bogie } from "./classes/bogies.js"
+			import { Car, Engine } from "./classes/cars.js"
+			import { Consist, Train } from "./classes/consists.js"
 
 			const Camera = { x: 0, y: 0, z: 1, v: 10 / 9 }
 			let pause = settings.paused
@@ -234,7 +228,7 @@
 				network.connectPoints('M4','B','SCM','B')
 
 				network.addTrack(new StraightTrack('M5'))
-				network.connectPoints('M5','A','M4','A')
+				network.connectPoints('M5','B','M4','A')
 
 				network.addTrack(new CurvedTrack('SSM','L'))
 				network.connectPoints('SSM','A','SWS','B')
@@ -278,7 +272,7 @@
 				network.connectPoints('N1','B','N2','A')
 
 				network.addTrack(new StraightTrack('SEM'))
-				network.connectPoints('SEM','A','M5','B')
+				network.connectPoints('SEM','A','M5','A')
 
 				network.addTrack(new StraightTrack('M6'))
 				network.connectPoints('M6','A','SEM','B')
@@ -591,36 +585,33 @@
 			// network.addBogie(new Bogie('B1',network.tracks.get('S11'),1,'white',1.0))
 			// network.addBogie(new Bogie('B2',network.tracks.get('C1'),1,'salmon',1.2))
 
-			network.addTrain("Train1","M2",'hsl(100 50 25)')
+			network.addTrain("Train1","M2",'hsl(100 50 25)',1)
 			network.activeEngineId="Train1Engine"
 
-			network.addCar("red","N2")
-			network.addCar("yellow","N4")
-			network.addCar("blue","N6")
+			// network.addCar("red","N2")
+			// network.addCar("yellow","N4")
+			// network.addCar("blue","N6")
 			
 			network.addCar("orange","M5")
 			network.addCar("purple","M7")
-			const green = network.addCar("green","S2")
+			const green = network.addCar("green","S2",1)
+			network.consists.delete(green.consist.id)
+			network.trains.get('Train1').rearConsist.cars.set(green,1)
 			
-			network.addParkingSpot("red","N5")
-			network.addParkingSpot("yellow","S1")
-			network.addParkingSpot("blue","N1")
+			// network.addParkingSpot("red","N5")
+			// network.addParkingSpot("yellow","S1")
+			// network.addParkingSpot("blue","N1")
 			
-			network.addParkingSpot("orange","N3")
-			network.addParkingSpot("purple","M1")
-			network.addParkingSpot("green","M4")
+			// network.addParkingSpot("orange","N3")
+			// network.addParkingSpot("purple","M1")
+			// network.addParkingSpot("green","M4")
 
-			network.addParkingSpot("engine","M7")
+			// network.addParkingSpot("engine","M7")
 
-			// console.log(network.trains.get('Train1').rearConsist.cars.set(green,1))
 
-			// console.log([...network.tracks.values()].map(track=>[track.id,track.A?.id,track.B?.id]))
+			// console.log(network.trains.get('Train1').rearConsist.hitchTail)
 
-			// let hitch = new Hitch(
-			// 	new Bogie(0, 0, deg(-5), 'M2', 'A', crypto.randomUUID()),
-			// 	new Bogie(0, 0, deg(10), 'M1', 'B', crypto.randomUUID())
-			// )
-			// console.log(hitch.dist)
+			// console.log(network)
 
 			let last = performance.now()
 			function loop(now = performance.now()) {
