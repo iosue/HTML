@@ -218,7 +218,8 @@ export class Car {
 export class Engine extends Car {
   constructor() {
     super(...arguments)
-    this.A.color = "goldenrod"
+    this.A.color = "salmon"
+    this.B.color = "goldenrod"
     this.maxSpeed = 3
     this.gearForward = true
   }

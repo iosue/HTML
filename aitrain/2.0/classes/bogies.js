@@ -103,22 +103,25 @@ export class Bogie {
   }
 
 
-  followBogie(lead,dist) {
+  followBogie(lead,dist,log=false) {
     const leadDistance = lead.track.chordLengthAtPos(lead.trackPosition)
     let thisDistance = leadDistance + dist*lead.direction
     if (thisDistance > lead.track.length) {
+      log?console.log(this,lead,thisDistance,'>',lead.track.length):{}
       const adjacentTrack = lead.track.nextTrack
       if (!adjacentTrack) return "end of track"
       this.trackId = adjacentTrack.id
       this.direction = (adjacentTrack.dir==1) ? lead.direction : -lead.direction
       thisDistance = (this.direction==1) ? this.track.length - (thisDistance - lead.track.length) : thisDistance - lead.track.length
     } else if (thisDistance < 0) {
+      log?console.log(this,lead,thisDistance,'<',0):{}
       const adjacentTrack = lead.track.prevTrack
       if (!adjacentTrack) return "end of track"
       this.trackId = adjacentTrack.id
       this.direction = (adjacentTrack.dir==1) ? lead.direction : -lead.direction
       thisDistance = (this.direction==1) ? this.track.length - (0 - thisDistance) : 0 - thisDistance
     } else {
+      log?console.log(this,lead,'else'):{}
       this.trackId = lead.trackId
       this.direction = lead.direction
     }

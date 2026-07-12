@@ -43,13 +43,45 @@ export class Consist {
       const uBogie = prevCarDir>0?prevCar.B:prevCar.A
       const [vBogie,wBogie] = nextCarDir?[nextCar.A,nextCar.B]:[nextCar.B,nextCar.A]
       uBogie.hitched=vBogie.hitched=true
-      vBogie.followBogie(uBogie,-40)
-      if (wBogie.followBogie(vBogie,-60)=="end of track") {
+      let frontEnd = vBogie.followBogie(uBogie,-settings.hitchLength*2,1)
+      let backEnd = wBogie.followBogie(vBogie,-nextCar.length,1)
+      if ((frontEnd||backEnd)=="end of track") {
+        console.log(frontEnd,backEnd)
         activeEngine.speed = 0
-        return this.backPropagate(wBogie,uBogie)
+        return this.backPropagate(wBogie,vBogie)
       }
+      return [nextCar,nextCarDir]
     })
     this.draw(ctx)
+  }
+
+  backPropagate(anchor,partner) {
+    console.log(
+      anchor.id,anchor.track.id,anchor.trackPosition,
+      partner.id,partner.track.id,partner.trackPosition,
+    )
+    anchor.trackPosition = (anchor.direction>0)?0:1
+    partner.followBogie(anchor,anchor.car.length,true)
+    console.log(
+      anchor.id,anchor.track.id,anchor.trackPosition,
+      partner.id,partner.track.id,partner.trackPosition,
+    )
+
+    let carList = [...this.cars].toReversed()
+    carList.reduce(([prevCar,prevCarDir],[nextCar,nextCarDir])=>{
+      const uBogie = prevCarDir<0?prevCar.B:prevCar.A
+      const [vBogie,wBogie] = nextCarDir?[nextCar.B,nextCar.A]:[nextCar.A,nextCar.B]
+      vBogie.followBogie(uBogie,settings.hitchLength*2,1)
+      wBogie.followBogie(vBogie,nextCar.length,1)
+      console.log(
+        uBogie.id,uBogie.track.id,uBogie.trackPosition,
+        vBogie.id,vBogie.track.id,vBogie.trackPosition,
+        wBogie.id,wBogie.track.id,wBogie.trackPosition,
+      )
+      return [nextCar,nextCarDir]
+    })
+
+    // throw new Error()
   }
 
   _update(ctx) {
@@ -78,7 +110,8 @@ export class Consist {
     this.draw(ctx)
   }
 
-  backPropagate(anchor,partner) {
+  _backPropagate(anchor,partner) {
+    console.log('backPropagate')
     anchor.trackPosition = anchor.direction>0?0:1
     partner.followBogie(anchor,-anchor.car.length);
     [...this.cars.keys()].toReversed().reduce((prevCar,nextCar)=>{
@@ -86,7 +119,6 @@ export class Consist {
       let [pBogie,qBogie] = this.cars.get(nextCar)<0?[nextCar.A,nextCar.B]:[nextCar.B,nextCar.A]
       pBogie.followBogie(prevBogie,-40)
       qBogie.followBogie(pBogie,-nextCar.length)
-      return nextCar
     })
   }
 

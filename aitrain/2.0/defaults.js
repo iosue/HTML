@@ -1,4 +1,4 @@
-export const paused = 0
+export let paused = 0
 export const trackWidth = 8
 export const standardLength = 100
 export const longStraight = 115.470053837925
