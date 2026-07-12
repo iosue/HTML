@@ -146,7 +146,7 @@ export class Consist {
       if (consist != this) {
         function inRange(a,b) {
           const dx = b.x - a.x,
-          dy = a.y - a.y
+          dy = b.y - a.y
           let dist = Math.hypot(dx,dy)
           if (a.trackId==b.trackId || a.track.nextTrack?.id==b.trackId || a.track.prevTrack?.id==b.trackId) return Math.abs(dist) < 40
         }
