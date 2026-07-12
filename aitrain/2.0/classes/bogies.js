@@ -112,7 +112,8 @@ export class Bogie {
       if (!adjacentTrack) return "end of track"
       this.trackId = adjacentTrack.id
       this.direction = (adjacentTrack.dir==1) ? lead.direction : -lead.direction
-      thisDistance = (this.direction==1) ? this.track.length - (thisDistance - lead.track.length) : thisDistance - lead.track.length
+      // thisDistance = (this.direction==1) ? this.track.length - (thisDistance - lead.track.length) : thisDistance - lead.track.length
+      thisDistance = (adjacentTrack.dir==1) ? this.track.length - (thisDistance - lead.track.length) : thisDistance - lead.track.length
     } else if (thisDistance < 0) {
       log?console.log(this,lead,thisDistance,'<',0):{}
       const adjacentTrack = lead.track.prevTrack

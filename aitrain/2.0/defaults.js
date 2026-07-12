@@ -6,5 +6,5 @@ export const clickRadius = 15
 export const trackLineCap = 'none'
 export const showLabels = 1
 export const bounce = false
-export const carLength = 55
+export const carLength = 60
 export const hitchLength = 20
