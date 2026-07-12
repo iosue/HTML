@@ -42,9 +42,9 @@ export class Consist {
     carList.reduce(([prevCar,prevCarDir],[nextCar,nextCarDir])=>{
       const uBogie = prevCarDir>0?prevCar.B:prevCar.A
       const [vBogie,wBogie] = nextCarDir?[nextCar.A,nextCar.B]:[nextCar.B,nextCar.A]
-      uBogie.hitched=vBogie.hitched=true
-      let frontEnd = vBogie.followBogie(uBogie,-settings.hitchLength*2,1)
-      let backEnd = wBogie.followBogie(vBogie,-nextCar.length,1)
+      uBogie.hitched = vBogie.hitched = true
+      let frontEnd = vBogie.followBogie(uBogie,-settings.hitchLength*2)
+      let backEnd = wBogie.followBogie(vBogie,-nextCar.length)
       if ((frontEnd||backEnd)=="end of track") {
         console.log(frontEnd,backEnd)
         activeEngine.speed = 0
@@ -61,7 +61,7 @@ export class Consist {
       partner.id,partner.track.id,partner.trackPosition,
     )
     anchor.trackPosition = (anchor.direction>0)?0:1
-    partner.followBogie(anchor,anchor.car.length,true)
+    partner.followBogie(anchor,anchor.car.length)
     console.log(
       anchor.id,anchor.track.id,anchor.trackPosition,
       partner.id,partner.track.id,partner.trackPosition,
@@ -80,7 +80,6 @@ export class Consist {
       )
       return [nextCar,nextCarDir]
     })
-
     // throw new Error()
   }
 
