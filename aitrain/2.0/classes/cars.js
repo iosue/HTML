@@ -167,6 +167,7 @@ export class Car {
   // }
 
   stop() {
+    console.log("STOP")
     this.speed = 0
     // this.train.speed = 0
   }
@@ -261,7 +262,13 @@ export class Engine extends Car {
     }
     if (this.speed == 0) this.speedLock = false
     this.A.update()
-    this.B.followBogie(this.A,-this.length)
+    if (this.B.followBogie(this.A,-this.length) == "end of track") {
+      this.speed = 0
+      this.B.trackId = this.A.trackId
+      this.B.direction = this.A.direction
+      this.B.trackPosition = 0
+      this.A.trackPosition = this.A.track.positionAtDist(this.length)
+    }
   }
 
   draw(ctx) {

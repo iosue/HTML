@@ -585,17 +585,21 @@
 			// network.addBogie(new Bogie('B1',network.tracks.get('S11'),1,'white',1.0))
 			// network.addBogie(new Bogie('B2',network.tracks.get('C1'),1,'salmon',1.2))
 
-			network.addTrain("Train1","M2",'hsl(100 50 25)',1)
+			network.addTrain("Train1","M6",'hsl(100 50 25)',1)
 			network.activeEngineId="Train1Engine"
 
 			// network.addCar("red","N2")
 			// network.addCar("yellow","N4")
 			// network.addCar("blue","N6")
 			
-			// network.addCar("orange","M5")
-			// network.addCar("purple","M7")
-			// const green = network.addCar("green","S2",1)
+			// const orange = network.addCar("orange","M5")
+			// const purple = network.addCar("purple","M7")
+			const green = network.addCar("green","S4",-1)
+			// network.consists.delete(orange.consist.id)
+			// network.consists.delete(purple.consist.id)
 			// network.consists.delete(green.consist.id)
+			// network.trains.get('Train1').rearConsist.cars.set(orange,1)
+			// network.trains.get('Train1').rearConsist.cars.set(purple,1)
 			// network.trains.get('Train1').rearConsist.cars.set(green,1)
 			
 			// network.addParkingSpot("red","N5")
@@ -627,7 +631,7 @@
 				ctx.scale(scale,scale)
 				ctx.globalAlpha = 0.75
 
-				ctx.translate(-400,-200)
+				ctx.translate(-500,-200)
 
 				network.draw(ctx)
 				document.title = now
