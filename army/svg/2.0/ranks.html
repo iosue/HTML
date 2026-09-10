@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0"
+		/>
+		<title>Document</title>
+		<style>
+			grid {
+        background: grey;
+				display: grid;
+        font-size: 8px;
+				gap: 1px;
+				grid-template: auto repeat(13, 1fr) / 
+        [pay] 1fr
+        [camp1] 1fr
+        [camp2] 1fr
+        [soldier] 1fr
+        [pair] 1fr
+        [team] 1fr
+        [squad] 1fr
+        [section] 1fr
+        [platoon] 1fr
+        [century] 1fr
+        [company] 1fr
+        [battalion] 1fr
+        [regiment] 1fr
+        [cohort] 1fr;
+				margin-inline: auto;
+        padding: 1px;
+        text-align: center;
+        width: fit-content;
+        b {
+          background: white;
+          grid-row: 1;
+        }
+        div {
+          background: white;
+          color: black;
+          grid-row: -1;
+          justify-self: center;
+          width: 4rem;
+          svg {
+            margin-block: -0%;
+            scale: 1 1;
+          }
+        }
+			}
+		</style>
+	</head>
+	<body>
+		<grid>
+      <a style="grid-column:1;grid-row:1;">pay</a>
+      <b style="grid-column:span 2"><br>Boot Camp</b>
+      <b>O<br>Soldier</b>
+      <b>8<br>Pair</b>
+      <b>0<br>Team</b>
+      <b>•<br>Squad</b>
+      <b>••<br>Section</b>
+      <b>•••<br>Platoon</b>
+      <b>••••<br>Century</b>
+      <b>|<br>Company</b>
+      <b>||<br>Battalion</b>
+      <b>|||<br>Regiment</b>
+      <b>||||<br>Cohort</b>
+    </grid>
+    <script>
+
+for (let i=0;i<13;i++) {
+        document.querySelector('grid').innerHTML+=`<a style="background: white; grid-column:1">${i}<br>$${String(12*(4500+(i-1)*2500)).replace(/(...)$/,',$1')}</a>`
+      }
+
+      const ranks=[
+        { svg:"./e00x00.svg", pay:0, authority:"camp1", name:"recruit", },
+        { svg:"./e00x01.svg", pay:0, authority:"camp2", name:"trained", },
+        { svg:"./e00x02.svg", pay:1, authority:"soldier", name:"private", },
+        { svg:"./e00x03.svg", pay:"2/span 4", authority:"soldier", name:"specialist", },
+        // { svg:"./e00x04.svg", pay:4, authority:"camp", name:"private", },
+
+        { svg:"./e01x00.svg", pay:2, authority:"pair", name:"private first class", },
+        { svg:"./e01x01.svg", pay:"3/span 3", authority:"pair", name:"specialist first class", },
+        { svg:"./e01x02.svg", pay:3, authority:"team", name:"lance corporal", },
+        { svg:"./e01x03.svg", pay:"4/span 3", authority:"team", name:"weapons corporal", },
+        // { svg:"./e01x04.svg", pay:8, authority:"team/span 1", name:"", },
+
+        { svg:"./e02x00.svg", pay:4, authority:"squad", name:"corporal", },
+        { svg:"./e02x01.svg", pay:"5/span 3", authority:"squad", name:"master corporal", },
+        { svg:"./e02x02.svg", pay:5, authority:"section", name:"lance sergeant", },
+        { svg:"./e02x03.svg", pay:"6/span 2", authority:"section", name:"weapons sergeant", },
+        // { svg:"./e02x04.svg", pay:6, authority:"squad", name:"", },
+
+        { svg:"./e03x00.svg", pay:6, authority:"platoon", name:"sergeant", },
+        { svg:"./e03x01.svg", pay:"7/span 2", authority:"platoon", name:"master sergeant", },
+        { svg:"./e03x02.svg", pay:7, authority:"century", name:"quartermaster sergeant", },
+        { svg:"./e03x03.svg", pay:"8/span 2", authority:"century", name:"gunnery sergeant", },
+        // { svg:"./e03x04.svg", pay:7, authority:"", name:"", },
+
+        // { svg:"./e04x00.svg", pay:8, authority:"century2", name:"Sergeant Major", },
+        { svg:"./e04x01.svg", pay:9, authority:"company", name:"Company Sergeant Major", },
+        { svg:"./e04x02.svg", pay:10, authority:"battalion", name:"Battalion Sergeant Major", },
+        { svg:"./e04x03.svg", pay:11, authority:"regiment", name:"Regiment Sergeant Major", },
+        { svg:"./e04x04.svg", pay:12, authority:"cohort", name:"Chief Sergeant Major", },
+      ]
+
+      for (rank of ranks) {
+        const {e,x} = {
+          e:rank.svg[4],
+          x:rank.svg[7],
+        }
+        console.log(e,x)
+        let html=`
+        <div style="grid-column:${rank.authority}; grid-row:${String(rank.pay).replace(/^(\d)(.*)/,(str,q1,q2)=>Number(q1)+2+q2).replace(/^(\d)(\d)/,(str,q1,q2)=>q1>1?"1"+(Number(q2)+2):q1+''+q2)}">
+          <!--<img src="${rank.svg}"/>-->
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -10 60 60">
+            <rect x="-50%" y="-50%" width="100%" height="200%" fill="hsl(${[160,85,80,75,40][e]} 35 35)"/>
+            <g transform="scale(2.5 1) rotate(45)">
+              ${e>3?`<path d="M +07 -07 h -14 v +14 l +05 +05 v -14 h+14 z"/>`:''}
+              ${x>1?`<path d="M +02 +02 H +12 V +05 H +05 V+12 H+02 Z"/>`:''}
+              ${x%2?`<path d="M +07 +07 h +05 v +05 h -05 Z"/>`:''}
+              ${e>0?`<path d="M +00 +14 h +14 v -14 l +05 +05 v +14 h-14 z"/>`:''}
+              ${e>1?`<path d="M +07 +21 h +14 v -14 l +05 +05 v +14 h-14 z"/>`:''}
+              ${e>2?`<path d="M +14 +28 h +14 v -14 l +05 +05 v +14 h-14 z"/>`:''}
+            </g>
+          </svg>
+          <a>${rank.name}</a>
+        </div>`
+        document.querySelector('grid').innerHTML+=html
+      }
+
+
+
+      let test="3/span 2"
+      console.log(
+        test,
+      String(test).replace(/^(\d)(.*)/,(str,q1,q2)=>Number(q1)+2+q2)
+      )
+    </script>
+		<!-- <script>
+			const ranks = [
+        // ["Cadet", "Specialist", "Master Private", "Chief Private"],
+        // ["Private", "Specialist", "Master Private", "Chief Private"],
+				["Lance Corporal", "Corporal", "Master Corporal", "Chief Corporal"],
+				["Corporal", "Special Corporal", "Master Corporal", "Chief Corporal"],
+				["Sergeant", "Sergeant Major", "Master Sergeant Major", "Chief Sergeant Major"],
+				["Sergeant Major", "Cadet", "Master Cadet", "Chief Cadet"],
+        ["Private", "Specialist", "Master Private", "Chief Private"],
+			]
+			for (let x = 0; x < 5; x++) {
+				for (let e = 0; e < 5; e++) {
+          if (e==0&&x==0) continue
+					let div = document.createElement("div")
+					let img = document.createElement("img")
+					img.src = `./e${String(e).padStart(2, 0)}x${String(x).padStart(2, 0)}.svg`
+					div.style.setProperty("grid-column", 1*e + x + 4)
+          let svg=`
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -10 60 60">
+            <rect x="-50%" y="-50%" width="100%" height="200%" fill="hsl(${[160,85,80,75,40][e]} 35 35)"/>
+            <g transform="scale(2.5 1) rotate(45)">
+              ${e>3?`<path d="M +07 -07 h -14 v +14 l +05 +05 v -14 h+14 z"/>`:''}
+              ${x>=4||x>3?`<path d="M +00 +00 h +05 v +05 h -05 v -05 Z"/>`:''}
+              ${x==2||x>2?`<path d="M +00 +07 h +05 v +05 h -05 v -05 Z"/>`:''}
+              ${x==2||x>2?`<path d="M +07 +00 h +05 v +05 h -05 v -05 Z"/>`:''}
+              ${x==1||x>2?`<path d="M +07 +07 h +05 v +05 h -05 v -05 Z"/>`:''}
+              ${e>0?`<path d="M +00 +14 h +14 v -14 l +05 +05 v +14 h-14 z"/>`:''}
+              ${e>1?`<path d="M +07 +21 h +14 v -14 l +05 +05 v +14 h-14 z"/>`:''}
+              ${e>2?`<path d="M +14 +28 h +14 v -14 l +05 +05 v +14 h-14 z"/>`:''}
+            </g>
+          </svg>`
+					div.innerHTML+=svg
+					div.innerHTML += `${ranks[e][x]}`
+					document.querySelector("grid").appendChild(div)
+				}
+			}
+		</script> -->
+	</body>
+</html>

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hex Pathing</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    body {
+      background: black;
+    }
+    canvas {
+      position: fixed;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <script>
+
+    const settings={
+      layers:[
+        {name:"bmp"},
+        {name:"map",live:true,scale:true},
+        {name:"pth",live:true,scale:true},
+        {name:"gui",live:true,}        
+      ],
+      hexTile:{
+        w:100,
+        h:100/Math.cos(Math.PI/6)
+      },
+      hexMap:{
+        I:Math.floor(2*innerWidth/101-1),
+        J:Math.floor(innerHeight/(100/Math.cos(Math.PI/6)*3/4))
+      }
+    }
+
+    settings.layers[0].width=(settings.hexMap.I*2+2)*settings.hexTile.w/4
+    settings.layers[0].height=(settings.hexMap.J*3+1)*settings.hexTile.h/4
+
+    const CVS={},CTX={},M={b:{}},C={
+      x:settings.layers[0].width/2-settings.hexTile.w/2,
+      y:settings.layers[0].height/2-settings.hexTile.h/2,
+      z:1,v:10/9}
+
+    for (let layer of settings.layers) {
+      if (layer.live) {
+        CVS[layer.name] = document.createElement('canvas')
+        CVS[layer.name].height = innerHeight
+        CVS[layer.name].width = innerWidth
+        CVS[layer.name].id = layer.name
+        document.body.appendChild(CVS[layer.name])
+      } else {
+        CVS[layer.name] = new OffscreenCanvas(layer.width,layer.height)
+      }
+      CTX[layer.name] = CVS[layer.name].getContext('2d')
+    }
+
+    const map2d=[]
+    let flatMap
+
+    function createMap() {
+      CTX['bmp'].fillRect(0,0,2000,2000)
+      CTX['bmp'].translate(settings.hexTile.w/2,settings.hexTile.h/2)
+      // let map2d=[]
+      for (let j=0;j<settings.hexMap.J;j++) {
+        map2d[j] = []
+        for (let i=j%2;i<settings.hexMap.I;i+=2) {
+          let hex=new HexTile(i,j,map2d)
+          map2d[j][i] = hex
+          hex.draw(CTX['bmp'])
+          hex.labelEdges(CTX['bmp'])
+        }
+      }
+      flatMap = map2d.flat()
+
+      let foundPath=findPath(map2d[0][0],map2d[4][16])
+
+      let ctx = CTX['bmp']
+      ctx.save()
+      ctx.fillStyle="white"
+      ctx.strokeStyle="blue"
+      ctx.textAlign="center"
+      ctx.textBaseline="bottom"
+      foundPath.p.entries().forEach(([q,step])=>{
+        let {tile:p,dir} = step,
+            rid={nw:"se",ne:"sw",dw:"de",de:"dw",sw:"ne",se:"nw"}[dir]
+        console.log(p,q,dir)
+        ctx.beginPath()
+        ctx.moveTo(p.x,p.y)
+        ctx.lineTo(q.x,q.y)
+        ctx.stroke()
+        ctx.fillText(`${p.edges[dir].leave+q.edges[rid].enter}`,(p.x+q.x)/2,(p.y+q.y)/2)
+      })
+      ctx.restore()
+
+      ctx.save()
+      ctx.fillStyle="goldenrod"
+      ctx.strokeStyle="white"
+      ctx.textAlign="center"
+      ctx.textBaseline="bottom"
+      foundPath.path.reduce((p,q)=>{
+        let {tile,dir}=p,
+            rid={nw:"se",ne:"sw",dw:"de",de:"dw",sw:"ne",se:"nw"}[dir]
+        ctx.beginPath()
+        ctx.moveTo(p.tile.x,p.tile.y)
+        ctx.lineTo(q.tile.x,q.tile.y)
+        ctx.stroke()
+        ctx.fillText(`${p.tile.edges[dir].leave+q.tile.edges[rid].enter}`,(p.tile.x+q.tile.x)/2,(p.tile.y+q.tile.y)/2)
+        return q
+      })
+      ctx.restore()
+
+      refresh()
+    }
+
+    onload=createMap
+
+    function refresh() {
+      for (let layer of settings.layers) {
+        if (layer.live) {
+          CVS[layer.name].width = innerWidth
+          CVS[layer.name].height = innerHeight
+          if (layer.scale) {
+            CTX[layer.name].translate(innerWidth/2,innerHeight/2)
+            CTX[layer.name].scale(1/C.z,1/C.z)
+            CTX[layer.name].translate(-C.x,-C.y)
+          }
+        }
+      }
+      CTX['map'].drawImage(CVS['bmp'],-settings.hexTile.w/2,-settings.hexTile.h/2)
+      flatMap.forEach(hex=>hex.checkHover(CTX['map']))
+      requestAnimationFrame(refresh)
+    }
+
+    class HexTile {
+      constructor(i,j,map2d,ops) {
+        this.j = j
+        this.i = i
+        this.map2d = map2d
+        for (let s in settings.hexTile)
+          this[s] = settings.hexTile[s]
+        for (let op in ops)
+          this[op] = ops[op]
+        this.edges = []
+        for (let e of ['de','se','sw','dw','nw','ne']) {
+          this.edges[e]={
+            enter: Math.ceil(20+Math.random()*10),
+            leave: Math.ceil(20+Math.random()*10)
+          }
+        }
+      }
+      get x() {return this.i*this.w/2}
+      get y() {return this.j*this.h*3/4}
+      get path() {
+        let ctx=new Path2D()
+          ctx.lineTo(this.x-this.w/2,this.y-this.h/4)
+          ctx.lineTo(this.x+this.w*0,this.y-this.h/2)
+          ctx.lineTo(this.x+this.w/2,this.y-this.h/4)
+          ctx.lineTo(this.x+this.w/2,this.y+this.h/4)
+          ctx.lineTo(this.x+this.w*0,this.y+this.h/2)
+          ctx.lineTo(this.x-this.w/2,this.y+this.h/4)
+          ctx.closePath()
+        return ctx
+      }
+      get neighbours() {
+        let neighbors = {},
+            offsets = {
+              de:[+2, 0],
+              se:[+1,+1],
+              sw:[-1,+1],
+              dw:[-2, 0],
+              nw:[-1,-1],
+              ne:[+1,-1],
+            }
+        for (const dir in offsets) {
+          let neighbour = this.map2d
+                [this.j+offsets[dir][1]]?.
+                [this.i+offsets[dir][0]]
+          neighbors[dir] = neighbour
+        }
+        return neighbors
+      }
+      checkHover(ctx) {
+        if (ctx.isPointInPath(this.path,M.x,M.y)) {
+          // this.fill(ctx)
+          ctx.save()
+          ctx.globalAlpha=0.5
+          // Object.values(this.neighbours).forEach(n=>n?.fill(ctx))
+          this.labelWeights(ctx)
+          ctx.restore()
+        }
+      }
+      draw(ctx) {
+        ctx.save()
+        ctx.clip(this.path)
+        ctx.strokeStyle='cyan'
+        ctx.stroke(this.path)
+        ctx.textAlign='center'
+        ctx.textBaseline='middle'
+        ctx.fillStyle='salmon'
+        ctx.fillText(`${this.j}:${this.i}`,this.x,this.y)
+        ctx.restore()
+      }
+      labelEdges(ctx) {
+        ctx.save()
+        ctx.globalAlpha = 0.25
+        ctx.translate(this.x,this.y)
+        ctx.strokeStyle='#cf08'
+        for (let d=0;d<6;d++) {
+          ctx.beginPath()
+          ctx.moveTo(this.w*1/5,-this.h/40)
+          ctx.arc(this.w*7/8/2,-this.h/40,2,0,Math.PI*2)
+          ctx.stroke()
+          ctx.rotate(Math.PI/3)
+        }
+        ctx.strokeStyle='#fc08'
+        for (let d=0;d<6;d++) {
+          ctx.beginPath()
+          ctx.moveTo(this.w*7/8/2,+this.h/40)
+          ctx.arc(this.w*1/5,+this.h/40,2,0,Math.PI*2)
+          ctx.stroke()
+          ctx.rotate(Math.PI/3)
+        }
+        ctx.textAlign="center"
+        ctx.textBaseline="middle"
+        for (let d=0;d<6;d++) {
+          ctx.save()
+          ctx.translate(this.w*3/10,-10)
+          ctx.rotate(-d*Math.PI/3)
+          ctx.fillStyle='#cf08'
+          ctx.fillText(this.edges[['de','se','sw','dw','nw','ne'][d]].leave,0,0)
+          ctx.restore()
+          ctx.rotate(Math.PI/3)
+        }
+        for (let d=0;d<6;d++) {
+          ctx.save()
+          ctx.translate(this.w*3/10,+10)
+          ctx.rotate(-d*Math.PI/3)
+          ctx.fillStyle='#fc08'
+          ctx.fillText(this.edges[['de','se','sw','dw','nw','ne'][d]].enter,0,0)
+          ctx.restore()
+          ctx.rotate(Math.PI/3)
+        }
+        ctx.restore()
+      }
+      labelWeights(ctx) {
+        ctx.save()
+        ctx.globalAlpha = 1
+        ctx.translate(this.x,this.y)
+        ctx.scale(1.65,1.65)
+        ctx.strokeStyle='#cf08'
+        function getWeight(me,n,heading) {
+          const dirs = ['de','se','sw','dw','nw','ne'],
+                d = dirs[n],
+                b = dirs[(n+3)%6],
+                p = me,
+                q = p.neighbours[d]
+          let weight_to_leave_this = p?.edges[d]?.leave ?? Infinity,
+              weight_to_enter_that = q?.edges[b]?.enter ?? Infinity,
+              weight_to_leave_that = q?.edges[b]?.leave ?? Infinity,
+              weight_to_enter_this = p?.edges[d]?.enter ?? Infinity
+          if (heading=="enter")
+            return `${weight_to_leave_that+weight_to_enter_this}`
+            return `${weight_to_leave_this+weight_to_enter_that}`
+        }
+        for (let d=0;d<6;d++) {
+          ctx.beginPath()
+          ctx.moveTo(this.w*1/5,-this.h/40)
+          ctx.arc(this.w*7/8/2,-this.h/40,2,0,Math.PI*2)
+          ctx.stroke()
+          ctx.rotate(Math.PI/3)
+        }
+        ctx.strokeStyle='#fc08'
+        for (let d=0;d<6;d++) {
+          ctx.beginPath()
+          ctx.moveTo(this.w*7/8/2,+this.h/40)
+          ctx.arc(this.w*1/5,+this.h/40,2,0,Math.PI*2)
+          ctx.stroke()
+          ctx.rotate(Math.PI/3)
+        }
+        ctx.textAlign="center"
+        ctx.textBaseline="middle"
+        for (let d=0;d<6;d++) {
+          ctx.save()
+          ctx.translate(this.w*3/10,-10)
+          ctx.rotate(-d*Math.PI/3)
+          ctx.fillStyle='#cf08'
+          ctx.fillText(getWeight(this,d,'leave'),0,0)
+          ctx.restore()
+          ctx.rotate(Math.PI/3)
+        }
+        for (let d=0;d<6;d++) {
+          ctx.save()
+          ctx.translate(this.w*3/10,+10)
+          ctx.rotate(-d*Math.PI/3)
+          ctx.fillStyle='#fc08'
+          ctx.fillText(getWeight(this,d,'enter'),0,0)
+          ctx.restore()
+          ctx.rotate(Math.PI/3)
+        }
+        ctx.restore()
+      }
+      fill(ctx) {
+        ctx.save()
+        ctx.clip(this.path)
+        ctx.fillStyle='hsl(0 0 50/0.5)'
+        ctx.fill(this.path)
+        ctx.textAlign='center'
+        ctx.textBaseline='middle'
+        ctx.fillStyle='black'
+        ctx.fillText(`${this.j}:${this.i}`,this.x,this.y)
+        ctx.restore()
+      }
+    }
+
+
+    function findPath(S,G,
+        d = (a,b,d,p={nw:"se",ne:"sw",dw:"de",de:"dw",sw:"ne",se:"nw"}[d])=>a.edges[d].leave+b.edges[p].enter,
+        h = (a,b=G)=>Math.hypot(a.x-b.x,a.y-b.y),
+      ) {
+      const f=new Map([[S,h(S)]]),
+            g=new Map([[S,0]]),
+            o=[S], p=new Map(),
+            trace=(p,q,d)=>{
+
+              let ctx=CTX['bmp']
+              ctx.save()
+              ctx.fillStyle='cyan'
+              f.entries().forEach(([tile,f_score])=>{
+                ctx.fillText(f_score.toFixed(),tile.x,tile.y)
+              })
+              ctx.restore()
+
+              const s=[{tile:q}]
+              while (p.get(q)) {
+                let pq=q
+                d=p.get(q).dir
+                q=p.get(q).tile
+                s.unshift({tile:q,dir:d})
+                // console.log(pq,q,d)
+              }
+              return {path:s,p}
+            }
+      while (1&&o.length) {
+        let {b:X,i} = o.reduce((a,b,i)=>{
+          const v=f.get(b)
+          if ((v<a.v)||(v==a.v&&Math.random()<0.5))
+          return {b,v,i}
+          return a
+        }, {b:null, v:Infinity, i:-1})
+        if (X==G) return trace(p,X)
+        o.splice(i,1)
+        for (const dir in X.neighbours) {
+          const N = X.neighbours[dir]
+          if (N) {
+            let t = g.get(X)+d(X,N,dir)
+            if (t < (g.get(N)??Infinity)) {
+              p.set(N,{tile:X,dir})
+              g.set(N,t)
+              f.set(N,t+h(N))
+              o.includes(N) || o.push(N)
+            }
+          }
+        }
+      }
+      return console.error('no path found from',S,'to',G)
+    }  
+
+
+
+    addEventListener('contextmenu',e=>{
+      if (!e.ctrlKey) e.preventDefault()
+    })
+    addEventListener('mousemove',e=>{
+      M.x=e.x
+      M.y=e.y
+      if (M.b[1]) {
+        C.x-=e.movementX*C.z
+        C.y-=e.movementY*C.z
+      }
+    })
+    addEventListener('mousedown',e=>M.b[e.button]=true)
+    addEventListener('mouseup',e=>delete M.b[e.button])
+    addEventListener('wheel',e=>{
+      C.x+=(e.x-innerWidth/2)*C.z
+      C.y+=(e.y-innerHeight/2)*C.z
+      C.z*=C.v**Math.sign(e.deltaY)
+      C.y-=(e.y-innerHeight/2)*C.z
+      C.x-=(e.x-innerWidth/2)*C.z
+    })
+  </script>
+
+</body>
+</html>

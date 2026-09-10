@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    div {
+      &.team {
+        border: 1px solid #fff8;
+        /* border-radius: 50%; */
+        /* aspect-ratio: 1; */
+        display: inline grid;
+        gap: 0.125rlh;
+        padding: 0.25rlh;
+        &:not(&.plt) {
+          grid-template-columns: repeat(2,auto);
+        }
+        &.plt {
+          grid-template-columns: repeat(1,auto);
+          &>* {
+            grid-column: span 2;
+          }
+        }
+      }
+      &.sdr {
+        border: 1px solid #fff4;
+        /* border-radius: 50%; */
+        /* aspect-ratio: 1; */
+        /* height: 1rlh; */
+        text-align: center;
+        justify-self: center;
+        &:first-child {
+          grid-column: span 2;
+        }
+      }
+    }
+
+
+    .sdr {
+      border: 1px solid;
+    }
+  </style>
+</head>
+<body>
+  <script>
+
+    onload=()=>{
+      document.body.innerHTML+=new Fireteam().markup
+    }
+  
+    class Formation {
+      constructor(id="") {
+        this.id = String(id)
+        this.subs=[new Soldier(this.id+0)]
+        console.log(this.id)
+        if (this.id.length<4) {
+          this.subs.push(
+            new Formation(this.id+1),
+            new Formation(this.id+2),
+          )
+        }
+      }
+      get markup() {
+        return `<div class="${['plt','sec','sqd','ftm','sdr'][this.id.length-0]} team" title="${this.id}">
+          ${this.subs.map(sub=>sub.markup).join('')}
+          </div>`
+      }
+    }
+
+    class Soldier {
+      constructor(id) {
+        this.id = id
+        this.type=['plt','sec','sqd','ftm','sdr'][this.id.length-1]
+      }
+      get markup() {
+        return `<div class="${this.type} sdr">
+            <a>${this.type}</a> ${this.id} ${this.type=='sdr'?'':'leader'}
+          </div>`
+      }
+    }
+
+    class Fireteam extends Formation {
+      constructor() {
+        super()
+        this.subs=[
+          new Soldier(this.id+0),
+          new Soldier(this.id+1),
+          new Soldier(this.id+2),
+          new Soldier(this.id+3),
+        ]
+      }
+    }
+
+    class Squad extends Formation {
+      constructor() {
+        super()
+        this.subs=[
+          new Soldier(this.id+0),
+          new Soldier(this.id+1),
+          new Soldier(this.id+2),
+          new Soldier(this.id+3),
+        ]
+      }
+    }
+  </script>
+</body>
+</html>

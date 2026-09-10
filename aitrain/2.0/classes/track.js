@@ -390,13 +390,12 @@ export class CurvedTrack extends Track {
     this.A.a = normalizeAngle(this.B.a - this.sweep)
   }
 
-chordLengthAtPos(t=0) {
-  return 2*this.radius*Math.sin(t*Math.abs(this.sweep)/2)
-}
-positionAtDist(d=0) {
-  return 2*Math.asin(d/2/this.radius)/Math.abs(this.sweep)
-}
-
+  chordLengthAtPos(t=0) {
+    return 2*this.radius*Math.sin(t*Math.abs(this.sweep)/2)
+  }
+  positionAtDist(d=0) {
+    return 2*Math.asin(d/2/this.radius)/Math.abs(this.sweep)
+  }
 
   draw(ctx) {
     ctx.save()

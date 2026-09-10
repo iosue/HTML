@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>sprites</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    canvas {
+      position: fixed;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    const CVS={},CTX={},
+          canvasLayers=[
+            {
+              name:'bmp',
+              width:1000,
+              height:1000
+            },
+            {
+              name:'sprites',
+              width:1000,
+              height:1000
+            },
+            {
+              name:'map',
+              screen:true,
+              scale:true,
+            },
+            {
+              name:'pcs',
+              screen:true,
+              scale:true,
+            },
+            {
+              name:'gui',
+              screen:true,
+              scale:false,
+            },
+          ]
+    for (const layer of canvasLayers) {
+      if (layer.screen) {
+        CVS[layer.name] = document.createElement('canvas')
+        CVS[layer.name].id = layer.name
+        CVS[layer.name].width = innerWidth
+        CVS[layer.name].height = innerHeight
+        document.body.appendChild(CVS[layer.name])
+      } else {
+        CVS[layer.name] = new OffscreenCanvas(layer.width,layer.height)
+      }
+      CTX[layer.name] = CVS[layer.name].getContext('2d')
+    }
+
+    let Sprites
+    onload = preload
+
+    async function preload() {
+      Sprites = await(await fetch('./sprites.json')).json()
+      for (const sheet in Sprites.sheets) {
+        Sprites.sheets[sheet].canvasWidth = 0
+        Sprites.sheets[sheet].canvasHeight = 0
+        for (const pose in Sprites.sheets[sheet].poses) {
+          Sprites.sheets[sheet].poses[pose].sprites=[]
+          for (let i=0;i<Sprites.sheets[sheet].poses[pose].n;i++) {
+            let img=document.createElement('img')
+            img.src=`./sprites/Top_Down_Survivor/Top_Down_Survivor/${sheet}/${pose}/survivor-${pose}_${sheet}_${i}.png`
+            Sprites.sheets[sheet].poses[pose].sprites.push(img)
+          }
+          Sprites.sheets[sheet].canvasWidth = Math.max(
+            Sprites.sheets[sheet].canvasWidth,
+            Sprites.sheets[sheet].poses[pose].n*
+            Sprites.sheets[sheet].poses[pose].width
+          )
+          Sprites.sheets[sheet].poses[pose].canvasY = Sprites.sheets[sheet].canvasHeight
+          Sprites.sheets[sheet].canvasHeight += Sprites.sheets[sheet].poses[pose].height
+        }
+      }
+      createSpriteSheets()
+    }
+
+    function createSpriteSheets(){
+      console.log(Sprites)
+      CVS.sprites={}
+      CTX.sprites={}
+      for (const sheet in Sprites.sheets) {
+        CVS.sprites[sheet] = new OffscreenCanvas(Sprites.sheets[sheet].canvasWidth,Sprites.sheets[sheet].canvasHeight)
+        CTX.sprites[sheet] = CVS.sprites[sheet].getContext('2d')
+        for (const pose in Sprites.sheets[sheet].poses) {
+          for (let i=0;i<Sprites.sheets[sheet].poses[pose].n;i++) {
+            CTX.sprites[sheet].drawImage(
+              Sprites.sheets[sheet].poses[pose].sprites[i],
+              Sprites.sheets[sheet].poses[pose].width*i,
+              Sprites.sheets[sheet].poses[pose].canvasY
+            )
+          }
+        }
+      }
+      refresh()
+    }
+
+
+    function refresh(frame=0) {
+      for (const layer of canvasLayers) {
+        if (layer.screen) {
+          CVS[layer.name].width = innerWidth
+          CVS[layer.name].height = innerHeight
+        }
+        if (layer.scale) {
+          CTX[layer.name].scale(1,1)
+          CTX[layer.name].globalAlpha=0.25
+        }
+      }
+
+      CTX['pcs'].drawImage(CVS.sprites['rifle'],0,0)
+
+      // let weapon='feet',
+      //     mode=Object.keys(Sprites[weapon])[0]
+
+      // let sprite=Sprites[weapon][mode],
+      //     f = frame%sprite.list.length,
+      //     sw = sprite.w,
+      //     sh = sprite.h,
+      //     sx = sprite.x+f*sw,
+      //     sy = sprite.y,
+      //     dx = innerWidth/2
+      //     dy = innerHeight/2
+      // CTX['pcs'].drawImage(CVS['sprites'][weapon],sx,sy,sw,sh,dx-sw/2,dy-sh/2,sw,sh)
+
+      //     weapon='rifle'
+      //     mode=Object.keys(Sprites[weapon])[0]
+
+      //     sprite=Sprites[weapon][mode]
+      //     f = frame%sprite.list.length
+      //     sw = sprite.w
+      //     sh = sprite.h
+      //     sx = sprite.x+f*sw
+      //     sy = sprite.y
+      //     dx = innerWidth/2
+      //     dy = innerHeight/2
+      // CTX['pcs'].drawImage(CVS['sprites'][weapon],sx,sy,sw,sh,dx-sw/2,dy-sh/2,sw,sh)
+
+      // CTX.gui.drawImage(CVS['sprites'].feet,0,0)
+
+      let fps=18
+      setTimeout(()=>refresh(++frame),1000/fps)
+      // requestAnimationFrame(()=>refresh(++frame))
+    }
+  </script>
+</body>
+</html>

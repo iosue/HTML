@@ -1,6 +1,7 @@
 import { deg } from '../helpers.js'
 import * as settings from '../defaults.js'
 import { Car, Engine } from './cars.js'
+import { Consist, Train } from './consists.js'
 
 export class Bogie {
   constructor(network, id, pos, carId, trackId, dir=1, color='white', t=0, speed=1) {
@@ -149,7 +150,7 @@ export class Bogie {
       if (this.position=="B") ctx.rotate(Math.PI)
 
       // if (this.direction==-1) ctx.rotate(Math.PI)
-      // if (this.car.direction==-1) ctx.rotate(Math.PI)
+      if (this.car.direction==-1) ctx.rotate(Math.PI)
 
       ctx.save()
         ctx.beginPath()
@@ -165,23 +166,74 @@ export class Bogie {
           ctx.lineWidth = 2
           ctx.strokeStyle = "#ccc"
         ctx.stroke()
-      ctx.restore()
+        ctx.restore()
+        // ctx.translate(0,30)
+        // ctx.fillText(`${this.direction}:${this.car.direction}`,0,0)
 
     ctx.restore()
   }
 }
 
-// export class Hitch extends Car {
-//   constructor(bogieA,bogieB) {
-//     this.A = bogieA
-//     this.B = bogieB
-//   }
-//   get dist() {
-//     let theta = this.B.a - this.A.a
-//     let h = settings.hitchLength
-//     let A = Math.sin(theta)
-//     let B = Math.cos(theta)
-//     let l = h * Math.hypot(A,B+1)
-//     return l
-//   }
-// }
+export class Coupling {
+  constructor(id,bogieA,bogieB,consist) {
+    this.id = id
+    this.bogieA = bogieA
+    this.bogieB = bogieB
+    this.consist = consist
+    this.network = consist.network
+  }
+  get center() {
+    return {
+      x:(this.bogieA.x+this.bogieB.x)/2,
+      y:(this.bogieA.y+this.bogieB.y)/2,
+    }
+  }
+  draw(ctx) {
+    if (this.network.hoveredCoupling == this.id) {
+      ctx.save()
+      ctx.beginPath()
+      ctx.arc(this.center.x,this.center.y,settings.clickRadius,0,Math.PI*2)
+      ctx.lineWidth = 4
+      ctx.strokeStyle="salmon"
+      ctx.stroke()
+      ctx.restore()
+    }
+  }
+
+          hitch(consist,itsEnd) {
+            console.log(this,this.trainConsist,consist,itsEnd)
+            let carList = [...consist.cars]
+            let backward = false
+            if (itsEnd=="B") {
+              carList.reverse()
+              backward = true
+            }
+            let id=performance.now()
+            this.network.couplings.set(
+              id,
+              new Coupling(id,this.hitchTail,consist[itsEnd=='A'?'hitchHead':'hitchTail'],this.network)
+            )
+            // console.log(this.network.couplings)
+            // let backward=this.hitchTail.position==consist[`hitch${itsEnd}`].position;
+            // console.log(consist,carList)
+            ;[...carList].forEach(([car,dir])=>this.cars.set(car,backward?-dir:dir))
+            this.network.consists.delete(consist.id)
+          }
+
+  unhitch() {
+    let oldConsist = new Consist(this.consist.network,this.consist.id),
+        newConsistId = 'c'+performance.now(),
+        newConsist = new Consist(this.consist.network,newConsistId),
+        target = oldConsist
+    for (const [car,dir] of this.consist.cars) {
+      target.cars.set(car,dir)
+      if (car == this.bogieA.car) target=newConsist
+    }
+
+    this.consist.cars = oldConsist.cars
+    this.network.consists.set(newConsistId,newConsist)
+
+    this.bogieA.hitched = this.bogieB.hitched = false
+    this.network.couplings.delete(this.id)
+  }
+}

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -10 60 60">
+  <rect x="-50%" y="-50%" width="100%" height="200%" fill="hsl(80 35 35)"/>
+  <g transform=" scale(2.5 1)rotate(45)">
+    <!-- <path d="M +07 -07 h -14 v +14 l +05 +05 v -14 h+14 z"/> -->
+    <!-- <path d="M +00 +00 h +05 v +05 h -05 v -05 Z"/> -->
+    <!-- <path d="M +00 +07 h +05 v +05 h -05 v -05 Z"/> -->
+    <!-- <path d="M +07 +00 h +05 v +05 h -05 v -05 Z"/> -->
+    <path d="M +07 +07 h +05 v +05 h -05 v -05 Z"/>
+    <path d="M +00 +14 h +14 v -14 l +05 +05 v +14 h-14 z"/>
+    <path d="M +07 +21 h +14 v -14 l +05 +05 v +14 h-14 z"/>
+    <!-- <path d="M +14 +28 h +14 v -14 l +05 +05 v +14 h-14 z"/> -->
+  </g>
+</svg>

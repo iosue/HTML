@@ -10,6 +10,7 @@ export class RailNetwork {
     this.switches = new Map()
     this.bogies = new Map()
     this.hitches = new Map()
+    this.couplings = new Map()
     this.cars = new Map()
     this.engines = new Map()
     this.trains = new Map()
@@ -64,6 +65,11 @@ export class RailNetwork {
     const train = new Train(this,id,engine,rearConsist,foreConsist)
     train.network = this
     this.trains.set(train.id,train)
+  }
+
+  unHitch(couplingId) {
+    const coupling=this.couplings.get(couplingId)
+    console.log(couplingId,coupling)
   }
 
   connectPoints(track1,track1end,track2,track2end) {
@@ -134,6 +140,8 @@ export class RailNetwork {
     this.consists.values().forEach(x=>x.update(ctx))
     this.trains  .values().forEach(x=>x.update(ctx))
     this.bogies .values().forEach(x=>x.draw(ctx))
+
+    this.couplings.values().forEach(x=>x.draw(ctx))
 
     // console.log(this.switches)
   }
