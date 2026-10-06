@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>aiming</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    canvas {
+      position: fixed;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <script>
+    const Game={
+      settings:{
+        map:{
+          I:16,
+          J:12,
+        },
+        hex:{
+          width:50,
+          height:50/Math.cos(Math.PI/6)
+        }
+      },
+      layers:[
+        {name:"bmp",static:true},
+        {name:"map",scale:true},
+        {name:"pcs",scale:true},
+        {name:"gui"},
+      ]
+    }, 
+    CVS = {}, CTX = {}, 
+    M = {
+      x:0,
+      y:0,
+      B:{}
+    }
+    C = {
+      v:10/9,
+      x:(Game.settings.map.I-1/2)*(Game.settings.hex.width*4/4)/2,
+      y:(Game.settings.map.J-2/2)*(Game.settings.hex.height*3/4)/2,
+      z:1
+    }
+
+    Game.settings.map.width = (Game.settings.map.I+1/2)*Game.settings.hex.width
+    Game.settings.map.height = (((Game.settings.map.J-1)*3/4)+1)*Game.settings.hex.height
+
+
+    addEventListener('mousemove',e=>{
+      M.x=e.x; M.y=e.y
+      if (M.B[1]) {
+        C.x -= e.movementX/C.z
+        C.y -= e.movementY/C.z
+      }
+    })
+    addEventListener('mousedown',e=>{ M.B[e.button] = true })
+    addEventListener('mouseup',  e=>{ delete M.B[e.button] })
+    addEventListener('wheel',e=>{
+      C.x+=(M.x-innerWidth/2)/C.z
+      C.y+=(M.y-innerHeight/2)/C.z
+      C.z/=C.v**Math.sign(e.deltaY)
+      C.y-=(M.y-innerHeight/2)/C.z
+      C.x-=(M.x-innerWidth/2)/C.z
+    })
+
+
+    for (const layer of Game.layers) {
+      if (layer.static) {
+        CVS[layer.name] = new OffscreenCanvas(Game.settings.map.width,Game.settings.map.height)
+      } else {
+        CVS[layer.name] = document.createElement('canvas')
+        CVS[layer.name].id = layer.name
+        document.body.appendChild(CVS[layer.name])
+      }
+      CTX[layer.name] = CVS[layer.name].getContext('2d')
+    }
+
+    function createMap() {
+      const ctx=CTX['bmp']
+      ctx.font="10px consolas"
+      ctx.textAlign="center"
+      ctx.textBaseline="middle"
+      ctx.fillRect(0,0,1000,1000)
+      ctx.translate(Game.settings.hex.width/2,Game.settings.hex.height/2)
+      Game.mapData??=[]
+      for (let i=0;i<Game.settings.map.I;i++) {
+        Game.mapData[i]??=[]
+        for (let j=0;j<Game.settings.map.J;j++) {
+          Game.mapData[i][j]??=new Hex(i,j,Math.random()<.1).create()
+        }
+      }
+      Game.tile={selected:Game.mapData[4][5]}
+      delete Game.tile.selected.k
+      refresh()
+    }
+
+    function refresh() {
+      document.body.style.setProperty('cursor','default')
+      for (const layer of Game.layers) {
+        if (!layer.static) {
+          CVS[layer.name].width = innerWidth
+          CVS[layer.name].height = innerHeight
+          CTX[layer.name].font="10px consolas"
+          CTX[layer.name].lineCap="round"
+          CTX[layer.name].lineJoin="round"
+          CTX[layer.name].textAlign="center"
+          CTX[layer.name].textBaseline="middle"
+          if (layer.scale) {
+            CTX[layer.name].translate(innerWidth/2,innerHeight/2)
+            CTX[layer.name].scale(C.z,C.z)
+            CTX[layer.name].translate(-C.x,-C.y)
+          }
+        }
+      }
+      CTX['map'].drawImage(CVS['bmp'],-Game.settings.hex.width/2,-Game.settings.hex.height/2)
+      for (let i=0;i<Game.settings.map.I;i++)
+      for (let j=0;j<Game.settings.map.J;j++)
+        Game.mapData[i][j].checkHover(CTX['map'])
+      requestAnimationFrame(refresh)
+    }
+
+    onload=createMap
+
+    class Hex {
+      constructor(i,j,k) {
+        this.i = i
+        this.j = j
+        this.k = k
+        this.w = Game.settings.hex.width
+        this.h = Game.settings.hex.height
+      }
+      get x() {
+        return (this.i+this.j%2/2)*Game.settings.hex.width
+      }
+      get y() {
+        return this.j*Game.settings.hex.height*3/4
+      }
+      create() {
+        this.draw(CTX['bmp'])
+        return this
+      }
+      get corners() {
+        return [
+          {x:this.x+this.w/2, y:this.y-this.h/4},
+          {x:this.x+this.w/2, y:this.y+this.h/4},
+          {x:this.x+this.w*0, y:this.y+this.h/2},
+          {x:this.x-this.w/2, y:this.y+this.h/4},
+          {x:this.x-this.w/2, y:this.y-this.h/4},
+          {x:this.x+this.w*0, y:this.y-this.h/2}
+        ]
+      }
+      get path() {
+        const ctx = new Path2D()
+        for (const v of this.corners)
+          ctx.lineTo(v.x,v.y)
+        ctx.closePath()
+        return ctx
+      }
+      draw(ctx=CTX['map']) {
+        ctx.save()
+        if (this.k) {
+          ctx.fillStyle='#8008'
+          ctx.fill(this.path)
+        }
+        ctx.strokeStyle='white'
+        ctx.stroke(this.path)
+        ctx.fillStyle='salmon'
+        // ctx.fillText(`${this.i}:${this.j}`,this.x,this.y)
+        ctx.restore()
+      }
+      fill(ctx=CTX['map'],color='#0ff4') {
+        ctx.save()
+        ctx.fillStyle=color
+        ctx.fill(this.path)
+        ctx.restore()
+      }
+      checkHover(ctx=CTX['map']) {
+        if (Game.tile.selected==this) {
+          ctx.save()
+          ctx.clip(this.path)
+          ctx.fillStyle='#0ff4'
+          ctx.fill(this.path)
+          ctx.restore()
+        } else
+        if (ctx.isPointInPath(this.path,M.x,M.y)) {
+          document.body.style.setProperty('cursor','pointer')
+          ctx.save()
+          ctx.clip(this.path)
+          ctx.fillStyle='#fff4'
+          ctx.fill(this.path)
+          ctx.restore()
+          ctx.save()
+          ctx.strokeStyle='white'
+          ctx.stroke(this.path)
+          ctx.restore()
+          this.drawLineToSelectedTile()
+        }
+      }
+      drawLineToSelectedTile(ctx=CTX['map']) {
+        let intersected = new Set(),
+            that = Game.tile.selected,
+            di=that.i-this.i,
+            dj=that.j-this.j
+        function runTests(thisTile) {
+          let M=Math.abs(thisTile.i-that.i),
+              N=Math.abs(thisTile.j-that.j)
+          for (let m=0;m<=M;m++) {
+            const i=that.i+m*Math.sign(thisTile.i-that.i)
+            for (let n=0;n<=N;n++) {
+              const j=that.j+n*Math.sign(thisTile.j-that.j)
+              if (!Game.mapData[i]?.[j]) return
+              let test=Game.mapData[i][j],
+                  dx=thisTile.x-that.x,
+                  dy=thisTile.y-that.y,
+                  edist=Math.hypot(dx,dy).toFixed(),
+                  angle=Math.atan2(dy,dx)
+              const point=lineIntersectsHex(that,thisTile,test)
+              if (point) {
+                if (test.k) return point
+                intersected.add(test)
+              }
+            }
+          }
+        }
+        let point = runTests(this)
+        ctx.save()
+        ctx.beginPath()
+        ctx.moveTo(that.x,that.y)
+        ctx.lineTo(this.x,this.y)
+        ctx.lineWidth = 2
+        ctx.strokeStyle='silver'
+        ctx.stroke()
+        intersected.forEach(tile=>tile.fill(ctx,'#0000'))
+        ctx.beginPath()
+        ctx.lineWidth = 4
+        ctx.moveTo(that.x,that.y)
+        if (point) {
+          console.log(point)
+          ctx.lineTo(point.x,point.y)
+          ctx.strokeStyle='goldenrod'
+          ctx.stroke()
+          const x=Game.settings.hex.width/6
+          ctx.save()
+          ctx.beginPath()
+          ctx.moveTo(point.x-x,point.y-x)
+          ctx.lineTo(point.x+x,point.y+x)
+          ctx.moveTo(point.x+x,point.y-x)
+          ctx.lineTo(point.x-x,point.y+x)
+          ctx.strokeStyle="red"
+          ctx.stroke()
+          ctx.restore()
+        } else {
+          let dx=this.x-that.x,
+              dy=this.y-that.y,
+              d=Math.hypot(dy,dx),
+              a=Math.atan2(dy,dx),
+              r=Game.settings.hex.width/4,
+              fx=that.x+(d-r)*Math.cos(a),
+              fy=that.y+(d-r)*Math.sin(a)
+          ctx.lineTo(fx,fy)
+          ctx.strokeStyle='cyan'
+          ctx.stroke()
+          ctx.beginPath()
+          ctx.arc(this.x,this.y,r,0,Math.PI*2)
+          ctx.moveTo(this.x-r*3/2,this.y)
+          ctx.lineTo(this.x-r*2/2,this.y)
+          ctx.moveTo(this.x+r*3/2,this.y)
+          ctx.lineTo(this.x+r*2/2,this.y)
+          ctx.moveTo(this.x,this.y-r*3/2)
+          ctx.lineTo(this.x,this.y-r*2/2)
+          ctx.moveTo(this.x,this.y+r*3/2)
+          ctx.lineTo(this.x,this.y+r*2/2)
+          ctx.lineWidth=4
+          ctx.strokeStyle='black'
+          ctx.stroke()
+          ctx.lineWidth=2
+          ctx.strokeStyle='white'
+          ctx.stroke()
+        }
+        ctx.restore()
+      }
+    }
+
+    function lineIntersectsHex(a,b,hex) {
+      const vs=hex.corners
+      for (let v=0;v<vs.length;v++)  {
+        let c=vs[v],
+            d=vs[(v+1)%vs.length]
+        if (lineIntersectsLine(a,b,c,d)) return true
+      }
+      return false
+    }
+    function lineIntersectsLine(a,b,c,d) {
+      function orientation(r,s,t) {
+        const val = (s.y-r.y)*(t.x-s.x)-(s.x-r.x)*(t.y-s.y)
+        if (Math.abs(val) < 1e-9) return 0 // collinear
+        return val>0?1:2 // 1:CW, 2:CCW
+      }
+      function onSegment(P,A,B) {
+        return (
+          P.x<=Math.max(A.x,B.x) && P.x>=Math.min(A.x,B.x) &&
+          P.y<=Math.max(A.y,B.y) && P.y>=Math.min(A.y,B.y)
+        )
+      }
+      const o1 = orientation(a,b,c)
+      const o2 = orientation(a,b,d)
+      const o3 = orientation(c,d,a)
+      const o4 = orientation(c,d,b)
+      if (o1!=o2 && o3!=o4) return true
+      if (o1==0 && onSegment(a,c,b)) return true
+      if (o2==0 && onSegment(a,d,b)) return true
+      if (o3==0 && onSegment(c,a,d)) return true
+      if (o4==0 && onSegment(c,b,d)) return true
+      return false
+    }
+
+  </script>
+</body>
+</html>

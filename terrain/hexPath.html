@@ -20,6 +20,7 @@
 <body>
   <script>
 
+    const game={}
     const settings={
       layers:[
         {name:"bmp"},
@@ -28,12 +29,12 @@
         {name:"gui",live:true,}        
       ],
       hexTile:{
-        w:100,
-        h:100/Math.cos(Math.PI/6)
+        w:50,
+        h:50/Math.cos(Math.PI/6)
       },
       hexMap:{
-        I:Math.floor(2*innerWidth/101-1),
-        J:Math.floor(innerHeight/(100/Math.cos(Math.PI/6)*3/4))
+        I:Math.floor(2*innerWidth/50-1),
+        J:Math.floor(innerHeight/(50/Math.cos(Math.PI/6)*3/4))
       }
     }
 
@@ -58,7 +59,7 @@
       CTX[layer.name] = CVS[layer.name].getContext('2d')
     }
 
-    const map2d=[]
+    game.map2d=[]
     let flatMap
 
     function createMap() {
@@ -66,35 +67,45 @@
       CTX['bmp'].translate(settings.hexTile.w/2,settings.hexTile.h/2)
       // let map2d=[]
       for (let j=0;j<settings.hexMap.J;j++) {
-        map2d[j] = []
+        game.map2d[j] = []
         for (let i=j%2;i<settings.hexMap.I;i+=2) {
-          let hex=new HexTile(i,j,map2d)
-          map2d[j][i] = hex
+          let hex=new HexTile(i,j,game.map2d)
+          game.map2d[j][i] = hex
           hex.draw(CTX['bmp'])
           hex.labelEdges(CTX['bmp'])
         }
       }
-      flatMap = map2d.flat()
+      flatMap = game.map2d.flat()
 
-      let foundPath=findPath(map2d[0][0],map2d[4][16])
+      game.tile={
+        selected:game.map2d[0][0],
+        hovered:game.map2d[0][0]
+      }
+    
+      refresh()
+    }
 
-      let ctx = CTX['bmp']
-      ctx.save()
-      ctx.fillStyle="white"
-      ctx.strokeStyle="blue"
-      ctx.textAlign="center"
-      ctx.textBaseline="bottom"
-      foundPath.p.entries().forEach(([q,step])=>{
-        let {tile:p,dir} = step,
-            rid={nw:"se",ne:"sw",dw:"de",de:"dw",sw:"ne",se:"nw"}[dir]
-        console.log(p,q,dir)
-        ctx.beginPath()
-        ctx.moveTo(p.x,p.y)
-        ctx.lineTo(q.x,q.y)
-        ctx.stroke()
-        ctx.fillText(`${p.edges[dir].leave+q.edges[rid].enter}`,(p.x+q.x)/2,(p.y+q.y)/2)
-      })
-      ctx.restore()
+    onload=createMap
+
+    function drawPath(ctx=CTX['map']) {
+      let foundPath=findPath(game.tile.selected, game.tile.hovered)
+
+      // ctx.save()
+      // ctx.fillStyle="white"
+      // ctx.strokeStyle="blue"
+      // ctx.textAlign="center"
+      // ctx.textBaseline="bottom"
+      // foundPath.p.entries().forEach(([q,step])=>{
+      //   let {tile:p,dir} = step,
+      //       rid={nw:"se",ne:"sw",dw:"de",de:"dw",sw:"ne",se:"nw"}[dir]
+      //   console.log(p,q,dir)
+      //   ctx.beginPath()
+      //   ctx.moveTo(p.x,p.y)
+      //   ctx.lineTo(q.x,q.y)
+      //   ctx.stroke()
+      //   ctx.fillText(`${p.edges[dir].leave+q.edges[rid].enter}`,(p.x+q.x)/2,(p.y+q.y)/2)
+      // })
+      // ctx.restore()
 
       ctx.save()
       ctx.fillStyle="goldenrod"
@@ -112,11 +123,7 @@
         return q
       })
       ctx.restore()
-
-      refresh()
     }
-
-    onload=createMap
 
     function refresh() {
       for (let layer of settings.layers) {
@@ -132,6 +139,7 @@
       }
       CTX['map'].drawImage(CVS['bmp'],-settings.hexTile.w/2,-settings.hexTile.h/2)
       flatMap.forEach(hex=>hex.checkHover(CTX['map']))
+      drawPath(CTX['map'])
       requestAnimationFrame(refresh)
     }
 
@@ -185,12 +193,13 @@
       }
       checkHover(ctx) {
         if (ctx.isPointInPath(this.path,M.x,M.y)) {
+          game.tile.hovered=this
           // this.fill(ctx)
-          ctx.save()
-          ctx.globalAlpha=0.5
+          // ctx.save()
+          // ctx.globalAlpha=0.5
           // Object.values(this.neighbours).forEach(n=>n?.fill(ctx))
-          this.labelWeights(ctx)
-          ctx.restore()
+          // this.labelWeights(ctx)
+          // ctx.restore()
         }
       }
       draw(ctx) {
@@ -203,6 +212,33 @@
         ctx.fillStyle='salmon'
         ctx.fillText(`${this.j}:${this.i}`,this.x,this.y)
         ctx.restore()
+        this.colorCost(ctx)
+      }
+      colorCost(ctx) {
+        ctx.save()
+        ctx.translate(this.x,this.y)
+
+        for (const dir of ['de','se','sw','dw','nw','ne']) {
+          ctx.beginPath()
+          ctx.moveTo(0,0)
+          ctx.lineTo(this.w/2-2,0)
+          ctx.lineTo(this.w/2-2,-this.h/4)
+          ctx.closePath()
+          ctx.fillStyle=`hsl(80 ${this.edges[dir].enter*5+25} 20)`
+          ctx.fill()
+  
+          ctx.beginPath()
+          ctx.moveTo(0,0)
+          ctx.lineTo(this.w/2-2,0)
+          ctx.lineTo(this.w/2-2,+this.h/4)
+          ctx.closePath()
+          ctx.fillStyle=`hsl(80 ${this.edges[dir].leave*5+25} 20)`
+          ctx.fill()
+
+          ctx.rotate(Math.PI/3)
+        }
+
+        ctx.restore()
       }
       labelEdges(ctx) {
         ctx.save()
@@ -211,16 +247,16 @@
         ctx.strokeStyle='#cf08'
         for (let d=0;d<6;d++) {
           ctx.beginPath()
-          ctx.moveTo(this.w*1/5,-this.h/40)
-          ctx.arc(this.w*7/8/2,-this.h/40,2,0,Math.PI*2)
+          ctx.moveTo(this.w*1/5,+this.h/40)
+          ctx.arc(this.w*7/8/2,+this.h/40,2,0,Math.PI*2)
           ctx.stroke()
           ctx.rotate(Math.PI/3)
         }
         ctx.strokeStyle='#fc08'
         for (let d=0;d<6;d++) {
           ctx.beginPath()
-          ctx.moveTo(this.w*7/8/2,+this.h/40)
-          ctx.arc(this.w*1/5,+this.h/40,2,0,Math.PI*2)
+          ctx.moveTo(this.w*7/8/2,-this.h/40)
+          ctx.arc(this.w*1/5,-this.h/40,2,0,Math.PI*2)
           ctx.stroke()
           ctx.rotate(Math.PI/3)
         }
@@ -228,7 +264,7 @@
         ctx.textBaseline="middle"
         for (let d=0;d<6;d++) {
           ctx.save()
-          ctx.translate(this.w*3/10,-10)
+          ctx.translate(this.w*3/10,+10)
           ctx.rotate(-d*Math.PI/3)
           ctx.fillStyle='#cf08'
           ctx.fillText(this.edges[['de','se','sw','dw','nw','ne'][d]].leave,0,0)
@@ -237,7 +273,7 @@
         }
         for (let d=0;d<6;d++) {
           ctx.save()
-          ctx.translate(this.w*3/10,+10)
+          ctx.translate(this.w*3/10,-10)
           ctx.rotate(-d*Math.PI/3)
           ctx.fillStyle='#fc08'
           ctx.fillText(this.edges[['de','se','sw','dw','nw','ne'][d]].enter,0,0)
@@ -268,16 +304,16 @@
         }
         for (let d=0;d<6;d++) {
           ctx.beginPath()
-          ctx.moveTo(this.w*1/5,-this.h/40)
-          ctx.arc(this.w*7/8/2,-this.h/40,2,0,Math.PI*2)
+          ctx.moveTo(this.w*1/5,+this.h/40)
+          ctx.arc(this.w*7/8/2,+this.h/40,2,0,Math.PI*2)
           ctx.stroke()
           ctx.rotate(Math.PI/3)
         }
         ctx.strokeStyle='#fc08'
         for (let d=0;d<6;d++) {
           ctx.beginPath()
-          ctx.moveTo(this.w*7/8/2,+this.h/40)
-          ctx.arc(this.w*1/5,+this.h/40,2,0,Math.PI*2)
+          ctx.moveTo(this.w*7/8/2,-this.h/40)
+          ctx.arc(this.w*1/5,-this.h/40,2,0,Math.PI*2)
           ctx.stroke()
           ctx.rotate(Math.PI/3)
         }
@@ -285,7 +321,7 @@
         ctx.textBaseline="middle"
         for (let d=0;d<6;d++) {
           ctx.save()
-          ctx.translate(this.w*3/10,-10)
+          ctx.translate(this.w*3/10,+10)
           ctx.rotate(-d*Math.PI/3)
           ctx.fillStyle='#cf08'
           ctx.fillText(getWeight(this,d,'leave'),0,0)
@@ -294,7 +330,7 @@
         }
         for (let d=0;d<6;d++) {
           ctx.save()
-          ctx.translate(this.w*3/10,+10)
+          ctx.translate(this.w*3/10,-10)
           ctx.rotate(-d*Math.PI/3)
           ctx.fillStyle='#fc08'
           ctx.fillText(getWeight(this,d,'enter'),0,0)
@@ -314,6 +350,9 @@
         ctx.fillText(`${this.j}:${this.i}`,this.x,this.y)
         ctx.restore()
       }
+      click() {
+        game.tile.selected = this
+      }
     }
 
 
@@ -326,13 +365,13 @@
             o=[S], p=new Map(),
             trace=(p,q,d)=>{
 
-              let ctx=CTX['bmp']
-              ctx.save()
-              ctx.fillStyle='cyan'
-              f.entries().forEach(([tile,f_score])=>{
-                ctx.fillText(f_score.toFixed(),tile.x,tile.y)
-              })
-              ctx.restore()
+              // let ctx=CTX['bmp']
+              // ctx.save()
+              // ctx.fillStyle='cyan'
+              // f.entries().forEach(([tile,f_score])=>{
+              //   ctx.fillText(f_score.toFixed(),tile.x,tile.y)
+              // })
+              // ctx.restore()
 
               const s=[{tile:q}]
               while (p.get(q)) {
@@ -347,7 +386,7 @@
       while (1&&o.length) {
         let {b:X,i} = o.reduce((a,b,i)=>{
           const v=f.get(b)
-          if ((v<a.v)||(v==a.v&&Math.random()<0.5))
+          if ((v<a.v)||(v==a.v&&Math.random()<1))
           return {b,v,i}
           return a
         }, {b:null, v:Infinity, i:-1})
@@ -382,7 +421,10 @@
         C.y-=e.movementY*C.z
       }
     })
-    addEventListener('mousedown',e=>M.b[e.button]=true)
+    addEventListener('mousedown',e=>{
+      M.b[e.button]=true
+      game.tile.hovered.click()
+    })
     addEventListener('mouseup',e=>delete M.b[e.button])
     addEventListener('wheel',e=>{
       C.x+=(e.x-innerWidth/2)*C.z
@@ -391,6 +433,8 @@
       C.y-=(e.y-innerHeight/2)*C.z
       C.x-=(e.x-innerWidth/2)*C.z
     })
+
+    addEventListener('load',e=>console.log(e))
   </script>
 
 </body>

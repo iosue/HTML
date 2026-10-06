@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    canvas {
+      position: fixed;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <a></a>
+  <canvas></canvas>
+  <script>
+
+    class Die {
+      constructor(d) {
+        this.d = d
+      }
+      roll() {
+        let R=Math.ceil(Math.random()*this.d)
+        return R
+      }
+      explode() {
+        let R=this.roll()
+        if (R==this.d) R+=this.explode()-1
+        return R
+      }
+      shoot() {
+        let D1=this.explode()
+        let D2=this.explode()
+        return {total:D1+D2,ones:(D1==1)+(D2==1)}
+      }
+    }
+
+    const results1={},
+          results2={},
+          results3={},
+          results4={},
+          results5={},
+          results6={}
+
+    const cvs=document.querySelector('canvas'),
+          ctx=cvs.getContext('2d')
+    let W, H
+    cvs.width=innerWidth
+    cvs.height=innerHeight
+    
+    let numberOfRolls=0
+    
+    let pause=false
+    refresh()
+
+    function refresh() {
+      if (pause) return 
+      cvs.width=W=innerWidth
+      cvs.height=H=innerHeight
+      // H/=2
+
+      ctx.beginPath()
+      ctx.moveTo(0+50,0+50)
+      ctx.lineTo(0+50,H-50)
+      ctx.lineTo(W-50,H-50)
+      ctx.stroke()
+
+      ctx.save()
+      ctx.globalAlpha=0.25
+      for (let y=0;y<10;y++) {
+        ctx.beginPath()
+        ctx.moveTo(0+50,50)
+        ctx.lineTo(W-50,50)
+        ctx.stroke()
+        ctx.fillText(100-10*y,25,55)
+        ctx.translate(0,(H-100)/10)
+      }
+      ctx.restore()
+      ctx.save()
+      ctx.globalAlpha=0.25
+      let X=5
+      for (let x=0;x<=100;x+=X) {
+        ctx.beginPath()
+        ctx.moveTo(50,0+50)
+        ctx.lineTo(50,H-50)
+        ctx.stroke()
+        ctx.fillText(x,50,H-35)
+        ctx.translate((W-100)*X/100,0)
+      }
+      ctx.restore()
+
+      function shootWithBandSize(results,band) {
+        let maxRoll=Math.max(...Object.keys(results))
+        let barWidth=(W-100)*band/2/100
+  
+        let maxCount=Math.max(...Object.values(results))
+        let barHeight=(H-100)/numberOfRolls
+  
+  
+        let newRoll=0
+        let ones=0
+        let newShot=new Die(6).shoot()
+        newRoll=newShot.total
+        ones=newShot.ones
+        if (ones>0) {
+          results[3-ones]??=0
+          results[3-ones]++
+        }
+        while (newRoll>2) {
+          results[newRoll]??=0
+          results[newRoll]++
+          newRoll--
+        }
+        ctx.strokeStyle={
+          4:'hsl(000 50 50)',
+          6:'hsl(050 50 50)',
+          8:'hsl(100 50 50)',
+          10:'hsl(150 50 50)',
+          12:'hsl(200 50 50)',
+          20:'hsl(250 50 50)',
+        }[band]
+
+        ctx.save()
+        ctx.beginPath()
+        Object.entries(results).map(([r,n])=>{
+          // let a = r%2
+          // ctx.save()
+          // ctx.globalAlpha = 0.5 - a/4
+          // ctx.fillRect((r-1)*barWidth+50,50+(H-100)-n*barHeight,barWidth,n*barHeight)
+          // ctx.restore()
+          // ctx.fillText(r??0,(r-1/2)*barWidth+50,H-35)
+          // ctx.fillText(n??0,(r-1/2)*barWidth+50,H-20)
+          let a = r%2
+          ctx.lineTo((r-1)*barWidth+50,50+(H-100)-n*barHeight)
+          // ctx.fillText(r??0,(r-1/2)*barWidth+50,H-35)
+          // ctx.fillText(n??0,(r-1/2)*barWidth+50,H-20)
+        })
+        ctx.stroke()
+        ctx.restore()
+      }
+
+      shootWithBandSize(results1,4)
+      shootWithBandSize(results2,6)
+      shootWithBandSize(results3,8)
+      shootWithBandSize(results4,10)
+      shootWithBandSize(results5,12)
+      shootWithBandSize(results6,20)
+
+      numberOfRolls++
+      console.log(results1[3],numberOfRolls,(100*results1[3]/numberOfRolls).toFixed(2))
+
+      requestAnimationFrame(refresh)
+    }
+
+  </script>
+</body>
+</html>

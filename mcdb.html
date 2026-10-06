@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Document</title>
+	<style>
+		grid {
+			display: grid; gap: 3px;
+			grid-template-columns:
+				[date] auto
+				[release] auto
+				[character] auto
+				[module] auto;
+			padding: 0.5em;
+			div {
+				display: grid;
+				grid-column: 1/-1;
+				grid-template-columns: subgrid;
+				row-gap: 2px;
+				div {
+					grid-column: 2/-1;
+					div {
+						row-gap: 1px;
+					}
+				}
+				&#header {
+					grid-column: 1/-1;
+					font-weight: bold;
+				}
+				span {
+					padding-inline: 1rem;
+					outline: 1px solid;
+				}
+			}
+		}
+		.core {
+			color: hsl(300 50 50);
+		}
+		.expansion {
+			color: hsl(050 50 50);
+		}
+		.scenario {
+			color: hsl(100 50 50);
+		}
+		.heropack {
+			color: hsl(200 00 50);
+		}
+		.hero {
+			color: hsl(200 50 50);
+		}
+		.villain {
+			color: hsl(000 50 50);
+		}
+		.module {
+			color: hsl(000 00 50);
+		}
+		[owned="false"] {
+			font-style: italic;
+			font-weight: bold;
+		}
+		:has(>[owned="false"]) {
+			background: white;
+			filter: invert(1);
+			opacity: 0.5;
+		}
+	</style>
+</head>
+<body>
+	<grid>
+		<div id="header">
+			<span>Date</span>
+			<span>Release</span>
+			<span>Characters</span>
+			<span>Modules</span>
+		</div>
+	</table>
+
+<script>
+	const db=[
+		{
+			date: "November 1, 2019",
+			release: [
+				{
+					name: "Core Set",
+					owned: true,
+					type: "core",
+					heroes: [
+						"Peter Parker/Spider-Man",
+						"Carol Danvers/Captain Marvel",
+						"Jennifer Walters/She-Hulk",
+						"Tony Stark/Iron Man",
+						"T'Challa/Black Panther",
+					],
+					villains: [
+						"Rhino",
+						"Klaw",
+						"Ultron",
+					],
+					modules: [
+						"Bomb Scare",
+						"Masters of Evil",
+						"Under Attack",
+						"Legions of Hydra",
+						"The Doomsday Chair",
+					]
+				}
+			]
+		},
+		{
+			date: "December 20, 2019",
+			release: [
+				{
+					name: "Green Goblin",
+					owned: true,
+					type: "scenario",
+					heroes: [
+					],
+					villains: [
+						"Norman Osborn/Green Goblin: Risky Business",
+						"Green Goblin: Mutagen Formula",
+					],
+					modules: [
+						"Goblin Gimmicks",
+						"A Mess of Things",
+						"Power Drain",
+						"Running Interference",
+					]
+				},
+				{
+					name: "Captain America",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Steve Rogers/Captain America"
+					],
+					villains: [
+					],
+					modules: [
+					]
+				},
+				{
+					name: "Ms. Marvel",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Kamala Khan/Ms. Marvel"
+					],
+					villains: [
+					],
+					modules: [
+					]
+				}
+			]
+		},
+		{
+			date: "February 7, 2020",
+			release: [
+				{
+					name: "Wrecking Crew",
+					owned: true,
+					type: "scenario",
+					heroes: [
+					],
+					villains: [
+						"Wrecker",
+						"Thunderball",
+						"Piledriver",
+						"Bulldozer",
+					],
+					modules: [
+					]
+				}
+			]
+		},
+		{
+			date: "March 6,  2020",
+			release: [
+				{
+					name: "Thor",
+					owned: true,
+					type: "heropack",
+					heroes: [
+					],
+					villains: [
+						"Odinson/Thor"
+					],
+					modules: [
+					]
+				}
+			]
+		},
+		{
+			date: "June 5, 2020",
+			release: [
+				{
+					name: "Black Widow",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Natasha Romanovff/Black Widow"
+					],
+					villains: [
+					],
+					modules: [
+					]
+				}
+			]
+		},
+		{
+			date: "July 3, 2020",
+			release: [
+				{
+					name: "Doctor Strange",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Stephen Strange/Doctor Strange"
+					],
+					villains: [
+					],
+					modules: [
+					]
+				}
+			]
+		},
+		{
+			date: "August 2, 2020",
+			release: [
+				{
+					name: "Hulk",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Bruce Banner/Hulk"
+					],
+					villains: [
+					],
+					modules: [
+					]
+				},
+				{
+					name: "The Rise of Red Skull",
+					owned: true,
+					type: "expansion",
+					heroes: [
+						"Clint Barton/Hawkeye",
+						"Jessica Drew/Spider-Woman",
+					],
+					villains: [
+						"Crossbones",
+						"Absorbing Man",
+						"Taskmaster",
+						"Zola",
+						"Red Skull",
+					],
+					modules: [
+						"Hydra Assault",
+						"Weapon Master",
+						"Hydra Patrol",
+						"Experimental Weapons",
+						"Tech Upgrades",
+						"Basic Conditions",
+						"Improved Conditions",
+						"Expert Campaign Set",
+					]
+				},
+			]
+		},
+		{
+			date: "October 2, 2020",
+			release: [
+				{
+					name: "The Once and Future Kang",
+					owned: true,
+					type: "scenario",
+					heroes: [
+					],
+					villains: [
+						"Kang",
+						"Expert Kang",
+					],
+					modules: [
+						"Temporal",
+						"Anachronauts",
+						"Master of Time",
+					]
+				}
+			]
+		},
+		{
+			date: "November 6, 2020",
+			release: [
+				{
+					name: "Ant-Man",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Scott Lang/Ant-Man",
+					],
+					villains: [
+					],
+					modules: [
+					]
+				},
+			]
+		},
+		{
+			date: "January 22, 2021",
+			release: [
+				{
+					name: "Wasp",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Nadia Van Dyne/Wasp",
+					],
+					villains: [
+					],
+					modules: [
+					]
+
+				}
+			]
+		},
+		{
+			date: "February 5, 2021",
+			release: [
+				{
+					name: "Quicksilver",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Pietro Maximoff/Quicksilver"
+					],
+					villains: [
+					],
+					modules: [
+					]
+
+				},
+			]
+		},
+		{
+			date: "March 5, 2021",
+			release: [
+				{
+					name: "Scarlet Witch",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Wanda Maximoff/Scarlet Witch"
+					],
+					villains: [
+					],
+					modules: [
+					]
+
+				}, 
+			]
+		},
+		{
+			date: "April 2, 2021",
+			release: [
+				{
+					name: "Galaxy's Most Wanted",
+					owned: true,
+					type: "expansion",
+					heroes: [
+						"Groot",
+						"Rocket Raccoon",
+					],
+					villains: [
+						"Drang: Brotherhood of Badoon",
+						"Collector: Infiltrate the Museum",
+						"Collector: Escape the Museum",
+						"Nebula",
+						"Ronan",
+					],
+					modules: [
+						"Band of Badoon",
+						"Galactic Artifacts",
+						"Kree Militants",
+						"Menagerie Medley",
+						"Space Pirates",
+						"Badoon Headhunter",
+						"Ship Command",
+						"Power Stone",
+						"Campaign: The Market",
+						"Campaign: Standard Challenge",
+						"Campaign: Expert Challenge",
+					]
+
+				}
+			]
+		},
+		{
+			date: "May 14, 2021",
+			release: [
+				{
+					name: "Star Lord",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Peter Quill/Star-Lord"
+					],
+					villains: [
+					],
+					modules: [
+					]
+				}, 
+				{
+					name: "Gamora",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Gamora"
+					],
+					villains: [
+					],
+					modules: [
+					]
+				}
+			]
+		},
+		{
+			date: "June 18, 2021",
+			release: [
+				{
+					name: "Drax",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Drax"
+					],
+					villains: [
+					],
+					modules: [
+					]
+				}
+			]
+		},
+		{
+			date: "July 16, 2021",
+			release: [
+				{
+					name: "Venom",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Venom"
+					],
+					villains: [
+					],
+					modules: [
+					]
+				}
+			]
+		},
+		{
+			date: "September 17, 2021",
+			release: [
+				{
+					name: "Nebula",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Nebula"
+					],
+					villains: [
+					],
+					modules: [
+					]
+				}
+			]
+		},
+		{
+			date: "October 29, 2021",
+			release: [
+				{
+					name: "The Mad Titan's Shadow",
+					owned: true,
+					type: "expansion",
+					heroes: [
+						"Monica Rambeau/Spectrum",
+						"Adam Warlock",
+					],
+					villains: [
+						"Ebony Maw",
+						"Proxima Midnight/Corvus Glaive: Tower Defense",
+						"Thanos",
+						"Hela",
+						"Loki",
+					],
+					modules: [
+						"The Black Order",
+						"Armies of Titan",
+						"Children of Thanos",
+						"Infinity Gauntlet",
+						"Legions of Hel",
+						"Frost Giants",
+						"Enchantress",
+						"Campaign Cards",
+					]
+				},
+			]
+		},
+		{
+			date: "November 5, 2021",
+			release: [
+				{
+					name: "War Machine",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"James Rhodes/War Machine"
+					],
+					villains: [
+					],
+					modules: [
+					]
+				},
+				{
+					name: "The Hood",
+					owned: true,
+					type: "scenario",
+					heroes: [
+					],
+					villains: [
+						"The Hood"
+					],
+					modules: [
+						"Beasty Boys",
+						"Brothers Grimm",
+						"Mister Hyde",
+						"Wrecking Crew",
+						"Sinister Syndicate",
+						"Crossfire’s Crew",
+						"Ransacked Armory",
+						"State of Emergency",
+						"Streets of Mayhem",
+						"Standard II",
+						"Expert II",
+					]
+				}
+			]
+		},
+		{
+			date: "January 14, 2022",
+			release: [
+				{
+					name: "Vision",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Vision"
+					],
+					villains: [
+					],
+					modules: [
+					]
+				}, 
+				{
+					name: "Valkyrie",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Brunnhilde/Valkyrie"
+					],
+					villains: [
+					],
+					modules: [
+					]
+				}
+			]
+		},
+		{
+			date: "April 8, 2022",
+			release: [
+				{
+					name: "Sinister Motives",
+					owned: true,
+					type: "expansion",
+					heroes: [
+						"Gwen Stacy/Ghost-Spider",
+						"Miles Morales/Spider-Man"
+					],
+					villains: [
+						"Sandman",
+						"Venom",
+						"Mysterio",
+						"Sinister Six",
+						"Venom Goblin",
+					],
+					modules: [
+						"City in Chaos",
+						"Down to Earth",
+						"Goblin Gear",
+						"Guerilla Tactics",
+						"Osborn Tech",
+						"Personal Nightmare",
+						"Sinister Assault",
+						"Symbiotic Strength",
+						"Whispers of Paranoia",
+						"Campaign"
+					]
+				}
+			]
+		},
+		{
+			date: "May 20, 2022",
+			release: [
+				{
+					name: "Nova",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Sam Alexander/Nova"
+					],
+					villains: [
+					],
+					modules: [
+						"Armadillo"
+					]
+				},
+				{
+					name: "Ironheart",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Riri Williams/Ironheart"
+					],
+					villains: [
+					],
+					modules: [
+						"Zzzax"
+					]
+				},
+			]
+		},
+		{
+			date: "July 15, 2022",
+			release: [
+				{
+					name: "Spider-Ham",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Peter Porker/Spider-Ham"
+					],
+					villains: [
+					],
+					modules: [
+						"The Inheritors"
+					]
+				}, 
+				{
+					name: "SP\/\/dr",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Peni Parker/SP//dr"
+					],
+					villains: [
+					],
+					modules: [
+						"Iron Spider's Sinister Six"
+					]
+				}
+			]
+		},
+		{
+			date: "September 30, 2022",
+			release: [
+				{
+					name: "Mutant Genesis",
+					owned: true,
+					type: "expansion",
+					heroes: [
+						"Piotr Rasputin/Colossus",
+						"Kitty Pryde/Shadowcat",
+					],
+					villains: [
+						"Sabretooth",
+						"Sentinel: Project Wideawake",
+						"Master Mold",
+						"Avalanche (Mansion Attack)",
+						"Blob (Mansion Attack)",
+						"Pyro (Mansion Attack)",
+						"Toad (Mansion Attack)",
+						"Magneto",
+					],
+					modules: [
+						"Mystique",
+						"Brotherhood",
+						"Operation Zero Tolerance",
+						"Sentinels",
+						"Acolytes",
+						"Future Past",
+						"Campaign",
+						"Brawler (Role)",
+						"Commander (Role)",
+						"Defender (Role)",
+						"Peacekeeper (Role)",
+					]
+				},
+				{
+					name: "Cyclops",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Scott Summers/Cyclops"
+					],
+					villains: [
+					],
+					modules: [
+					]
+				},
+				{
+					name: "Phoenix",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Jean Grey/Phoenix"
+					],
+					villains: [
+					],
+					modules: [
+					]
+
+				}
+			]
+		},
+		{
+			date: "November 11, 2022",
+			release: [
+				{
+					name: "Mojo Mania",
+					owned: true,
+					type: "scenario",
+					heroes: [
+					],
+					villains: [
+						"Magog",
+						"Spiral",
+						"Mojo",
+					],
+					modules: [
+						"Crime",
+						"Fantasy",
+						"Horror",
+						"Sci-Fi",
+						"Sitcom",
+						"Western",
+						"Longshot"
+					]
+				},
+				{
+					name: "Wolverine",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Logan/Wolverine"
+					],
+					villains: [
+					],
+					modules: [
+						"Deathstrike"
+					]
+				},
+				{
+					name: "Storm",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Ororo Munroe/Storm"
+					],
+					villains: [
+					],
+					modules: [
+						"Shadow King"
+					]
+
+				}
+			]
+		},
+		{
+			date: "February 10, 2023",
+			release: [
+				{
+					name: "Gambit",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Remy LeBeau/Gambit"
+					],
+					villains: [
+					],
+					modules: [
+						"Exodus"
+					]
+				},
+				{
+					name: "Rogue",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Anna Marie/Rogue"
+					],
+					villains: [
+					],
+					modules: [
+						"Reavers"
+					]
+				}
+			]
+		},
+		{
+			date: "August 18, 2023",
+			release: [
+				{
+					name: "NeXt Evolution",
+					owned: true,
+					type: "expansion",
+					heroes: [
+						"Nathan Summers/Cable",
+						"Neena Thurman/Domino"
+					],
+					villains: [
+						"Arclight (Marauders)",
+						"Blockbuster (Marauders)",
+						"Chimera (Marauders)",
+						"Greycrow (Marauders)",
+						"Harpoon (Marauders)",
+						"Riptide (Marauders)",
+						"Vertigo (Marauders)",
+						"Marauders: Morlock Siege",
+						"Marauders: On the Run",
+						"Juggernaut",
+						"Mister Sinister",
+						"Stryfe",
+					],
+					modules: [
+						"Military Grade",
+						"Mutant Slayers",
+						"Nasty Boys",
+						"Hope Summers",
+						"Black Tim Cassidy",
+						"Flight",
+						"Super Strength",
+						"Telepathy",
+						"Extreme Measures",
+						"Mutant Insurrection",
+						"Campaign",
+					]
+				}
+			]
+		},
+		{
+			date: "September 22, 2023",
+			release: [
+				{
+					name: "Psylocke",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Betsy Braddock/Psylocke"
+					],
+					villains: [
+					],
+					modules: [
+					]
+				}, 
+				{
+					name: "Angel",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Warren Worthington III/Angel"
+					],
+					villains: [
+					],
+					modules: [
+					]
+				}
+			]
+		},
+		{
+			date: "November 17, 2023",
+			release: [
+				{
+					name: "X-23",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Laura Kinney/X-23"
+					],
+					villains: [
+					],
+					modules: [
+					]
+
+				},
+				{
+					name: "Deadpool",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Wade Wilson/Deadpool"
+					],
+					villains: [
+					],
+					modules: [
+						"'Pool"
+					]
+				},
+			]
+		},
+		{
+			date: "March 29, 2024",
+			release: [
+				{
+					name: "The Age of Apocalypse",
+					owned: true,
+					type: "expansion",
+					heroes: [
+						"Lucas Bishop/Bishop",
+						"Illyana Rasputin/Magik"
+					],
+					villains: [
+						"Unus",
+						"War (Four Horsemen)",
+						"Famine (Four Horsemen)",
+						"Pestilence (Four Horsemen)",
+						"Death (Four Horsemen)",
+						"Apocalypse",
+						"Dark Beast",
+						"Apocalypse (En Sabah Nur)"
+					],
+					modules: [
+						"Infinites",
+						"Dystopian Nightmare",
+						"Hounds",
+						"Dark Riders",
+						"Savage Land",
+						"Genosha",
+						"Blue Moon",
+						"Celestial Tech",
+						"Clan Akkaba",
+						"Age of Apocalypse",
+						"Campaign",
+						"Mission",
+						"Overseer",
+						"Prelates",
+						"Standard III"
+					]
+				}
+			]
+		},
+		{
+			date: "May 17, 2024",
+			release: [
+				{
+					name: "Iceman",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Bobby Drake/Iceman"
+					],
+					villains: [
+					],
+					modules: [
+						"Sauron"
+					]
+				}
+			]
+		},
+		{
+			date: "July 19, 2024",
+			release: [
+				{
+					name: "Jubilee",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Jubilation Lee/Jubilee"
+					],
+					villains: [
+					],
+					modules: [
+						"Arcade"
+					]
+				}
+			]
+		},
+		{
+			date: "September 20, 2024",
+			release: [
+				{
+					name: "Nightcrawler",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Kurt Wagner/Nightcrawler"
+					],
+					villains: [
+					],
+					modules: [
+						"Crazy Gang"
+					]
+				}
+			]
+		},
+		{
+			date: "November 15, 2024",
+			release: [
+				{
+					name: "Magneto",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Erik Lehnsherr/Magneto"
+					],
+					villains: [
+					],
+					modules: [
+						"Hellfire"
+					]
+				}
+			]
+		},
+		{
+			date: "March 7, 2025",
+			release: [
+				{
+					name: "Agents of SHIELD",
+					owned: true,
+					type: "expansion",
+					heroes: [
+						"Maria Hill",
+						"Nick Fury"
+					],
+					villains: [
+						"Black Widow",
+						"Batroc",
+						"M.O.D.O.K.",
+						"Citizen V (Thunderbolts)",
+						"Baron Zemo"
+					],
+					modules: [
+						"Gravitational Pull",
+						"Hard Sound",
+						"Pale Little Spider",
+						"Power of the Atom",
+						"Supersonic",
+						"The Leaper",
+						"A.I.M. Abduction",
+						"A.I.M. Science",
+						"Batroc's Brigade",
+						"Scientist Supreme",
+						"S.H.I.E.L.D.",
+						"S.H.I.E.L.D. Executive Board (Campaign)",
+						"Executive Board Evidence (Campaign)"
+					]
+				}
+			]
+		},
+		{
+			date: "May 2, 2025",
+			release: [
+				{
+					name: "Black Panther",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Shuri/Black Panther"
+					],
+					villains: [
+					],
+					modules: [
+						"Extreme Risk"
+					]
+				}, 
+				{
+					name: "Silk",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Cindy Moon/Silk"
+					],
+					villains: [
+					],
+					modules: [
+						"Growing Strong"
+					]
+				}
+			]
+		},
+		{
+			date: "June 20, 2025",
+			release: [
+				{
+					name: "Falcon",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Sam Wilson/Falcon"
+					],
+					villains: [
+					],
+					modules: [
+						"Techno"
+					]
+				}, 
+				{
+					name: "Winter Soldier",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Bucky Barnes/Winter Soldier"
+					],
+					villains: [
+					],
+					modules: [
+					"Whiteout"
+					]
+				}
+			]
+		},
+		{
+			date: "August 15, 2025",
+			release: [
+				{
+					name: "Trickster Takeover",
+					owned: true,
+					type: "scenario",
+					heroes: [
+					],
+					villains: [
+						"Enchantress",
+						"Ulik",
+						"Loki, God of Lies",
+					],
+					modules: [
+						"Trickster Magic"
+					]
+				}
+			]
+		},
+		{
+			date: "October 17, 2025",
+			release: [
+				{
+					name: "Civil War",
+					owned: true,
+					type: "expansion",
+					heroes: [
+						"Greer Nelson/Tigra",
+						"Teddy Altman/Hulkling",
+					],
+					villains: [
+						"Captain Marvel: Registration",
+						"Iron Man: Registration",
+						"Captain America: Resistance",
+						"Spider-Woman: Resistance",
+					],
+					modules: [
+						"Standard PVP",
+						"Dangerous Recruits (Registration)",
+						"Mighty Avengers (Registration)",
+						"Heroes For Hire (Registration)",
+						"Paladin (Registration)",
+						"Cape-Killer (Registration)",
+						"The Initiative (Registration)",
+						"Martial Law (Registration)",
+						"Maria Hill (Registration)",
+						"New Avengers (Resistance)",
+						"Secret Avengers (Resistance)",
+						"Namor (Resistance)",
+						"Atlanteans (Resistance)",
+						"Spider-Man (Resistance)",
+						"Defenders (Resistance)",
+						"Hell's Kitchen (Resistance)",
+						"Cloak & Dagger (Resistance)",
+					]
+				}
+			]
+		},
+		{
+			date: "December 12, 2025",
+			release: [
+				{
+					name: "Synthezoid Smackdown",
+					owned: true,
+					type: "scenario",
+					heroes: [
+					],
+					villains: [
+						"She-Hulk: Registration",
+						"Vision: Resistance"
+					],
+					modules: [
+						"S.H.I.E.L.D. Ops (Registration)",
+						"Thunderbolts (Registration)",
+						"Taskmaster (Registration)",
+						"Deadly Duo (Registration)",
+						"Young Avengers (Resistance)",
+						"Scarlet Twins (Resistance)",
+						"Moon Knight (Resistance)",
+						"Royal Guard (Resistance)",
+					]
+				}
+			]
+		},
+		{
+			date: "February 20, 2026",
+			release: [
+				{
+					name: "Wonder Man",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Simon Williams/Wonder Man"
+					],
+					villains: [
+					],
+					modules: [
+					]
+				}, 
+				{
+					name: "Hercules",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Hercules"
+					],
+					villains: [
+					],
+					modules: [
+						"All Versus All"
+					]
+				}
+			]
+		},
+		{
+			date: "July, 2026",
+			release: [
+				{
+					name: "Fear No Evil (o-o-s)",
+					owned: false,
+					type: "expansion",
+					heroes: [
+						"Matt Murdock/Daredevil",
+						"Maya Lopez/Echo"
+					],
+					villains: [
+						"Bullseye",
+						"Electro",
+						"Hammerhead",
+						"Purple Man",
+						"Typhoid Mary",
+						"Kingpin"
+					],
+					modules: [
+						"Art Museum Heist",
+						"The Getaway",
+						"Protection Racket",
+						"The Raft Breakout",
+						"Stop the Presses",
+						"Disasters",
+						"Cops",
+						"Drive",
+						"The Owl",
+						"Tombstone",
+						"Tracksuit Mafia",
+						"Campaign"
+					]
+				}
+			]
+		},
+		{
+			date: "August, 2026",
+			release: [
+				{
+					name: "Jessica Jones (o-o-s)",
+					owned: false,
+					type: "heropack",
+					heroes: [
+						"Jessica Jones"
+					],
+					villains: [
+					],
+					modules: [
+					]
+
+				}, 
+				{
+					name: "Luke Cage",
+					owned: false,
+					type: "heropack",
+					heroes: [
+						"Luke Cage"
+					],
+					villains: [
+					],
+					modules: [
+					]
+				}
+			]
+		},
+		{
+			date: "October, 2026",
+			release: [
+				{
+					name: "Shadowland",
+					owned: false,
+					type: "scenario",
+					heroes: [
+					],
+					villains: [
+						"Archpriestess (Shadowland): Shadows in the Night",
+						"Daredevil (Shadowland): Shadows in the Night",
+						"Elektra (Shadowland): Shadows in the Night",
+						"Gorgon (Shadowland): Shadows in the Night",
+						"Lady Bullseye (Shadowland): Shadows in the Night",
+						"White Tiger (Shadowland): Shadows in the Night",
+						"-Shadow Labyrinth-",
+						"Krahllak: Heart of Shadow"
+					],
+					modules: [
+						"Ninja Swarm",
+						"Deadly Contraptions",
+						"Black Flower"
+					]
+				}
+			]
+		},
+		{
+			date: "November, 2026",
+			release: [
+				{
+					name: "Elektra",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Elektra Natchios/Elektra"
+					],
+					villains: [
+					],
+					modules: [
+					]
+				}, 
+				{
+					name: "Iron Fist",
+					owned: true,
+					type: "heropack",
+					heroes: [
+						"Danny Rand/Iron Fist"
+					],
+					villains: [
+					],
+					modules: [
+					]
+				}
+			]
+		}
+	]
+
+document.querySelector('grid').innerHTML+=db.map(date=>`
+	<div>
+		<span>${date.date}</span>
+		<div>
+		${date.release.map(release=>`
+			<span class="${release.type}" owned="${release.owned}">${release.name}</span>
+			<div style="grid-column: span 1">
+				${release.heroes.map(char=>`<span class="hero">${char}</span>`).join('')}
+				${release.villains.map(char=>`<span class="villain">${char}</span>`).join('')}
+			</div>
+			<div style="grid-column: span 1">
+					${release.modules.map(mod=>`<span>${mod}</span>`).join('')}
+			</div>`).join('')}
+		</div>
+	</div>`).join('')
+
+</script>	
+</body>
+</html>

@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Golden Triangle</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    canvas {
+      position: fixed;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <script>
+
+    const blu='hsl(200 50 50)',
+          red='hsl(000 50 50)'
+    const game={
+      turn:blu,
+      score:{
+        'hsl(200 50 50)':0,
+        'hsl(000 50 50)':0
+      }
+    }
+    const settings={
+      layers:[
+        {name:blu},
+        {name:red},
+        {name:"bmp"},
+        {name:"map",live:true,scale:true},
+        {name:"pth",live:true,scale:true},
+        {name:"pcs",live:true,scale:true},
+        {name:"gui",live:true,}        
+      ],
+      triSpace:{
+        b:80,
+        h:80*Math.cos(Math.PI/6)
+      },
+      tileMap:{
+        I:6,
+        J:12
+      }
+    }
+
+    const offscreenWidth=400+(settings.tileMap.I+1)*settings.triSpace.b,
+          offscreenHeight=Math.ceil(Math.ceil(settings.tileMap.J/2+1)*settings.triSpace.h)
+
+    const CVS={},CTX={},M={b:{}},C={
+      x:offscreenWidth/2+settings.triSpace.b/2-200,
+      y:offscreenHeight/2-settings.triSpace.h/1,
+      z:1,v:10/9}
+
+    for (let layer of settings.layers) {
+      if (layer.live) {
+        CVS[layer.name] = document.createElement('canvas')
+        CVS[layer.name].height = innerHeight
+        CVS[layer.name].width = innerWidth
+        CVS[layer.name].id = layer.name
+        document.body.appendChild(CVS[layer.name])
+      } else {
+        CVS[layer.name] = new OffscreenCanvas(
+          offscreenWidth,
+          offscreenHeight
+        )
+      }
+      CTX[layer.name] = CVS[layer.name].getContext('2d')
+    }
+
+    
+    function createMap() {
+      game.map2d=[
+        new triSpace(3,0,'border'),
+        new triSpace(4,0,'border'),
+        new triSpace(5,0,'border'),
+
+        new triSpace(2,1,'border'),
+        new triSpace(3,1,'border'),
+        new triSpace(4,1,'border'),
+        new triSpace(5,1,'border'),
+
+        new triSpace(2,2,'border'),
+        new triSpace(3,2,'space'),
+        new triSpace(4,2,'space'),
+        new triSpace(5,2,'border'),
+
+        new triSpace(1,3,'border'),
+        new triSpace(2,3,'space'),
+        new triSpace(3,3,'space'),
+        new triSpace(4,3,'space'),
+        new triSpace(5,3,'border'),
+
+        new triSpace(1,4,'border'),
+        new triSpace(2,4,'space'),
+        new triSpace(3,4,'space'),
+        new triSpace(4,4,'space'),
+        new triSpace(5,4,'blank'),
+
+        new triSpace(0,5,'border'),
+        new triSpace(1,5,'space'),
+        new triSpace(2,5,'space'),
+        new triSpace(3,5,'space'),
+        new triSpace(4,5,'space'),
+        new triSpace(5,5,'blank'),
+
+        new triSpace(0,6,'border'),
+        new triSpace(1,6,'space'),
+        new triSpace(2,6,'space'),
+        new triSpace(3,6,'border'),
+        new triSpace(4,6,'border'),
+        new triSpace(5,6,'border'),
+
+        new triSpace(0,7,'border'),
+        new triSpace(1,7,'space'),
+        new triSpace(2,7,'space'),
+        new triSpace(3,7,'border'),
+        new triSpace(4,7,'border'),
+
+        new triSpace(0,8,'border'),
+        new triSpace(1,8,'space'),
+        new triSpace(2,8,'space'),
+        new triSpace(3,8,'space'),
+        new triSpace(4,8,'border'),
+
+        new triSpace(0,9,'border'),
+        new triSpace(1,9,'space'),
+        new triSpace(2,9,'space'),
+        new triSpace(3,9,'border'),
+
+        new triSpace(0,10,'border'),
+        new triSpace(1,10,'border'),
+        new triSpace(2,10,'border'),
+        new triSpace(3,10,'border'),
+
+        new triSpace(0,11,'border'),
+        new triSpace(1,11,'border'),
+        new triSpace(2,11,'border'),
+      ]
+      game.trays={
+        blu:[
+          new triTray(1-1.5,0,2,'hsl(200 50 50)'),
+          new triTray(2-1.5,0,4,'hsl(200 50 50)'),
+          new triTray(0-1.5,1,1,'hsl(200 50 50)'),
+          new triTray(1-1.5,1,3,'hsl(200 50 50)'),
+          new triTray(2-1.5,1,5,'hsl(200 50 50)'),
+          new triTray(0-1.5,2,6,'hsl(200 50 50)'),
+          new triTray(1-1.5,2,8,'hsl(200 50 50)'),
+          new triTray(2-1.5,2,10,'hsl(200 50 50)'),
+          new triTray(0-1.5,3,7,'hsl(200 50 50)'),
+          new triTray(1-1.5,3,9,'hsl(200 50 50)'),
+        ],
+        red:[
+          new triTray(7.5,0,2,'hsl(000 50 50)'),
+          new triTray(8.5,0,4,'hsl(000 50 50)'),
+          new triTray(6.5,1,1,'hsl(000 50 50)'),
+          new triTray(7.5,1,3,'hsl(000 50 50)'),
+          new triTray(8.5,1,5,'hsl(000 50 50)'),
+          new triTray(6.5,2,6,'hsl(000 50 50)'),
+          new triTray(7.5,2,8,'hsl(000 50 50)'),
+          new triTray(8.5,2,10,'hsl(000 50 50)'),
+          new triTray(6.5,3,7,'hsl(000 50 50)'),
+          new triTray(7.5,3,9,'hsl(000 50 50)'),
+        ]
+      }
+      game.tiles={
+        blu:[
+          new triTile(1-1.5,0,2,'hsl(200 50 50)'),
+          new triTile(2-1.5,0,4,'hsl(200 50 50)'),
+          new triTile(0-1.5,1,1,'hsl(200 50 50)'),
+          new triTile(1-1.5,1,3,'hsl(200 50 50)'),
+          new triTile(2-1.5,1,5,'hsl(200 50 50)'),
+          new triTile(0-1.5,2,6,'hsl(200 50 50)'),
+          new triTile(1-1.5,2,8,'hsl(200 50 50)'),
+          new triTile(2-1.5,2,10,'hsl(200 50 50)'),
+          new triTile(0-1.5,3,7,'hsl(200 50 50)'),
+          new triTile(1-1.5,3,9,'hsl(200 50 50)'),
+        ],
+        red:[
+          new triTile(7.5,0,2,'hsl(000 50 50)'),
+          new triTile(8.5,0,4,'hsl(000 50 50)'),
+          new triTile(6.5,1,1,'hsl(000 50 50)'),
+          new triTile(7.5,1,3,'hsl(000 50 50)'),
+          new triTile(8.5,1,5,'hsl(000 50 50)'),
+          new triTile(6.5,2,6,'hsl(000 50 50)'),
+          new triTile(7.5,2,8,'hsl(000 50 50)'),
+          new triTile(8.5,2,10,'hsl(000 50 50)'),
+          new triTile(6.5,3,7,'hsl(000 50 50)'),
+          new triTile(7.5,3,9,'hsl(000 50 50)'),
+        ]
+      }
+      game.tile={}
+      game.space={}
+
+      CTX['bmp'].translate(200-settings.triSpace.b/2,settings.triSpace.h/1)
+      CTX[blu].translate(200-settings.triSpace.b/2,settings.triSpace.h/1)
+      CTX[red].translate(200-settings.triSpace.b/2,settings.triSpace.h/1)
+      game.trays.blu.forEach(tray=>tray.draw(CTX[blu],'outline'))
+      game.trays.blu.forEach(tray=>tray.draw(CTX[blu]))
+      game.trays.red.forEach(tray=>tray.draw(CTX[blu]))
+      game.trays.red.forEach(tray=>tray.draw(CTX[red],'outline'))
+      game.trays.red.forEach(tray=>tray.draw(CTX[red]))
+      game.trays.blu.forEach(tray=>tray.draw(CTX[red]))
+      game.map2d.forEach(space=>space.draw(CTX['bmp']))
+      refresh()
+    }
+    
+    onload=createMap
+
+    function refresh() {
+      if (game.tile.hovered) {
+        document.body.style.setProperty('cursor','pointer')
+        delete game.tile.hovered
+      } else if (game.space.hovered) {
+        document.body.style.setProperty('cursor','pointer')
+        delete game.space.hovered
+      } else {
+        document.body.style.setProperty('cursor','default')
+      }
+      for (let layer of settings.layers) {
+        if (layer.live) {
+          CVS[layer.name].width = innerWidth
+          CVS[layer.name].height = innerHeight
+          if (layer.scale) {
+            CTX[layer.name].translate(innerWidth/2,innerHeight/2)
+            CTX[layer.name].scale(1/C.z,1/C.z)
+            CTX[layer.name].translate(-C.x,-C.y)
+          }
+        }
+      }
+      // CTX['map'].fillRect(settings.triSpace.b/2-200,-settings.triSpace.h/1,offscreenWidth,offscreenHeight)
+      CTX['map'].drawImage(CVS[game.turn],settings.triSpace.b/2-200,-settings.triSpace.h/1)
+      CTX['map'].drawImage(CVS['bmp'],settings.triSpace.b/2-200,-settings.triSpace.h/1)
+      game.map2d.forEach(space=>space.draw(CTX['map']))
+      game.tiles.blu.forEach(tile=>tile.draw(CTX['map']))
+      game.tiles.red.forEach(tile=>tile.draw(CTX['map']))
+
+      let openSpaces=game.map2d.filter(space=>space.k=="space"&&!space.value)
+      if (openSpaces.length==1) {
+        openSpaces[0].score()
+        let ctx=CTX['pcs']
+        let winner = game.score[blu]>game.score[red]?"BLUE WINS"
+                    :game.score[blu]<game.score[red]?"RED WINS"
+                    :"TIE GAME"
+        ctx.font="100px consolas"
+        ctx.lineJoin="round"
+        ctx.lineWidth=8
+        ctx.strokeStyle="white"
+        ctx.textAlign="center"
+        ctx.textBaseline="middle"
+        ctx.fillStyle = game.score[blu]>game.score[red]?blu
+                      : game.score[blu]<game.score[red]?red
+                      : "black"
+        ctx.strokeText(winner,offscreenWidth*1/3,offscreenHeight*2/5)
+        ctx.fillText(winner,offscreenWidth*1/3,offscreenHeight*2/5)
+        return console.warn('game over',game.score)
+      }
+      requestAnimationFrame(refresh)
+    }
+
+    class triSpace {
+      constructor(i,j,k,ops) {
+        this.j = j
+        this.i = i
+        this.k = k
+        for (let s in settings.triSpace)
+          this[s] = settings.triSpace[s]
+        for (let op in ops)
+          this[op] = ops[op]
+      }
+      get x() {return (this.i+Math.floor(this.j%2)/2+Math.floor(this.j/2)/2)*this.b}
+      get y() {return Math.floor(this.j/2)*this.h}
+      get path() {
+        let ctx=new Path2D()
+        if (this.j%2) {
+          ctx.moveTo(this.x,         this.y-this.h/2)
+          ctx.lineTo(this.x+this.b/2,this.y+this.h/2)
+          ctx.lineTo(this.x-this.b/2,this.y+this.h/2)
+        } else {
+          ctx.moveTo(this.x,         this.y+this.h/2)
+          ctx.lineTo(this.x+this.b/2,this.y-this.h/2)
+          ctx.lineTo(this.x-this.b/2,this.y-this.h/2)
+        }
+        ctx.closePath()
+        return ctx
+      }
+      get neighbours() {
+        const nList=[]
+        if (this.j%2) {
+          let west=game.map2d.find(tile=>tile.i==this.i+0&&tile.j==this.j-1&&tile.k=='space')
+          if (west) nList.push(west)
+          let east=game.map2d.find(tile=>tile.i==this.i+1&&tile.j==this.j-1&&tile.k=='space')
+          if (east) nList.push(east)
+          let south=game.map2d.find(tile=>tile.i==this.i+0&&tile.j==this.j+1&&tile.k=='space')
+          if (south) nList.push(south)
+        } else {
+          let west=game.map2d.find(tile=>tile.i==this.i-1&&tile.j==this.j+1&&tile.k=='space')
+          if (west) nList.push(west)
+          let east=game.map2d.find(tile=>tile.i==this.i+0&&tile.j==this.j+1&&tile.k=='space')
+          if (east) nList.push(east)
+          let north=game.map2d.find(tile=>tile.i==this.i+0&&tile.j==this.j-1&&tile.k=='space')
+          if (north) nList.push(north)
+        }
+        return nList
+      }
+      draw(ctx,color='white') {
+        let hovered = this.k=="space" && ctx.isPointInPath(this.path,M.x,M.y) && !this.value
+        if (hovered) {
+          game.space.hovered=this
+          ctx=CTX['pth']
+          this.neighbours.forEach(space=>space.draw(ctx,'#4444'))
+        }
+        ctx.save()
+        ctx.clip(this.path)
+        ctx.fillStyle=hovered?game.turn:this.k=='border'?'goldenrod':this.k=='space'?color:'hsl(40 60 20)'
+        ctx.fill(this.path)
+        ctx.lineJoin='round'
+        ctx.lineWidth=2
+        ctx.strokeStyle='black'
+        ctx.stroke(this.path)
+        ctx.restore()
+        if (game.space.selected==this) {
+          let ctx=CTX['pth']
+          ctx.save()
+          ctx.clip(this.path)
+          ctx.fillStyle = "silver"
+          ctx.fill(this.path)
+          ctx.lineJoin = "round"
+          ctx.lineWidth = 8
+          ctx.strokeStyle = game.turn
+          ctx.stroke(this.path)
+          ctx.restore()
+        }
+      }
+      click() {
+        if (game.space.selected==this)
+          delete game.space.selected
+        else {
+          if (game.tile.selected)
+              game.tile.selected.moveTo(this)
+          else
+            game.space.selected=this
+        }
+      }
+      score() {
+        let ctx=CTX['map']
+        this.draw(ctx,'hsl(100 50 50)')
+        this.neighbours.forEach(space=>space.count())
+        ctx.save()
+        ctx.font="100px consolas"
+        ctx.textAlign="center"
+        ctx.textBaseline="middle"
+        ctx.fillStyle=blu
+        ctx.fillText(game.score[blu],0,settings.triSpace.h*4)
+        ctx.fillStyle=red
+        ctx.fillText(game.score[red],settings.triSpace.b*8,settings.triSpace.h*4)
+        ctx.restore()
+        console.log(game.score)
+      }
+      count(ctx=CTX['pth']) {
+        ctx.save()
+        ctx.lineJoin="round"
+        ctx.lineWidth=8
+        ctx.strokeStyle="white"
+        ctx.stroke(this.path)
+        ctx.restore()
+        game.score[this.color]+=this.value
+      }
+    }
+
+    class triTray {
+      constructor(i,j,n,color) {
+        this.j = j
+        this.i = i
+        this.n = n
+        this.color = color
+        for (let s in settings.triSpace)
+          this[s] = settings.triSpace[s]
+      }
+      get x() {return (this.i+Math.floor(this.j%2)/2+Math.floor(this.j/2)/2)*this.b}
+      get y() {return Math.floor(this.j/2)*this.h}
+      get path() {
+        let ctx=new Path2D()
+        if (this.j%2) {
+          ctx.moveTo(this.x,         this.y-this.h/2)
+          ctx.lineTo(this.x+this.b/2,this.y+this.h/2)
+          ctx.lineTo(this.x-this.b/2,this.y+this.h/2)
+        } else {
+          ctx.moveTo(this.x,         this.y+this.h/2)
+          ctx.lineTo(this.x+this.b/2,this.y-this.h/2)
+          ctx.lineTo(this.x-this.b/2,this.y-this.h/2)
+        }
+        ctx.closePath()
+        return ctx
+      }
+      draw(ctx,active) {
+        if (active) {
+          ctx.save()
+          ctx.lineJoin='round'
+          ctx.lineWidth=8
+          ctx.strokeStyle="silver"
+          ctx.stroke(this.path)
+          ctx.restore()
+        }
+        let bgcolor="#444"
+        ctx.save()
+        ctx.clip(this.path)
+        ctx.fillStyle = bgcolor
+        ctx.fill(this.path)
+        ctx.font="20px consolas"
+        ctx.textAlign='center'
+        ctx.textBaseline='middle'
+        ctx.fillStyle=this.color
+        ctx.fillText(`${this.n}`,this.x,this.y-this.h*(1/2-this.j%2)/3)
+          ctx.lineJoin='round'
+        ctx.lineWidth=2
+        ctx.strokeStyle='black'
+        ctx.stroke(this.path)
+        ctx.restore()
+      }
+    }
+
+    class triTile {
+      constructor(i,j,n,color) {
+        this.j = j
+        this.i = i
+        this.n = n
+        this.color = color
+        for (let s in settings.triSpace)
+          this[s] = settings.triSpace[s]
+      }
+      get x() {return (this.i+Math.floor(this.j%2)/2+Math.floor(this.j/2)/2)*this.b}
+      get y() {return Math.floor(this.j/2)*this.h}
+      get path() {
+        let ctx=new Path2D()
+        if (this.j%2) {
+          ctx.moveTo(this.x+this.b*0,this.y-this.h/2)
+          ctx.lineTo(this.x+this.b/2,this.y+this.h/2)
+          ctx.lineTo(this.x-this.b/2,this.y+this.h/2)
+        } else {
+          ctx.moveTo(this.x+this.b*0,this.y+this.h/2)
+          ctx.lineTo(this.x+this.b/2,this.y-this.h/2)
+          ctx.lineTo(this.x-this.b/2,this.y-this.h/2)
+        }
+        ctx.closePath()
+        return ctx
+      }
+      draw(ctx,color='#ccc') {
+        let hovered = game.turn==this.color && !this.locked && ctx.isPointInPath(this.path,M.x,M.y)
+        if (hovered) {
+          ctx=CTX['pcs']
+          game.tile.hovered=this
+        }
+        if (game.tile.selected==this) ctx=CTX['pth']
+        ctx.save()
+        ctx.fillStyle=this.color
+        ctx.fill(this.path)
+        ctx.font="20px consolas"
+        ctx.textAlign='center'
+        ctx.textBaseline='middle'
+        ctx.fillStyle=color
+        ctx.fillText(`${this.n}`,this.x,this.y-this.h*(1/2-this.j%2)/3)
+        ctx.lineJoin='round'
+        ctx.lineWidth=hovered?4:2
+        ctx.strokeStyle=hovered||game.tile.selected==this?'white':'#0000'
+        ctx.stroke(this.path)
+        ctx.clip(this.path)
+        ctx.strokeStyle=game.tile.selected==this?'white':'black'
+        ctx.stroke(this.path)
+        ctx.restore()
+      }
+      click() {
+        if (game.space.selected) {
+          this.moveTo(game.space.selected)
+          delete game.space.selected
+        } else {
+          if (game.tile.selected==this)
+            delete game.tile.selected
+          else if (!this.locked) 
+            game.tile.selected=this
+        }
+      }
+      moveTo(space) {
+        if (!this.locked) {
+          this.i = space.i
+          this.j = space.j
+          this.locked = true
+          space.color = this.color
+          space.value = this.n
+          delete game.tile.selected
+          game.turn = game.turn==blu?red:blu
+        }
+      }
+    }
+
+    addEventListener('contextmenu',e=>{
+      if (!e.ctrlKey) e.preventDefault()
+    })
+    addEventListener('mousemove',e=>{
+      M.x=e.x
+      M.y=e.y
+      if (M.b[1]) {
+        C.x-=e.movementX*C.z
+        C.y-=e.movementY*C.z
+      }
+    })
+    addEventListener('click',e=>{
+      (game.tile.hovered||game.space.hovered)?.click()
+    })
+    addEventListener('mousedown',e=>{
+      M.b[e.button]=true
+    })
+    addEventListener('mouseup',e=>delete M.b[e.button])
+    addEventListener('wheel',e=>{
+      C.x+=(e.x-innerWidth/2)*C.z
+      C.y+=(e.y-innerHeight/2)*C.z
+      C.z*=C.v**Math.sign(e.deltaY)
+      C.y-=(e.y-innerHeight/2)*C.z
+      C.x-=(e.x-innerWidth/2)*C.z
+    })
+  </script>
+
+</body>
+</html>

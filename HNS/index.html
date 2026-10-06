@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HnS</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    canvas {
+      position: fixed;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <script src="colorTransform.js"></script>
+  <script src="class/tile.js"></script>
+  <script src="class/blob.js"></script>
+  <script src="listeners.js"></script>
+  <script>
+
+    const Game={
+      tiles:[],
+      pcs:[
+        new Blob(32*1, 32*1/2, 0),
+        new Blob(32*18, 32*2, 1),
+        new Blob(32*18, 32*10, 2),
+        new Blob(32*4, 32*1/2, 3),
+      ],
+      spatter:[]
+    }
+
+    const settings={
+            screenOffset:16,
+            layers:[
+              {name:"bmp"},
+              {name:"map",live:true,scale:true},
+              {name:"pth",live:true,scale:true},
+              {name:"pcs",live:true,scale:true},
+              {name:"gui",live:true,}        
+            ],
+            tile:{
+              edge:5,
+              width:32,
+              height:32
+            },
+            get mapWidth() {return this.tile.width*22},
+            get mapHeight() {return this.tile.height*16},
+            get screenTop() {return this.mapHeight*0-16},
+            get screenLeft() {return this.mapWidth*0-16},
+            get screenRight() {return this.mapWidth*1-16},
+            get screenBottom() {return this.mapHeight*1-16},
+          }, K={blocked:{}},
+          CVS={}, CTX={}, 
+          C={x:settings.mapWidth/2,y:settings.mapHeight/2,z:1,v:10/9},
+          M={ b:{},
+            get sx() {return (this.x-innerWidth/2)*C.z},
+            get sy() {return (this.y-innerWidth/2)*C.z},
+          },
+          background = new Image(),
+          spriteSheet = new Image()
+      background.src = `Jump_'n_Bump.png`
+      spriteSheet.src = `spriteSheet.png`
+    
+    let pause=false
+
+    onload=()=>{
+      createCanvases()
+      createMap()
+      refresh()
+    }
+    
+
+
+
+    function resetContext(ctx) {
+      ctx.lineCap = "round"
+      ctx.lineJoin = "round"
+      ctx.font = "12px consolas"
+      ctx.textAlign = "center"
+      ctx.textBaseline = "middle"
+    }
+
+
+
+
+
+
+    function createCanvases() {
+      for (let layer of settings.layers) {
+        if (layer.live) {
+          CVS[layer.name] = document.createElement('canvas')
+          CVS[layer.name].height = innerHeight
+          CVS[layer.name].width = innerWidth
+          CVS[layer.name].id = layer.name
+          document.body.appendChild(CVS[layer.name])
+        } else {
+          CVS[layer.name] = new OffscreenCanvas(settings.mapWidth+120,settings.mapHeight)
+        }
+        CTX[layer.name] = CVS[layer.name].getContext('2d')
+        resetContext(CTX[layer.name])
+      }
+    }
+
+
+
+
+
+
+
+
+
+
+
+    function createMap() {
+      const dataMap=[
+              '1110000000000000000000',
+              '1000000000001000011000',
+              '1000111100001100000000',
+              '1000000000011110000011',
+              '1100000000111000000001',
+              '1110001111110000000001',
+              '1000000000000011110001',
+              '1000000000000000000011',
+              '1110011100000000000111',
+              '1000000000003100000001',
+              '1000000000031110000001',
+              '1011110000311111111001',
+              '1000000000000000000001',
+              '1100000000000000000011',
+              '2222222214000001333111',
+              '2222222211111111111111',
+            ],
+            ctx=CTX['bmp']
+        ctx.translate(settings.screenOffset,settings.screenOffset)
+
+      for (const j in dataMap) {
+        for (const i in dataMap[j]) {
+          let tile = new Tile(i,j,dataMap[j][i])
+          tile.draw(ctx)
+          Game.tiles.push(tile)
+        }
+      }
+
+      ctx.drawImage(spriteSheet,settings.mapWidth-settings.screenOffset,0-settings.screenOffset)
+      let imgData=ctx.getImageData(settings.mapWidth,0,120,120).data
+      let pixels=new Uint8ClampedArray(imgData.length)
+      for (let c=0;c<4;c++) {
+        let colorCode=[0,0,0]
+        for (let i=0;i<imgData.length;i+=4) {
+          let oldrgb=[imgData[i+0],imgData[i+1],imgData[i+2]]
+          let oklch=rgb2oklch(oldrgb)
+              oklch[2]+=60*c**1.25-120
+              oklch[2]%=360
+          let newrgb=oklch2rgb(oklch)
+
+          colorCode[0] = Math.max(colorCode[0],newrgb[0])
+          colorCode[1] = Math.max(colorCode[1],newrgb[1])
+          colorCode[2] = Math.max(colorCode[2],newrgb[2])
+          pixels[i+0]=newrgb[0]
+          pixels[i+1]=newrgb[1]
+          pixels[i+2]=newrgb[2]
+          pixels[i+3]=imgData[i+3]
+        }
+
+        if (Game.pcs.find(pc=>pc.color==c)) Game.pcs[c].rgb=colorCode
+
+        ctx.putImageData(
+          new ImageData(pixels,120),
+          settings.mapWidth, 120*c
+        )
+      }
+    }
+    
+
+
+
+
+
+
+
+
+
+
+
+    function refresh() {
+      for (let layer of settings.layers) {
+        if (layer.live) {
+          CVS[layer.name].width = innerWidth
+          CVS[layer.name].height = innerHeight
+          if (layer.scale) {
+            CTX[layer.name].translate(innerWidth/2+settings.screenOffset,innerHeight/2+settings.screenOffset)
+            CTX[layer.name].scale(1/C.z,1/C.z)
+            CTX[layer.name].translate(-C.x,-C.y)
+          }
+        }
+        resetContext(CTX[layer.name])
+      }
+
+      
+      CTX['map'].fillStyle=`hsl(100 20 20)`
+      CTX['map'].fillRect(-settings.screenOffset,-settings.screenOffset,settings.mapWidth,settings.mapHeight)
+      // CTX['map'].drawImage(background,0,0,settings.mapWidth,settings.mapHeight,-settings.screenOffset,-settings.screenOffset,settings.mapWidth,settings.mapHeight)
+      CTX['map'].drawImage(CVS['bmp'],0,0,settings.mapWidth,settings.mapHeight,-settings.screenOffset,-settings.screenOffset,settings.mapWidth,settings.mapHeight)
+
+      for (const spatter of Game.spatter) spatter.draw()
+
+      for (const pc of Game.pcs) pc.applyPhysics()
+      for (const pc of Game.pcs) pc.bump()
+      for (const pc of Game.pcs) pc.collide()
+      for (const pc of Game.pcs) pc.update()
+
+      if (!pause) 
+        setTimeout(refresh,1000/60)
+        // requestAnimationFrame(refresh)
+    }
+
+
+
+
+
+
+
+
+   
+
+</script>
+
+</body>
+</html>

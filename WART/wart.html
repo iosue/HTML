@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WART</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    canvas {
+      position: fixed;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <script>
+
+    const Game={
+      score:{
+        'hsl(200 50 50)':0,
+        'hsl(000 50 50)':0
+      },
+      piece:{}
+    }
+    const settings={
+      layers:[
+        {name:"bmp"},
+        {name:"map",live:true,scale:true},
+        {name:"pth",live:true,scale:true},
+        {name:"pcs",live:true,scale:true},
+        {name:"gui",live:true,}        
+      ],
+      triSpace:{
+        b:80,
+        h:80*Math.cos(Math.PI/6)
+      },
+      tileMap:{
+        I:6,
+        J:12
+      }
+    }
+
+    const offscreenWidth=400+(settings.tileMap.I+1)*settings.triSpace.b,
+          offscreenHeight=Math.ceil(Math.ceil(settings.tileMap.J/2+1)*settings.triSpace.h)
+
+    const CVS={},CTX={},M={b:{}},C={
+      x:offscreenWidth/2+settings.triSpace.b/2-200,
+      y:offscreenHeight/2-settings.triSpace.h/1,
+      z:1,v:10/9}
+
+    for (let layer of settings.layers) {
+      if (layer.live) {
+        CVS[layer.name] = document.createElement('canvas')
+        CVS[layer.name].height = innerHeight
+        CVS[layer.name].width = innerWidth
+        CVS[layer.name].id = layer.name
+        document.body.appendChild(CVS[layer.name])
+      } else {
+        CVS[layer.name] = new OffscreenCanvas(
+          offscreenWidth,
+          offscreenHeight
+        )
+      }
+      CTX[layer.name] = CVS[layer.name].getContext('2d')
+    }
+
+    
+    function createMap() {
+      Game.mapData=[
+      ]
+
+      CTX['bmp'].translate(200-settings.triSpace.b/2,settings.triSpace.h/1)
+      Game.mapData.forEach(space=>space.draw(CTX['bmp']))
+      refresh()
+    }
+    
+    onload=createMap
+
+    function refresh() {
+      if (Game.tile?.hovered) {
+        document.body.style.setProperty('cursor','pointer')
+        delete Game.tile.hovered
+      } else if (Game.space?.hovered) {
+        document.body.style.setProperty('cursor','pointer')
+        delete Game.space.hovered
+      } else {
+        document.body.style.setProperty('cursor','default')
+      }
+      for (let layer of settings.layers) {
+        if (layer.live) {
+          CVS[layer.name].width = innerWidth
+          CVS[layer.name].height = innerHeight
+          if (layer.scale) {
+            CTX[layer.name].translate(innerWidth/2,innerHeight/2)
+            CTX[layer.name].scale(1/C.z,1/C.z)
+            CTX[layer.name].translate(-C.x,-C.y)
+          }
+        }
+      }
+
+      CTX['map'].drawImage(CVS['bmp'],settings.triSpace.b/2-200,-settings.triSpace.h/1)
+
+
+      for (const unit of BLU) {
+        unit.draw(CTX['map'])
+      }
+
+      requestAnimationFrame(refresh)
+    }
+
+
+
+    addEventListener('contextmenu',e=>{
+      if (!e.ctrlKey) e.preventDefault()
+    })
+    addEventListener('mousemove',e=>{
+      M.x=e.x
+      M.y=e.y
+      if (M.b[1]) {
+        C.x-=e.movementX*C.z
+        C.y-=e.movementY*C.z
+      }
+    })
+    addEventListener('click',e=>{
+      Game.piece.hovered?.click()
+    })
+    addEventListener('mousedown',e=>{
+      M.b[e.button]=true
+    })
+    addEventListener('mouseup',e=>delete M.b[e.button])
+    addEventListener('wheel',e=>{
+      C.x+=(e.x-innerWidth/2)*C.z
+      C.y+=(e.y-innerHeight/2)*C.z
+      C.z*=C.v**Math.sign(e.deltaY)
+      C.y-=(e.y-innerHeight/2)*C.z
+      C.x-=(e.x-innerWidth/2)*C.z
+    })
+
+    const Weapons={
+      SAR:{name:"9mm Pistol"},
+      LAR:{name:"6mm Assault Rifle"},
+      MAR:{name:"8mm Battle Rifle"},
+      HAR:{name:"12mm Sniper Rifle"},
+      SMG:{name:"9mm PDW"},
+      LMG:{name:"6mm SAW"},
+      MMG:{name:"8mm GPMG"},
+      HMG:{name:"12mm HMG"},
+      SAT:{name:"Shotgun"},
+      LAT:{name:"NLAW"},
+      MAT:{name:"Carl G"},
+      HAT:{name:"Javelin"},
+      SID:{name:"7cm Frag"},
+      LID:{name:"4cm UBGL"},
+      MID:{name:"6cm Mortar"},
+      HID:{name:"9cm Mortar"},
+    }
+
+    const Kits={
+      "Rifleman":[Weapons.LAR],
+      "Demolitions":[Weapons.LAR,Weapons.LAT],
+      "SAW Gunner":[Weapons.LMG],
+      "Grenadier":[Weapons.LAR,Weapons.LID],
+    }
+
+    class Soldier {
+      constructor(rank,tier,role,kit=[]) {
+        this.mode = 'enlisted'
+        this.rank = rank
+        this.tier = tier
+        this.role = role
+        this.customKit = kit
+        this.kit
+      }
+      get kit() {
+        return Kits[this.role] ?? (Kits[this.role] = this.customKit)
+      }
+    }
+
+    class Officer extends Soldier {
+      constructor(...args) {
+        super(...args)
+        this.mode = 'officer'
+      }
+    }
+
+    class Team {
+      constructor(i,j,type,subs) {
+        this.i = i
+        this.j = j
+        count[type]??=0
+        this.type = (type??"Regular")+' '+ ++count[type]
+        this.subs=subs??[
+          new Soldier(2,1,'SAW Gunner'),
+          new Soldier(2,1,'Demolitions'),
+          new Soldier(2,1,'Grenadier'),
+        ]
+      }
+      get x() {return this.i*80}
+      get y() {return this.j*50}
+      get path() {
+        let ctx = new Path2D()
+        let rank=Math.max(...this.subs.map(sub=>sub.rank))
+        ctx.arc(0,0,this.subs.length*12+rank*3,0,Math.PI*2)
+        return ctx
+      }
+      draw(ctx=CTX['map']) {
+        let rank=Math.max(...this.subs.map(sub=>sub.rank))
+        ctx.save()
+        ctx.beginPath()
+        ctx.translate(this.x,this.y)
+        ctx.scale(1.25,1.25)
+        ctx.arc(0,0,this.subs.length*11+(rank-1.5)*4,0,Math.PI*2)
+        ctx.fillStyle=`hsl(${rank==7?250:150-(rank-(rank<4)*2)*25} 20 20)`
+        ctx.fill()
+        ctx.strokeStyle=`hsl(200 50 50)`
+        ctx.stroke()
+        if (ctx.isPointInPath(this.path,M.x,M.y)) {
+          Game.piece.hovered = this
+          document.body.style.setProperty('cursor','pointer')
+        }
+        this.subs.forEach((sdr,s,subs)=>{
+          ctx.save()
+          ctx.beginPath()
+          ctx.translate(s>0?s>1?+15:-15:0,25*(s>0)-8*(subs.length-1))
+          ctx.arc(0,0,12,0,Math.PI*2)
+          ctx.strokeStyle='#fff2'
+          ctx.stroke()
+          ctx.fillStyle='white'
+          ctx.font="20px consolas"
+          ctx.textAlign="center"
+          ctx.save()
+          ctx.rotate(-Math.PI/2)
+          ctx.letterSpacing="-4px"
+          ctx.textBaseline="middle"
+          if (this.subs.length==1) {
+            ctx.scale(1/2,1)
+            ctx.fillText(sdr.rank==7?"===":''.padStart(sdr.rank-3,'<'),-3,1)
+          } else {
+            ctx.fillText({
+              "Rifleman":"⭢",
+              "Grenadier":"⇴",
+              "Demolitions":"↣",
+              "SAW Gunner":"↠",
+              "MMG Gunner":"⤀",
+              "MAT Gunner":"⤔",
+            }[sdr.role],-2,1)
+          }
+          ctx.restore()
+          let path=new Path2D()
+          path.arc(0,0,10,0,Math.PI*2)
+          if (ctx.isPointInPath(path,M.x,M.y)) {
+            document.body.style.setProperty('cursor','pointer')
+            let transform=ctx.getTransform()
+            CTX['pcs'].save()
+            CTX['pcs'].setTransform(transform)
+            CTX['pcs'].lineJoin="round"
+            CTX['pcs'].lineWidth = 3
+            CTX['pcs'].strokeStyle='black'
+            CTX['pcs'].fillStyle='goldenrod'
+            CTX['pcs'].strokeText(sdr.role,0,0)
+            CTX['pcs'].fillText(sdr.role,0,0)
+            CTX['pcs'].restore()
+          }
+          ctx.restore()
+        })
+        ctx.restore()
+      }
+      click() {
+        console.log(this)
+      }
+    }
+
+    class CMND extends Team {
+      constructor(...args) {
+        super(...args)
+      }
+      command() {
+
+      }
+    }
+
+    let count={}
+
+    const BLU=[
+      new Team(0.5,0,"LTE",[new Soldier(7,1,'Lieutenant')]),
+      new Team(2.5,0,"MMG",[
+        new Soldier(3,1,'MMG Gunner'),
+        new Soldier(2,2,'Rifleman'),
+        new Soldier(1,1,'Rifleman'),
+      ]),
+      new Team(4.5,0,"MAT",[
+        new Soldier(3,1,'MAT Gunner'),
+        new Soldier(2,2,'Rifleman'),
+        new Soldier(1,1,'Rifleman'),
+      ]),
+
+      new Team(6.5,0,"SGT",[new Soldier(6,1,'Sergeant')]),
+      // new Team(7,1),
+
+      new Team(0,3,"CPL",[new Soldier(5,1,'Corporal')]),
+      new Team(1,4),
+
+      new Team(0,6,"LCP",[new Soldier(4,1,'Lance Corporal')]),
+      new Team(1,7),
+
+      new Team(3,3,"CPL",[new Soldier(5,1,'Corporal')]),
+      new Team(4,4),
+
+      new Team(3,6,"LCP",[new Soldier(4,1,'Lance Corporal')]),
+      new Team(4,7),
+
+      new Team(6,3,"CPL",[new Soldier(5,1,'Corporal')]),
+      new Team(7,4),
+
+      new Team(6,6,"LCP",[new Soldier(4,1,'Lance Corporal')]),
+      new Team(7,7),
+
+    ]
+
+  </script>
+
+</body>
+</html>
