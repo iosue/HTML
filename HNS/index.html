@@ -24,10 +24,10 @@
     const Game={
       tiles:[],
       pcs:[
-        new Blob(32*1, 32*1/2, 0),
-        new Blob(32*18, 32*2, 1),
-        new Blob(32*18, 32*10, 2),
-        new Blob(32*4, 32*1/2, 3),
+        new Blob(32*1.00, 32*1/2, 0),
+        new Blob(32*18.0, 32*2, 1),
+        new Blob(32*18.6, 32*10, 2),
+        new Blob(32*4.00, 32*1/2, 3),
       ],
       spatter:[]
     }
@@ -37,8 +37,8 @@
             layers:[
               {name:"bmp"},
               {name:"map",live:true,scale:true},
-              {name:"pth",live:true,scale:true},
               {name:"pcs",live:true,scale:true},
+              {name:"pth",live:true,scale:true},
               {name:"gui",live:true,}        
             ],
             tile:{
@@ -116,6 +116,19 @@
 
     function createMap() {
       const dataMap=[
+              '0000000000000000000000',
+              '0000000000000000000000',
+              '0000000000000000000000',
+              '0000000000000000000000',
+              '0000000000000000000000',
+              '0000000000000000000000',
+              '0000000000000000000000',
+              '0000000000000000000000',
+              '0000000000000000000000',
+              '0000000000000000000000',
+              '0000000000000000000000',
+              '1111111111111111111111',
+
               '1110000000000000000000',
               '1000000000001000011000',
               '1000111100001100000000',
@@ -148,7 +161,7 @@
       let imgData=ctx.getImageData(settings.mapWidth,0,120,120).data
       let pixels=new Uint8ClampedArray(imgData.length)
       for (let c=0;c<4;c++) {
-        let colorCode=[0,0,0]
+        let colorCode=[0,0,0], hue
         for (let i=0;i<imgData.length;i+=4) {
           let oldrgb=[imgData[i+0],imgData[i+1],imgData[i+2]]
           let oklch=rgb2oklch(oldrgb)
@@ -159,13 +172,17 @@
           colorCode[0] = Math.max(colorCode[0],newrgb[0])
           colorCode[1] = Math.max(colorCode[1],newrgb[1])
           colorCode[2] = Math.max(colorCode[2],newrgb[2])
-          pixels[i+0]=newrgb[0]
-          pixels[i+1]=newrgb[1]
-          pixels[i+2]=newrgb[2]
-          pixels[i+3]=imgData[i+3]
+          pixels[i+0] = newrgb[0]
+          pixels[i+1] = newrgb[1]
+          pixels[i+2] = newrgb[2]
+          pixels[i+3] = imgData[i+3]
         }
 
-        if (Game.pcs.find(pc=>pc.color==c)) Game.pcs[c].rgb=colorCode
+        let PC = Game.pcs.find(pc=>pc.color==c)
+        if (PC) {
+          PC.rgb = colorCode
+          PC.hue = hue
+        }
 
         ctx.putImageData(
           new ImageData(pixels,120),
@@ -191,6 +208,7 @@
           CVS[layer.name].width = innerWidth
           CVS[layer.name].height = innerHeight
           if (layer.scale) {
+            // C.x=600; C.y=350; C.z=.1
             CTX[layer.name].translate(innerWidth/2+settings.screenOffset,innerHeight/2+settings.screenOffset)
             CTX[layer.name].scale(1/C.z,1/C.z)
             CTX[layer.name].translate(-C.x,-C.y)
@@ -199,7 +217,6 @@
         resetContext(CTX[layer.name])
       }
 
-      
       CTX['map'].fillStyle=`hsl(100 20 20)`
       CTX['map'].fillRect(-settings.screenOffset,-settings.screenOffset,settings.mapWidth,settings.mapHeight)
       // CTX['map'].drawImage(background,0,0,settings.mapWidth,settings.mapHeight,-settings.screenOffset,-settings.screenOffset,settings.mapWidth,settings.mapHeight)

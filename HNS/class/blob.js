@@ -6,7 +6,7 @@ class Blob {
     this.y = y
     this.color = color
     this.u = 0
-    this.v = -10
+    this.v = 0
     this.a = 0
     this.b = 0
     this.f = 0
@@ -86,7 +86,7 @@ class Blob {
     }
 
     if (K[this.keys.down]) {
-      if (this.suicide++>180) {
+      if (this.suicide++>100) {
         this.suicide = 0
         delete K[this.keys.down]
         return this.die()
@@ -127,6 +127,39 @@ class Blob {
     for (const that of Game.pcs) {
       if (that==this) continue
 
+      let dx = that.x-this.x,
+          dy = that.y-this.y,
+          D = Math.hypot(dy,dx),
+          A = Math.atan2(dy,dx)
+        A+=Math.PI*2
+        A%=Math.PI*2
+      let ndx = that.next.x-this.next.x,
+          ndy = that.next.y-this.next.y,
+          nD = Math.hypot(ndy,ndx),
+          nA = Math.atan2(ndy,ndx)
+        nA+=Math.PI*2
+        nA%=Math.PI*2
+
+      if (nD<this.w) {
+        if (Math.PI*1/5 < A && A < Math.PI*4/5) {
+          console.log(this,'kills',that)
+          this.next.v=-8
+          return that.die()
+        }
+
+        let mx = D*Math.cos(A)/2,
+            my = D*Math.sin(A)/2
+
+        this.next.u = (this.u+that.u)/2
+        this.next.x = this.x + this.next.u
+      }
+    }
+  }
+
+  bump2() {
+    for (const that of Game.pcs) {
+      if (that==this) continue
+
       let dx = that.next.x-this.next.x,
           dy = that.next.y-this.next.y,
           D = Math.hypot(dy,dx),
@@ -136,6 +169,22 @@ class Blob {
       if (D < this.w) {
         if (Math.PI*1/4 < A && A<Math.PI*3/4) {
           this.next.v-=10
+
+          let ctx=CTX['pth']
+
+          ctx.beginPath()
+          ctx.strokeStyle = 'white'
+          ctx.moveTo(this.x, this.y)
+          ctx.lineTo(that.x, that.y)
+          ctx.stroke()
+
+          ctx.beginPath()
+          ctx.strokeStyle = 'black'
+          ctx.moveTo(that.next.x+2, that.next.y)
+          ctx.lineTo(this.next.x+2, this.next.y)
+          ctx.stroke()
+
+
           return that.die()
         }
 
@@ -233,10 +282,9 @@ class Blob {
       this[prop]=this.next[prop]
     }
 
-    console.log(this.pose,this.next.pose)
     this.pose = this.next.pose||
               (
-                (this.suicide&&(this.suicide+2)%4)?'still':this.suicide>110?'blocked':this.suicide>50?'accelerating'
+                (this.suicide&&(this.suicide+2)%4)?'still':this.suicide>60?'blocked':this.suicide>30?'accelerating'
                   :this.next.jumping
                   ?'jumping'
                   :Math.abs(this.v)>0.05
@@ -251,12 +299,11 @@ class Blob {
                           :this.next.inWater?'dec_water':'decelerating'
                         :this.next.inWater?'still_water':'still'
               )
-    console.log(this.pose,this.next.pose)
     this.facing = this.next.u>0
                     ?1 
                     :this.next.u<0
                       ?-1
-                      :this.suicide>20&&this.suicide%4==0
+                      :this.suicide>10&&this.suicide%4==0
                           ?-this.facing
                           :+this.facing
     delete K[this.keys.jump]
@@ -268,13 +315,13 @@ class Blob {
 
 
   die() {
+    Game.spatter.push(new Spatter(this.rgb,this.u,this.v,this.x,this.y))
     this.next.a=0; this.next.u=0; this.next.x=0;
-    this.next.b=0; this.next.v=0; this.next.y=0;
+    this.next.b=0; this.next.v=-1; this.next.y=0;
     let airTiles = Game.tiles.filter(tile=>tile.type==0)
     let newTile = airTiles[Math.floor(Math.random()*airTiles.length)]
-    this.next.x = newTile.x
-    this.next.y = newTile.y
-    Game.spatter.push(new Spatter(this.rgb,this.u,this.v,this.x,this.y))
+    this.x = this.next.x = newTile.x
+    this.y = this.next.y = newTile.y
   }
 
 }
@@ -283,7 +330,7 @@ class Blob {
 class Spatter {
   constructor(color,u,v,x,y) {
     this.chunks = []
-    for (let i=0;i<8+Math.floor(Math.random()*4);i++)
+    for (let i=0;i<20+Math.floor(Math.random()*10);i++)
     this.chunks.push(new Chunk(color,u,v,x,y))
   }
 
@@ -300,12 +347,14 @@ class Chunk {
   constructor(color,u,v,x,y) {
     this.color = color
     this.u = u+Math.random()*8-4
-    this.v = v+Math.random()*6-3
+    this.v = v+Math.random()*7-4
     this.x = x
     this.y = y
     this.rotation = Math.PI*2*Math.random()
     this.friction = 0.01
     this.gravity = 0.25
+    this.skin = Math.random()>0.5
+    this.small = Math.random()>0.5
   }
   get top    () {return this.y-this.h/2}
   get left   () {return this.x-this.w/2}
@@ -406,26 +455,93 @@ class Chunk {
   draw(ctx) {
     this.update()
     ctx.save()
-    ctx.translate(this.x,this.y)
-    ctx.rotate(this.rotation)
-    ctx.beginPath()
-    ctx.roundRect(-4,-4,8,8,2)
-    ctx.fillStyle=`hsl(000 75 35)`
-    ctx.fill()
-    ctx.stroke()
-    ctx.beginPath()
-    ctx.moveTo(-1,0)
-    ctx.lineTo(1,+5)
-    ctx.lineTo(5,0)
-    ctx.lineTo(1,-5)
-    ctx.closePath()
-    ctx.fillStyle=`rgb(${this.color.join()})`
-    ctx.fill()
-    ctx.stroke()
-    ctx.fillStyle='#fffc'
-    ctx.fillRect(0,0,2,2)
-    ctx.fillStyle='#000c'
-    ctx.fillRect(-3,-4,3,2)
+    ctx.translate(this.next.x,this.next.y)
+    ctx.scale(this.small?1.2:0.8,this.small?1.2:0.8)
+    ctx.rotate(this.rotation-this.u)
+
+    let flesh=new Path2D()
+    flesh.lineTo(-3,-3)
+    flesh.lineTo(+2,-2)
+    flesh.lineTo(+2,+3)
+    flesh.lineTo(-3,+3)
+    flesh.lineTo(-5,0)
+    flesh.closePath()
+
+    let fleshShadow=new Path2D()
+    fleshShadow.lineTo(-5,0)
+    fleshShadow.lineTo(+2,+3)
+    fleshShadow.lineTo(-3,+3)
+    fleshShadow.closePath()
+
+    let skin=new Path2D()
+    skin.lineTo(-0,-2.5)
+    skin.lineTo(+2,-3.0)
+    skin.lineTo(+4,0.00)
+    skin.lineTo(+2,+3.0)
+    skin.lineTo(-0,+2.5)
+    skin.lineTo(-1,0.00)
+    skin.closePath()
+
+    let skinShadow=new Path2D()
+    skinShadow.lineTo(+2.5,-0.5)
+    skinShadow.lineTo(+2,-3.0)
+    skinShadow.lineTo(+4,0.00)
+    skinShadow.lineTo(+2,+3.0)
+    skinShadow.lineTo(-0,+2.5)
+    skinShadow.closePath()
+
+
+    ctx.lineWidth=3
+
+   
+    ctx.strokeStyle='hsl(0 75 10)'
+    ctx.stroke(flesh)
+
+    ctx.fillStyle='hsl(0 75 35)'
+    ctx.fill(flesh)
+
+    ctx.fillStyle='#0004'
+    ctx.fill(fleshShadow)
+
+
+    if (this.skin) {
+      ctx.strokeStyle='hsl(0 75 0)'
+      ctx.stroke(skin)
+  
+      ctx.fillStyle=`rgb(${this.color.join()})`
+      ctx.fill(skin)
+  
+      ctx.fillStyle='#0004'
+      ctx.fill(skinShadow)
+    }
+
+    
     ctx.restore()
+
+
+    // ctx.save()
+    // ctx.translate(this.x,this.y)
+    // ctx.rotate(this.rotation)
+    // ctx.beginPath()
+    // ctx.roundRect(-4,-4,8,8,2)
+    // ctx.fillStyle=`hsl(000 75 35)`
+    // ctx.fill()
+    // ctx.stroke()
+    // ctx.beginPath()
+    // ctx.moveTo(-1,0)
+    // ctx.lineTo(2,+4.5)
+    // ctx.lineTo(5,0)
+    // ctx.lineTo(2,-4.5)
+    // ctx.closePath()
+    // ctx.fillStyle=`rgb(${this.color.join()})`
+    // ctx.fill()
+    // ctx.fillStyle=`hsl(000 75 35)`
+    // ctx.fillRect(1/2,-4,2,3)
+    // ctx.fillStyle='#fffc'
+    // ctx.fillRect(1/2,1,2,3)
+    // ctx.fillStyle='#000c'
+    // ctx.fillRect(-4,-4,5,2)
+    // ctx.stroke()
+    // ctx.restore()
   }
 }

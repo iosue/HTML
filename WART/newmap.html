@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WART</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    canvas {
+      position: fixed;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <script>
+
+    const mapWidth=1000,
+          mapHeight=1000,
+          settings={
+            layers:[
+              {name:"bmp",},
+              {name:"map",live:true,scale:true},
+              {name:"pth",live:true,scale:true},
+              {name:"pcs",live:true,scale:true},
+              {name:"gui",live:true,}        
+            ],
+          },
+          CVS={},CTX={},K={},
+          C={x:mapWidth/2,y:mapHeight/2,z:1.8,v:10/9},
+          M={
+            b:{},
+            get sx() {return (this.x-innerWidth/2)*C.z},
+            get sy() {return (this.y-innerHeight/2)*C.z}
+          },
+          Game={
+            locations:[],
+            terrain:[],
+          }
+    let pause=false
+
+    addEventListener('contextmenu',e=>{
+      if (!e.ctrlKey) e.preventDefault()
+    })
+    addEventListener('mousemove',e=>{
+      M.x=e.x
+      M.y=e.y
+      if (M.b[1]) {
+        C.x-=e.movementX*C.z
+        C.y-=e.movementY*C.z
+      }
+    })
+    addEventListener('mousedown',e=>M.b[e.button]=true)
+    addEventListener('mouseup',e=>delete M.b[e.button])
+    addEventListener('wheel',e=>{
+      if (K['KeyM']) {
+        R-=20*Math.sign(e.deltaY)
+        R=Math.max(0,R)
+      } else {
+        C.x+=M.sx
+        C.y+=M.sy
+        C.z*=C.v**Math.sign(e.deltaY)
+        C.y-=M.sy
+        C.x-=M.sx
+      }
+    })
+    addEventListener('keydown',e=>{
+      if (e.code=='Escape') {
+        pause=!pause
+        if (!pause) refresh()
+        console.log(pause?'pause':'resume')
+      } else
+        K[e.code]=true
+    })
+    addEventListener('keyup',e=>{delete K[e.code]})
+
+    onload=()=>{
+      createLayers()
+      createMap()
+      refresh()
+    }
+
+
+    let size=100, mode='createMap', loop=0
+
+    function createLayers() {
+      for (let layer of settings.layers) {
+        if (layer.live) {
+          CVS[layer.name] = document.createElement('canvas')
+          CVS[layer.name].height = innerHeight
+          CVS[layer.name].width = innerWidth
+          CVS[layer.name].id = layer.name
+          document.body.appendChild(CVS[layer.name])
+        } else CVS[layer.name] = new OffscreenCanvas(mapWidth,mapHeight)
+        CTX[layer.name] = CVS[layer.name].getContext('2d')
+        CTX[layer.name].lineCap = "round"
+        CTX[layer.name].lineJoin = "round"
+        CTX[layer.name].font = "12px consolas"
+        CTX[layer.name].textAlign = "center"
+        CTX[layer.name].textBaseline = "middle"
+      }
+    }
+
+    function createMap(ctx=CTX['bmp']) {
+      for (let j=0;j<mapWidth/size;j++)
+      for (let i=0;i<mapWidth/size;i++) {
+        Game.terrain[j]??=[]
+        Game.terrain[j][i] = new Meter(i,j)
+      }
+    }
+    
+    function refresh() {
+      //reset layers
+      for (let layer of settings.layers) {
+        if (layer.live) {
+          CVS[layer.name].width = innerWidth
+          CVS[layer.name].height = innerHeight
+          if (layer.scale) {
+            CTX[layer.name].translate(innerWidth/2,innerHeight/2)
+            CTX[layer.name].scale(1/C.z,1/C.z)
+            CTX[layer.name].translate(-C.x,-C.y)
+          }
+        }
+        CTX[layer.name].lineCap = "round"
+        CTX[layer.name].lineJoin = "round"
+        CTX[layer.name].font = "64px consolas"
+        CTX[layer.name].textAlign = "center"
+        CTX[layer.name].textBaseline = "middle"
+      }
+
+      //draw loop
+      CTX['map'].drawImage(CVS['bmp'],0,0)
+
+      if (mode=='createMap') {
+        let empty = Game.terrain.flat().filter(m=>!m.z)
+        if (empty.length) {
+          let i=Math.floor(Math.random()*empty.length)
+          let newMeter = empty[i]
+          newMeter.k = Math.round((Math.random()*100-50 + newMeter.neighbourAverage*3)/4)
+          newMeter.draw(CTX['bmp'])
+          ctx=CTX['gui']
+          ctx.fillStyle='goldenrod'
+          let width=(Game.terrain.flat().length-empty.length)/Game.terrain.flat().length*innerWidth
+          ctx.fillRect(0,0,width,1)
+        } else {
+          Game.terrain[0][0].k=-10
+          Game.terrain[0][0].draw(CTX['bmp'])
+          console.log(Game.terrain)
+          mode='rain'
+        }
+      }
+
+      if (mode=='rain') {
+        let flatMap = Game.terrain.flat()
+
+        console.log('flow')
+        for (const m of flatMap) {
+          let pool = m.water
+          for (const n of m.lowestNeighbours) {
+            n.flow += m.rate
+          }
+          m.water -= pool
+          // m.water += 1/20
+        }
+
+        console.log('update')
+        for (const m of flatMap) {
+          if (m.flow<0.01) m.flow = 0
+          m.water += m.flow
+          m.drawWater()
+          m.drawFlow()
+          m.flow = 0
+        }
+        pause=true
+      }
+
+      CTX['gui'].fillStyle='goldenrod'
+      CTX['gui'].fillText('\\|/-'[Math.floor(++loop/10)%4],50,50)
+
+      if (!pause)
+          // requestAnimationFrame(refresh)
+        setTimeout(refresh,1000/10)
+    }
+
+    class Meter {
+      constructor (i,j,k) {
+        this.i = i
+        this.j = j
+        this.k = k
+        this.water = 1
+        this.flow = 0
+      }
+      get x() {return this.i*size}
+      get y() {return this.j*size}
+      get z() {return 120-this.k*1.5+(this.k<-10)*100||''}
+      get neighbours() {
+        const nList = [],
+          check = n=>{if (n) nList.push(n)}
+        check(Game.terrain[this.j-1]?.[this.i-1])
+        check(Game.terrain[this.j-1]?.[this.i])
+        check(Game.terrain[this.j-1]?.[this.i+1])
+        check(Game.terrain[this.j]?.[this.i-1])
+        check(Game.terrain[this.j]?.[this.i+1])
+        check(Game.terrain[this.j+1]?.[this.i-1])
+        check(Game.terrain[this.j+1]?.[this.i])
+        check(Game.terrain[this.j+1]?.[this.i+1])
+        return nList
+      }
+      get waterLevel() {
+        return this.k + this.water
+      }
+      get lowestNeighbours() {
+        let lList=[]
+        for (const n of [this,...this.neighbours]) {
+          if (lList.length==0 || n.waterLevel < lList[0].waterLevel) {
+            lList = [n]
+          } else if (n.waterLevel==lList[0].waterLevel) {
+            lList.push(n)
+          }
+        }
+        if (this.i+this.j==0) console.log(this,...lList)
+        return lList
+      }
+      get rate() {
+        return this.water/this.lowestNeighbours.length
+      }
+      get neighbourAverage() {
+        const kList=[]
+        for (const n of this.neighbours) {
+          if (n.k) {
+            kList.push(n.k)
+            if (Math.abs(n.i-this.i)+Math.abs(n.j-this.j)<2)
+              kList.push(n.k)
+          }
+        }
+        return kList.reduce((s,c)=>s+c,0)/kList.length||50
+      }
+      draw(ctx=CTX['bmp']) {
+        ctx.save()
+        ctx.fillStyle = `hsl(${this.z} 50 50)`
+        ctx.fillRect(this.x,this.y,size,size)
+        ctx.fillStyle = `hsl(0 50 100)`
+        ctx.fillText(this.k??'',this.x+size/2,this.y+size/2)
+        ctx.restore()
+      }
+      drawWater(ctx=CTX['map']) {
+        ctx.save()
+        ctx.fillStyle = `hsl(222 50 50/0.2)`
+        for (let i=0;i<this.water;i++)
+          ctx.fillRect(this.x,this.y,size,size)
+        ctx.restore()
+      }
+      drawFlow(ctx=CTX['map']) {
+        ctx.save()
+        ctx.translate(this.x+size/2,this.y+size/2)
+        ctx.scale(0.65,0.65)
+        ctx.beginPath()
+        for (const n of this.lowestNeighbours) {
+          ctx.moveTo(0,0)
+          ctx.lineTo(n.x-this.x,n.y-this.y)
+        }
+        ctx.strokeStyle = `hsl(222 50 50/0.25)`
+        ctx.lineWidth = this.rate
+        if (this.rate>0.001) ctx.stroke()
+        ctx.restore()
+      }
+    }
+
+    class TownName {
+      constructor() {
+        return `Location ${Game.locations.length+1}`
+      }
+    }
+
+    class Town {
+      constructor(x,y,pop=1000,name=new TownName()) {
+        this.x = x
+        this.y = y
+        this.pop = pop
+        this.name = name
+      }
+    }
+
+
+</script>
+
+</body>
+</html>
