@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WART</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    canvas {
+      position: fixed;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <script src="./scripts/consts.js"></script>
+  <script src="./scripts/helpers.js"></script>
+  <script src="./scripts/listeners.js"></script>
+  <script src="./classes/Button.js"></script>
+  <script src="./classes/Meter.js"></script>
+  <script src="./classes/Soldier.js"></script>
+  <script src="./classes/Team.js"></script>
+  <script>
+
+// onload=()=>{
+//   createLayers()
+//   createMap()
+//   createSprites()
+//   createPCs()
+//   createGUI()
+//   refresh()
+// }
+
+createLayers()
+
+
+function createLayers() {
+  for (let layer of settings.layers) {
+    if (layer.live) {
+      CVS[layer.name] = document.createElement('canvas')
+      CVS[layer.name].height = innerHeight
+      CVS[layer.name].width = innerWidth
+      CVS[layer.name].id = layer.name
+      document.body.appendChild(CVS[layer.name])
+    } else CVS[layer.name] = new OffscreenCanvas(layer.w??canvasWidth,layer.h??canvasHeight)
+    CTX[layer.name] = CVS[layer.name].getContext('2d')
+    CTX[layer.name].lineCap = "round"
+    CTX[layer.name].lineJoin = "round"
+    CTX[layer.name].font = "9px consolas"
+    CTX[layer.name].textAlign = "center"
+    CTX[layer.name].textBaseline = "middle"
+  }
+
+  return createMap()
+}
+
+function createMap(ctx=CTX['bmp']) {
+  ctx.translate(tileSize,tileSize/Math.cos(Math.PI/6)*7/8)
+  for (let j=0;j<=mapJ;j++)
+  for (let i=0;i<=mapI;i++) {
+    let newTile = new Meter(2*i+j%2,j)
+    Game.terrain[j]??=[]
+    Game.terrain[j][2*i+j%2] = newTile
+    newTile.draw()
+  }
+
+  return createSprites()
+}
+
+function createSprites(ctx=CTX['sprites']) {
+  for (const mode in SpriteList) {
+    Sprites[mode]??={}
+    for (const pose in SpriteList[mode]) {
+      Sprites[mode][pose]??=[]
+      CVS[`${mode}_${pose}`] = new OffscreenCanvas(300*4,200*5)
+
+      // CVS[`${mode}_${pose}`] = document.createElement('canvas')
+      // CVS[`${mode}_${pose}`].width = 300*4
+      // CVS[`${mode}_${pose}`].height = 200*5
+      // document.body.appendChild(CVS[`${mode}_${pose}`])
+
+      CTX[`${mode}_${pose}`] = CVS[`${mode}_${pose}`].getContext('2d')
+      for (let i=0;i<SpriteList[mode][pose];i++) {
+        let img = new Image()
+        img.src=`./sprites/topDown/${mode}/${pose}/survivor-${pose}_${mode}_${i}.png`
+        img.onload=()=>CTX[`${mode}_${pose}`].drawImage(img,300*(i%4),200*Math.floor(i/4))
+      }
+    }
+  }
+  return createPCs()
+}
+
+function createPCs() {
+  PCs.push(
+    new Soldier(1,"Rifleman",undefined,Game.terrain[5][15])
+  )
+  Game.activePC = PCs[0]
+
+  return createGUI()
+}
+
+function createGUI() {
+  // pause=true
+  Game.buttons=[]
+  Game.hotkeys={}
+  new Button(-150,64,()=>{},'Move','move',1,'Digit1')
+  new Button(-50,64,()=>{},'Shoot','aim1',2,'Digit2')
+  new Button(+50,64,()=>{},'Suppress','aim3',3,'Digit3')
+  new Button(+150,64,()=>{},'Reload','reload',4,'Digit4')
+
+  onload=refresh
+}
+
+function refresh() {
+  //reset layers
+  for (let layer of settings.layers) {
+    if (layer.live) {
+      CVS[layer.name].width = innerWidth
+      CVS[layer.name].height = innerHeight
+      if (layer.scale) {
+        CTX[layer.name].translate(innerWidth/2,innerHeight/2)
+        CTX[layer.name].scale(1/C.z,1/C.z)
+        CTX[layer.name].translate(-C.x,-C.y)
+        // CTX[layer.name].scale(10/10,9/10)
+        // CTX[layer.name].rotate(Math.PI/12)
+      }
+    }
+    CTX[layer.name].lineCap = "round"
+    CTX[layer.name].lineJoin = "round"
+    CTX[layer.name].font = "12px consolas"
+    CTX[layer.name].textAlign = "center"
+    CTX[layer.name].textBaseline = "middle"
+  }
+
+  if (Game.hoverButton || Game.hoverHex) {
+    document.body.style.setProperty('cursor','default')
+  } else {
+    document.body.style.setProperty('cursor','default')
+  }
+  delete Game.hoverButton
+  // delete Game.hoverHex
+
+
+  //draw loop
+  CTX['map'].drawImage(CVS['bmp'],-tileSize,-tileSize*1)
+  // CTX['test'].drawImage(CVS['rifle_idle'],0,0)
+
+  // CTX['map'].strokeStyle='white'
+  // CTX['map'].strokeRect(0,0,mapWidth,mapHeight)
+
+  CTX['gui'].fillStyle='goldenrod'
+  CTX['gui'].fillText('\\|/-'[Math.floor(++loop/6)%4],25,25)
+
+  Game.terrain.flat().forEach(hex=>hex.hover())
+  displayUI()
+  PCs.forEach(pc=>pc.update())
+
+  if (!pause)
+      // requestAnimationFrame(refresh)
+    setTimeout(refresh,1000/60)
+}
+
+function displayUI(ctx=CTX['gui']) {
+  ctx.beginPath
+  ctx.rect(0,innerHeight-128,innerWidth,128)
+  ctx.fillStyle=`hsl(200 50 20/0.30)`
+  if (ctx.isPointInPath(M.x,M.y)) {
+  ctx.fillStyle=`hsl(200 50 20/0.50)`
+    delete Game.hoverHex
+  }
+  ctx.fill()
+  ctx.font="13px slate"
+  Game.buttons.forEach(b=>b.draw())
+}
+
+
+</script>
+
+</body>
+</html>
