@@ -22,3 +22,6 @@ Math.minAbs=(...N)=>{
   return N[m]
 }
 
+Math.clamp=(m=0,n=0,M=n)=>{
+  return Math.min(M,Math.max(m,n))
+}

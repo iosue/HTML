@@ -1,5 +1,5 @@
 class Button {
-  constructor(cx,cy,fn,text='',phase,key='',code,img='../me.png',w=64,h=64,r=8) {
+  constructor(cx,cy,fn,text='',phase,key='',code,img='./misc/me.png',w=64,h=64,r=8) {
     this.cx = cx
     this.cy = cy
     this.fn = fn
@@ -13,20 +13,23 @@ class Button {
     this.r = r
     Game.buttons.push(this)
     if (code) Game.hotkeys[code]=this
+    let thisButton = this
   }
   get sx() {return innerWidth/2 + this.cx}
-  get sy() {return innerHeight - this.cy}
+  get sy() {return 0 - this.cy}
   get x() {return this.sx - this.w/2}
   get y() {return this.sy - this.h/2}
+
   draw(ctx=CTX['gui']) {
     ctx.save()
     ctx.beginPath()
     ctx.roundRect(this.x,this.y,this.w,this.h,this.r)
     if (ctx.isPointInPath(M.x,M.y)) {
-      Game.hoverButton = this
-      this.hover = true
+        Game.hoverButton = this
+        this.hover = true
     } else {
       this.hover = false
+      if (Game.hoverButton==this) delete Game.hoverButton
     }
     ctx.lineWidth = this.hover||Game.phase==this.phase?4:2
     ctx.fillStyle = this.hover||Game.phase==this.phase?'hsl(200 80 20)':'hsl(200 20 20)'
@@ -46,9 +49,11 @@ class Button {
     ctx.fillText(this.key,this.sx,this.sy+this.h*3/4)
     ctx.restore()
   }
+
   click() {
-    console.log(this)
     Game.phase=this.phase
-    this.fn()
+    // console.log(Game.phase)
+    this.fn(this)
   }
+
 }

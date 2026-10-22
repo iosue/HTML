@@ -21,6 +21,9 @@
   <script src="./classes/Button.js"></script>
   <script src="./classes/Meter.js"></script>
   <script src="./classes/Soldier.js"></script>
+  <script src="./classes/Soldier_calc.js"></script>
+  <script src="./classes/Soldier_do.js"></script>
+  <script src="./classes/Soldier_draw.js"></script>
   <script src="./classes/Team.js"></script>
   <script>
 
@@ -58,9 +61,9 @@ function createLayers() {
 
 function createMap(ctx=CTX['bmp']) {
   ctx.translate(tileSize,tileSize/Math.cos(Math.PI/6)*7/8)
-  for (let j=0;j<=mapJ;j++)
-  for (let i=0;i<=mapI;i++) {
-    let newTile = new Meter(2*i+j%2,j)
+  for (let j=0;j<mapJ;j++)
+  for (let i=0;i<mapI;i++) {
+    let newTile = new Meter(2*i+j%2,j,mapData[j][i])
     Game.terrain[j]??=[]
     Game.terrain[j][2*i+j%2] = newTile
     newTile.draw()
@@ -93,10 +96,16 @@ function createSprites(ctx=CTX['sprites']) {
 }
 
 function createPCs() {
-  PCs.push(
+  Game.PCs.push(
     new Soldier(1,"Rifleman",undefined,Game.terrain[5][15])
   )
-  Game.activePC = PCs[0]
+  Game.PCs.push(
+    new Soldier(1,"Rifleman",undefined,Game.terrain[10][10])
+  )
+  Game.PCs.push(
+    new Soldier(1,"Rifleman",undefined,Game.terrain[5][5])
+  )
+  Game.activePC = Game.PCs[0]
 
   return createGUI()
 }
@@ -105,15 +114,63 @@ function createGUI() {
   // pause=true
   Game.buttons=[]
   Game.hotkeys={}
-  new Button(-150,64,()=>{},'Move','move',1,'Digit1')
-  new Button(-50,64,()=>{},'Shoot','aim1',2,'Digit2')
-  new Button(+50,64,()=>{},'Suppress','aim3',3,'Digit3')
-  new Button(+150,64,()=>{},'Reload','reload',4,'Digit4')
+
+  new Button(-350,64,(button)=>{
+    let i=Game.pendingPCs.indexOf(Game.activePC)
+        i+=Game.pendingPCs.length-1
+        i%=Game.pendingPCs.length
+    Game.activePC = Game.pendingPCs[i]
+    if (Game.activePC) Game.activePC.focus = true
+    delete Game.phase
+  },'Prev PC',null,'Shift','ShiftLeft')
+
+  new Button(-250,64,()=>{},'Move','plan_move',1,'Digit1')
+
+  new Button(-150,64,()=>{},'Shoot','plan_shoot',2,'Digit2')
+
+  new Button(-50,64,()=>{},'Suppress','plan_suppress',3,'Digit3')
+
+  new Button(+50,64,()=>{},'Reload','plan_reload',4,'Digit4')
+
+  new Button(+150,64,()=>{
+      Game.activePC.done = true
+      delete Game.phase
+      Game.hotkeys['Tab'].click()
+    },'End Turn','next_turn',9,'Digit9')
+
+  new Button(+250,64,()=>{
+        Game.PCs.forEach(pc=>{
+          let carry = pc.energy.carry
+          pc.energy.spent = 0
+          pc.energy.costs = 0
+          pc.energy.datum = carry
+          delete pc.done
+        })
+      Game.activePC = Game.PCs[0]
+      Game.activePC.focus = true
+      delete Game.phase
+    },'End Round','next_round',0,'Digit0')
+
+  new Button(+350,64,(button)=>{
+      let i=Game.pendingPCs.indexOf(Game.activePC)
+          i+=Game.pendingPCs.length+1
+          i%=Game.pendingPCs.length
+      Game.activePC = Game.pendingPCs[i]
+      console.log(Game.activePC)
+      if (!Game.activePC) {
+        console.log('end round')
+        Game.hotkeys['Digit0'].click()
+      } else {
+        Game.activePC.focus = true
+      }
+      delete Game.phase
+    },'Next PC',null,'Tab','Tab')
 
   onload=refresh
 }
 
 function refresh() {
+  // console.log(Game.phase)
   //reset layers
   for (let layer of settings.layers) {
     if (layer.live) {
@@ -139,7 +196,7 @@ function refresh() {
   } else {
     document.body.style.setProperty('cursor','default')
   }
-  delete Game.hoverButton
+  // delete Game.hoverButton
   // delete Game.hoverHex
 
 
@@ -153,9 +210,9 @@ function refresh() {
   CTX['gui'].fillStyle='goldenrod'
   CTX['gui'].fillText('\\|/-'[Math.floor(++loop/6)%4],25,25)
 
-  Game.terrain.flat().forEach(hex=>hex.hover())
   displayUI()
-  PCs.forEach(pc=>pc.update())
+  Game.terrain.flat().forEach(hex=>hex.hover())
+  Game.PCs.forEach(pc=>pc.update())
 
   if (!pause)
       // requestAnimationFrame(refresh)
@@ -163,16 +220,26 @@ function refresh() {
 }
 
 function displayUI(ctx=CTX['gui']) {
+  ctx.save()
+  Game.activePC.drawGauge(ctx)
+  if (Game.phase?.match(/^wait/)) return
+
+  ctx.translate(0,innerHeight-80)
   ctx.beginPath
-  ctx.rect(0,innerHeight-128,innerWidth,128)
+  ctx.rect(0,0,innerWidth,-128)
   ctx.fillStyle=`hsl(200 50 20/0.30)`
-  if (ctx.isPointInPath(M.x,M.y)) {
-  ctx.fillStyle=`hsl(200 50 20/0.50)`
-    delete Game.hoverHex
-  }
   ctx.fill()
   ctx.font="13px slate"
-  Game.buttons.forEach(b=>b.draw())
+  Game.buttons.forEach(b=>b.draw(ctx))
+
+  ctx.beginPath()
+  ctx.rect(0,80,innerWidth,-208)
+  if (ctx.isPointInPath(M.x,M.y)) {
+    Game.hoverHex=null
+  } else {
+    delete Game.hoverHex
+  }
+  ctx.restore()
 }
 
 

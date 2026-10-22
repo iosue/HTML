@@ -29,9 +29,12 @@ addEventListener('keydown',e=>{
   if (e.code=='Escape') {
     pause=!pause
     if (!pause) refresh()
-    console.log(pause?'pause':'resume')
-  } else
+    console.warn(pause?'pause':'resume')
+  } else {
     K[e.code]=true
+    if (e.code=='Tab') e.preventDefault()
+  }
+
 })
 addEventListener('keyup',e=>{
   delete K[e.code]
@@ -41,13 +44,16 @@ addEventListener('click',e=>{
   if (Game.hoverButton) {
     Game.hoverButton.click()
   } else if (Game.activePC && Game.hoverHex) {
-    if (Game.phase=='move')
-      Game.activePC.walkPathTo(Game.hoverHex)
-    else 
-    if (Game.phase=='aim1') 
-      Game.activePC.shoot(Game.hoverHex)
-    if (Game.phase=='aim3') 
-      Game.activePC.suppress(Game.hoverHex)
-    delete Game.phase
+    switch (Game.phase) {
+      case "plan_move": {
+        Game.activePC.move()
+      }  break
+      case "plan_shoot": {
+        Game.activePC.shoot()
+      } break
+      case "plan_suppress": {
+        Game.activePC.suppress()
+      } break
+    }
   }
 })

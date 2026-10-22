@@ -2,7 +2,7 @@ class Meter {
   constructor(i,j,k) {
     this.i = i
     this.j = j
-    this.k = k ?? Math.round(Math.random()*8)
+    this.k = Number(k) ?? Math.round(Math.random()*8)
   }
   get w() {return tileSize}
   get h() {return this.w/Math.cos(Math.PI/6)}
@@ -23,31 +23,58 @@ class Meter {
   draw(ctx=CTX['bmp']) {
     ctx.save()
     ctx.fillStyle=`hsl(${100-this.k*5} 35 35)`
+    ctx.fillStyle=[
+      'hsl(200 50 50)',
+      'hsl(000 00 65)',
+      'hsl(080 50 60)',
+      'hsl(100 50 40)',
+      'black',
+      'hsl(000 00 35)',
+    ][this.k]
     ctx.fill(this.path)
-    ctx.strokeStyle='white'
-    // ctx.stroke(this.path)
-    ctx.font="32px consolas"
-    ctx.fillStyle='hsl(40 20 80/0.6)'
+    // ctx.font="32px consolas"
+    // ctx.fillStyle='hsl(40 20 80/0.6)'
     // ctx.fillText(`${this.j}:${this.i}`,this.x,this.y-16)
     // ctx.fillText(`${this.k}`,this.x,this.y+16)
     ctx.restore()
   }
   hover(ctx=CTX['map']) {
+    if (Game.hoverHex===null) return
     if (ctx.isPointInPath(this.path,M.x,M.y)) {
       Game.hoverHex = this
-      // ctx.save()
-      // ctx.fillStyle='#fff2'
-      // ctx.fill(this.path)
-      // ctx.restore()
-
-      // for (const [d,n] of this.neighbours) {
-      //   ctx.save()
-      //   ctx.font="32px consolas"
-      //   ctx.fillStyle = 'cyan'
-      //   ctx.fillText(d,n.x,n.y)
-      //   ctx.restore()
-      // }
+      this.highlight(CTX['pth'],'hsl(0 0 100/0.5)')
     }
+  }
+  highlight(ctx=CTX['pth'],color='cyan') {
+    ctx.save()
+    let notched = new Path2D()
+    let f=6, steps=6*f, dΘ = Math.PI*2/steps
+    for (let s=0;s<=steps;s++) {
+      let Θ=s*dΘ,
+          r=this.w/2.28 * (3**0.5)/(2*Math.sin(Θ+Math.PI/3-Math.PI/3*Math.floor(3*Θ/Math.PI)))
+      if (s%f>1)
+        notched.moveTo(r*Math.sin(Θ),r*Math.cos(Θ))
+      else
+        notched.lineTo(r*Math.sin(Θ),r*Math.cos(Θ))
+    }
+    ctx.translate(this.x,this.y)
+    ctx.lineWidth=7
+    ctx.strokeStyle=color
+    ctx.stroke(notched)
+    
+    ctx.font="20px consolas"
+    ctx.fillStyle='hsl(40 20 80/0.6)'
+    ctx.fillText(`${this.j}:${this.i}`,0,-12)
+    ctx.fillText(`${this.k}`,0,+16)
+    ctx.restore()
+  }
+  outline(ctx=CTX['pth'],color='cyan') {
+    ctx.save()
+    ctx.lineWidth=9
+    ctx.strokeStyle=color
+    ctx.clip(this.path)
+    ctx.stroke(this.path)
+    ctx.restore()
   }
   get neighbours() {
     let nList={}
@@ -61,5 +88,8 @@ class Meter {
     test('sw',this.i-1,this.j+1)
     test('se',this.i+1,this.j+1)
     return Object.entries(nList)
+  }
+  pathTo(goal) {
+    
   }
 }
