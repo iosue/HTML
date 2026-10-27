@@ -17,7 +17,7 @@ Soldier.prototype.draw = function(ctx=CTX['pcs']) {
 
     if (this.focus) {
       ctx.beginPath()
-      ctx.arc(0,0,.75**(2/3)*tileSize,0,Math.PI*2)
+      ctx.arc(0,0,.6**(2/3)*tileSize,0,Math.PI*2)
       ctx.fillStyle='#00f'
       ctx.fill()
     }
@@ -31,8 +31,8 @@ Soldier.prototype.draw = function(ctx=CTX['pcs']) {
 
     if (Game.activePC==this) {
       ctx.beginPath()
-      ctx.arc(0,0,.3**(2/3)*tileSize,0,Math.PI*2)
-      ctx.fillStyle='#fff'
+      ctx.arc(0,0,.4**(2/3)*tileSize,0,Math.PI*2)
+      ctx.fillStyle='#fff8'
       ctx.fill()
     }
 

@@ -24,12 +24,12 @@ class Meter {
     ctx.save()
     ctx.fillStyle=`hsl(${100-this.k*5} 35 35)`
     ctx.fillStyle=[
-      'hsl(200 50 50)',
-      'hsl(000 00 65)',
-      'hsl(080 50 60)',
-      'hsl(100 50 40)',
+      'hsl(200 50 50/0.5)',
+      'hsl(000 00 65/0.5)',
+      'hsl(080 50 60/0.5)',
+      'hsl(100 50 40/0.5)',
       'black',
-      'hsl(000 00 35)',
+      'hsl(000 00 35/0.5)',
     ][this.k]
     ctx.fill(this.path)
     // ctx.font="32px consolas"

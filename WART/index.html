@@ -115,7 +115,7 @@ function createGUI() {
   Game.buttons=[]
   Game.hotkeys={}
 
-  new Button(-350,64,(button)=>{
+  new Button(-400,64,(button)=>{
     let i=Game.pendingPCs.indexOf(Game.activePC)
         i+=Game.pendingPCs.length-1
         i%=Game.pendingPCs.length
@@ -151,7 +151,7 @@ function createGUI() {
       delete Game.phase
     },'End Round','next_round',0,'Digit0')
 
-  new Button(+350,64,(button)=>{
+  new Button(+400,64,(button)=>{
       let i=Game.pendingPCs.indexOf(Game.activePC)
           i+=Game.pendingPCs.length+1
           i%=Game.pendingPCs.length
