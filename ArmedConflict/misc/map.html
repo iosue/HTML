@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WART</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    canvas {
+      position: fixed;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <script>
+
+    const Game={
+      terrain:[],
+    }
+    const settings={
+      layers:[
+        {name:"bmp"},
+        {name:"map",live:true,scale:true},
+        {name:"pth",live:true,scale:true},
+        {name:"pcs",live:true,scale:true},
+        {name:"gui",live:true,}        
+      ],
+    }
+
+    let pause=false, R=200, measure={}
+
+    const mapWidth=1000,
+          mapHeight=1000
+
+    const CVS={},CTX={},K={},
+          C={x:mapWidth/2,y:mapHeight/2,z:1.75,v:10/9},
+          M={
+            b:{},
+            get sx() {return (this.x-innerWidth/2)*C.z},
+            get sy() {return (this.y-innerHeight/2)*C.z}
+          }
+
+    onload=()=>{
+      createLayers()
+      createMap()
+      refresh()
+    }
+
+    function createLayers() {
+      for (let layer of settings.layers) {
+        if (layer.live) {
+          CVS[layer.name] = document.createElement('canvas')
+          CVS[layer.name].height = innerHeight
+          CVS[layer.name].width = innerWidth
+          CVS[layer.name].id = layer.name
+          document.body.appendChild(CVS[layer.name])
+        } else CVS[layer.name] = new OffscreenCanvas(mapWidth,mapHeight)
+        CTX[layer.name] = CVS[layer.name].getContext('2d')
+        CTX[layer.name].lineCap = "round"
+        CTX[layer.name].lineJoin = "round"
+        CTX[layer.name].font = "12px consolas"
+        CTX[layer.name].textAlign = "center"
+        CTX[layer.name].textBaseline = "middle"
+      }
+    }
+
+    function createMap(ctx=CTX['bmp']) {
+      ctx.save()
+      ctx.fillStyle=`hsl(90 20 20)`
+      ctx.fillRect(0,0,1000,1000)
+      ctx.strokeStyle=`hsl(60 20 20)`
+      for (let i=1;i<10;i++) {
+        ctx.beginPath()
+        ctx.moveTo(100*i,0.00)
+        ctx.lineTo(100*i,1000)
+        ctx.moveTo(0.00,100*i)
+        ctx.lineTo(1000,100*i)
+        ctx.stroke()
+      }
+      ctx.restore()
+      for (const terrain of Game.terrain) {
+        terrain.draw(ctx)
+      }
+    }
+    
+    function refresh() {
+      //reset cursor
+      if (Game.tile?.hovered) {
+        document.body.style.setProperty('cursor','pointer')
+        delete Game.tile.hovered
+      } else if (Game.space?.hovered) {
+        document.body.style.setProperty('cursor','pointer')
+        delete Game.space.hovered
+      } else {
+        document.body.style.setProperty('cursor','default')
+      }
+
+      //reset layers
+      for (let layer of settings.layers) {
+        if (layer.live) {
+          CVS[layer.name].width = innerWidth
+          CVS[layer.name].height = innerHeight
+          if (layer.scale) {
+            CTX[layer.name].translate(innerWidth/2,innerHeight/2)
+            CTX[layer.name].scale(1/C.z,1/C.z)
+            CTX[layer.name].translate(-C.x,-C.y)
+          }
+        }
+        CTX[layer.name].lineCap = "round"
+        CTX[layer.name].lineJoin = "round"
+        CTX[layer.name].font = "12px consolas"
+        CTX[layer.name].textAlign = "center"
+        CTX[layer.name].textBaseline = "middle"
+      }
+
+      //draw loop
+      CTX['map'].save()
+      CTX['map'].rect(0,0,CVS['bmp'].width,CVS['bmp'].height)
+      CTX['map'].lineJoin="miter"
+      CTX['map'].lineWidth=8
+      CTX['map'].strokeStyle='grey'
+      CTX['map'].stroke()
+      CTX['map'].lineWidth=3
+      CTX['map'].strokeStyle='hsl(40 20 20)'
+      CTX['map'].stroke()
+      CTX['map'].restore()
+      CTX['map'].drawImage(CVS['bmp'],0,0)
+
+      if (K['KeyM']||K['KeyR']) {
+        let s=1//2.15
+        if (measure.start) {
+          let ctx=CTX['pcs'],
+              DR=Math.round(Math.hypot(M.sx+C.x-measure.start.x,M.sy+C.y-measure.start.y)),
+              MR=Math.round((DR/10*s)**(3/2)),
+              text=[`${DR}px`,`:`,`${MR}m`]
+          ctx.save()
+          ctx.textBaseline="bottom"
+          ctx.beginPath()
+          ctx.moveTo(measure.start.x,measure.start.y)
+          ctx.lineTo(M.sx+C.x,M.sy+C.x)
+          ctx.lineWidth=3
+          ctx.strokeStyle="#000"
+          ctx.stroke()
+          ctx.translate(M.sx+C.x,M.sy+C.y)
+          ctx.scale(C.z,C.z)
+          ctx.fillStyle="#000"
+          ctx.textAlign="right"
+          ctx.strokeText(text[0],-4,0)
+          ctx.textAlign="center"
+          ctx.strokeText(text[1],0,0)
+          ctx.textAlign="left"
+          ctx.strokeText(text[2],+4,0)
+          ctx.lineWidth=1
+          ctx.strokeStyle="#fff"
+          ctx.stroke()
+          ctx.fillStyle="#fff"
+          ctx.textAlign="right"
+          ctx.fillText(text[0],-4,0)
+          ctx.textAlign="center"
+          ctx.fillText(text[1],0,0)
+          ctx.textAlign="left"
+          ctx.fillText(text[2],+4,0)
+          ctx.restore()
+        } else if (K['KeyR']) {
+          let ctx=CTX['pcs'],
+              MR=Math.round((10/s)*R**(2/3)),
+              text=[`${R}m`,`:`,`${MR}px`]
+          ctx.save()
+          ctx.textAlign="left"
+          ctx.textBaseline="bottom"
+          ctx.beginPath()
+          ctx.arc(M.sx+C.x,M.sy+C.y,MR,0,Math.PI*2)
+          ctx.lineWidth=3
+          ctx.strokeStyle="#000"
+          ctx.stroke()
+          ctx.translate(M.sx+C.x,M.sy+C.y)
+          ctx.scale(C.z,C.z)
+          ctx.fillStyle="#000"
+          ctx.textAlign="right"
+          ctx.strokeText(text[0],-4,0)
+          ctx.textAlign="center"
+          ctx.strokeText(text[1],0,0)
+          ctx.textAlign="left"
+          ctx.strokeText(text[2],+4,0)
+          ctx.lineWidth=1
+          ctx.strokeStyle="#fff"
+          ctx.stroke()
+          ctx.fillStyle="#fff"
+          ctx.textAlign="right"
+          ctx.fillText(text[0],-4,0)
+          ctx.textAlign="center"
+          ctx.fillText(text[1],0,0)
+          ctx.textAlign="left"
+          ctx.fillText(text[2],+4,0)
+          ctx.restore()
+        }
+      }
+
+      if (!pause) requestAnimationFrame(refresh)
+    }
+
+
+
+
+    addEventListener('contextmenu',e=>{
+      if (!e.ctrlKey) e.preventDefault()
+      if (K['KeyM']) measure.start={x:M.sx+C.x,y:M.sy+C.y}
+    })
+    addEventListener('mousemove',e=>{
+      M.x=e.x
+      M.y=e.y
+      if (M.b[1]) {
+        C.x-=e.movementX*C.z
+        C.y-=e.movementY*C.z
+      }
+    })
+    addEventListener('click',e=>{
+      if (K['KeyM']&&M.b[2]) {
+        measure.start={x:M.sx,y:M.sy}
+        console.log(measure.start)
+      }
+      // pause=!pause
+      // if (!pause) refresh()
+      // console.log(pause?'pause':'resume')
+    })
+    addEventListener('mousedown',e=>M.b[e.button]=true)
+    addEventListener('mouseup',e=>delete M.b[e.button])
+    addEventListener('wheel',e=>{
+      if (K['KeyM']) {
+        R-=20*Math.sign(e.deltaY)
+        R=Math.max(0,R)
+      } else {
+        C.x+=M.sx
+        C.y+=M.sy
+        C.z*=C.v**Math.sign(e.deltaY)
+        C.y-=M.sy
+        C.x-=M.sx
+      }
+    })
+    addEventListener('keydown',e=>K[e.code]=true)
+    addEventListener('keyup',e=>{delete K[e.code];delete measure.start})
+
+
+  class Terrain {
+    constructor(x,y,features,rotation=0) {
+      this.x = x
+      this.y = y
+      this.features = features
+      this.rotation = rotation
+    }
+    draw(ctx) {
+      for (const feature of this.features) {
+        ctx.save()
+        ctx.translate(this.x,this.y)
+        ctx.rotate(this.rotation)
+        ctx.fillStyle='#000'
+        ctx.fill(feature())
+        ctx.strokeStyle='#fff'
+        ctx.stroke(feature())
+        ctx.restore()
+      }
+    }
+  }
+
+  Game.terrain.push(new Terrain(200,200,[
+    ()=>{
+      let path=new Path2D()
+      path.arc(0,0,50,0,Math.PI,1)
+      path.rect(-50,0,100,150)
+      path.moveTo(0,0);path.lineTo(0,150)
+      return path
+    },()=>{
+      let path=new Path2D()
+      path.arc(0,0,20,0,Math.PI*2)
+      path.moveTo(0,0)
+      path.arc(0,0,1,0,Math.PI*2)
+      path.rect(-55,130,+30,30)
+      path.rect(+55,130,-30,30)
+      path.moveTo(-55,130);path.lineTo(-25,160)
+      path.moveTo(-55,160);path.lineTo(-25,130)
+      path.moveTo(+55,130);path.lineTo(+25,160)
+      path.moveTo(+55,160);path.lineTo(+25,130)
+      path.moveTo(-60,100);
+        path.lineTo(-25,100)
+        path.lineTo(-50,125)
+        path.lineTo(-60,125)
+        path.lineTo(-60,75)
+        path.lineTo(-50,75)
+        path.lineTo(-25,100)
+      path.moveTo(+60,100)
+        path.lineTo(+25,100)
+        path.lineTo(+50,125)
+        path.lineTo(+60,125)
+        path.lineTo(+60,75)
+        path.lineTo(+50,75)
+        path.lineTo(+25,100)
+      return path
+    }
+  ],-Math.PI*0/6))
+
+  Game.terrain.push(new Terrain(700,400,[
+    ()=>{
+      let path=new Path2D()
+      path.rect(-70,-50,140,100)
+      path.moveTo(-70,0);path.lineTo(+70,0)
+      return path
+    },
+    ()=>{
+      let path=new Path2D()
+      path.moveTo(0,60)
+        path.lineTo(0,10)
+        path.lineTo(+40,50)
+        path.lineTo(+40,60)
+        path.lineTo(-40,60)
+        path.lineTo(-40,50)
+        path.lineTo(0,10)
+      return path
+    }
+  ],Math.PI*1/6))
+
+  Game.terrain.push(new Terrain(700,200,[
+    ()=>{
+      let path=new Path2D()
+      path.rect(-20,-25,40,50)
+      path.moveTo(-20,-5);path.lineTo(+20,-5)
+      return path
+    }
+  ],Math.PI*1/3))
+
+  Game.terrain.push(new Terrain(300,800,[
+    ()=>{
+      let path=new Path2D()
+      path.rect(-40,-25,80,45)
+      path.moveTo(-40,-10);path.lineTo(+40,-10)
+      return path
+    }
+  ],Math.PI*1/1))
+
+  Game.terrain.push(new Terrain(400,800,[
+    ()=>{
+      let path=new Path2D()
+      path.rect(-40,-25,80,45)
+      path.moveTo(-40,-10);path.lineTo(+40,-10)
+      return path
+    }
+  ],Math.PI*1/1))
+
+  Game.terrain.push(new Terrain(500,800,[
+    ()=>{
+      let path=new Path2D()
+      path.rect(-40,-25,80,45)
+      path.moveTo(-40,-10);path.lineTo(+40,-10)
+      return path
+    }
+  ],Math.PI*1/1))
+
+  Game.terrain.push(new Terrain(225,725,[
+    ()=>{
+      let path=new Path2D()
+      path.rect(-40,-25,80,45)
+      path.moveTo(-40,-10);path.lineTo(+40,-10)
+      return path
+    }
+  ],-Math.PI*1/2))
+
+  Game.terrain.push(new Terrain(350,725,[
+    ()=>{
+      let path=new Path2D()
+      path.arc(0,0,20,0,Math.PI*2)
+      return path
+    },
+    ()=>{
+      let path=new Path2D()
+      path.arc(0,0,15,0,Math.PI*2)
+      return path
+    }
+  ],Math.PI*0/6))
+
+  Game.terrain.push(new Terrain(800,800,[
+    ()=>{
+      let path=new Path2D()
+      path.rect(-110,-60,110,130)
+      path.moveTo(-55,-60)
+      path.lineTo(-55,+70)
+      return path
+    },
+    ()=>{
+      let path=new Path2D()
+      path.moveTo(80,0)
+        path.lineTo(-45,0)
+        path.lineTo(+0,-45)
+        path.lineTo(80,-45)
+        path.lineTo(80,+45)
+        path.lineTo(-0,+45)
+        path.lineTo(-45,0)
+      return path
+    }
+  ],Math.PI*0/6))
+
+  Game.terrain.push(new Terrain(400,500,[
+    ()=>{
+      let path=new Path2D()
+      path.rect(-40,-60,80,120)
+      return path
+    },
+    ()=>{
+      let path=new Path2D()
+      path.moveTo(-40,-60)
+      path.lineTo(0.0,-20)
+      path.lineTo(+40,-60)
+
+      path.moveTo(-40,+60)
+      path.lineTo(0.0,+20)
+      path.lineTo(+40,+60)
+
+      path.moveTo(0,-20)
+      path.lineTo(0,+20)
+      return path
+    }
+  ],Math.PI*1/3))
+
+
+
+</script>
+
+</body>
+</html>

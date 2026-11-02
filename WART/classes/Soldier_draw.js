@@ -8,6 +8,7 @@ Soldier.prototype.draw = function(ctx=CTX['pcs']) {
 
   ctx.save()
   ctx.translate(this.x,this.y)
+  ctx.scale(1/2,1/2)
   // if (Game.activePC==this) {
   //   if (Game.hoverHex) {
   //     if (Game.phase=='aim1'||Game.phase=='aim3'||this.pose=='shoot') this.aim()

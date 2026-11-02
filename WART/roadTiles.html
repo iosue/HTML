@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WART</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    canvas {
+      position: fixed;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <script src="./scripts/consts.js"></script>
+  <script src="./scripts/helpers.js"></script>
+  <script src="./scripts/listeners.js"></script>
+  <script src="./classes/Button.js"></script>
+  <script src="./classes/Meter.js"></script>
+  <script src="./classes/Soldier.js"></script>
+  <script src="./classes/Soldier_calc.js"></script>
+  <script src="./classes/Soldier_do.js"></script>
+  <script src="./classes/Soldier_draw.js"></script>
+  <script src="./classes/Team.js"></script>
+  <script>
+
+class Tile {
+  constructor(i,j,roads,n) {
+    this.i = i
+    this.j = j
+
+    this.i=(n-1)%6
+    this.j=Math.floor((n-1)/6)
+
+    this.n = n
+    this.roads = roads
+    this.w = 100
+    this.h = 100/Math.cos(Math.PI/6)
+  }
+  get x() {return (this.i+(this.j%2)/2)*this.w}
+  get y() {return this.j*this.h*3/4}
+  draw(ctx) {
+    ctx.save()
+    ctx.translate(this.x,this.y)
+    ctx.scale(0.95,0.95)
+    ctx.beginPath()
+    ctx.lineTo(+this.w*0,-this.h/2)
+    ctx.lineTo(+this.w/2,-this.h/4)
+    ctx.lineTo(+this.w/2,+this.h/4)
+    ctx.lineTo(-this.w*0,+this.h/2)
+    ctx.lineTo(-this.w/2,+this.h/4)
+    ctx.lineTo(-this.w/2,-this.h/4)
+    ctx.fillStyle='hsl(100 30 30)'
+    ctx.fill()
+    ctx.clip()
+
+    ctx.beginPath()
+    for (let d of this.roads) {
+      ctx.save()
+      ctx.moveTo(0,0)
+      ctx.rotate(d*Math.PI/3)
+      ctx.lineTo(this.w/2,0)
+      ctx.restore()
+    }
+    ctx.lineWidth = 10
+    ctx.strokeStyle='hsl(100 10 90)'
+    ctx.stroke()
+
+    ctx.beginPath()
+    ctx.font = '50px consolas'
+    ctx.fillStyle = '#fff1'
+    ctx.fillText(this.n,0,0)
+
+    ctx.restore()
+  }
+}
+
+const tileList = []
+let list=[
+
+      // [0],   [0,1],   [0,2],   [0,3],   [0,4],   [0,5],
+      //        [0,1], [0,1,2], [0,1,3], [0,1,4], [0,1,5],
+      //                 [0,2], [0,2,3], [0,2,4], [0,2,5],
+      //                          [0,3], [0,3,4], [0,3,5],
+      //                                   [0,4], [0,4,5],
+      //                                            [0,5],
+
+      //          [1],   [1,2],   [1,3],   [1,4],   [1,5],
+      //                 [1,2], [1,2,3], [1,2,4], [1,2,5],
+      //                          [1,3], [1,3,4], [1,3,5],
+      //                                   [1,4], [1,4,5],
+      //                                            [1,5],
+
+      //                   [2],   [2,3],   [2,4],   [2,5],
+      //                          [2,3], [2,3,4], [2,3,5],
+      //                                   [2,4], [2,4,5],
+      //                                            [2,5],
+
+      //                            [3],   [3,4],   [3,5],
+      //                                   [3,4], [3,4,5],
+      //                                            [3,5],
+
+      //                                     [4],   [4,5],
+      //                                            [4,5],
+
+      //                                              [5],
+]
+
+// for (let a=0;a<6;a++)
+// for (let b=a;b<6;b++)
+// for (let c=b;c<6;c++) {
+//   let A=a, B=b, C=c
+//   // if (a==b) B=-1
+//   // if (a==c) C=-1
+//   // if (b==c) C=-1
+//   let L=[]
+//   if (A>=0) L.push(A)
+//   if (B>=0) L.push(B)
+//   if (C>=0) L.push(C)
+//   list.push(L)
+// }
+
+// list=[...new Set(list)]
+
+for (let a=0;a<6;a++) {
+  list.push([a])
+  for (let b=a+1;b<6;b++) {
+    list.push([a,b])
+    for (let c=b+1;c<6;c++) {
+      list.push([a,b,c])
+      for (let d=c+1;d<6;d++) {
+        list.push([a,b,c,d])
+        for (let e=d+1;e<6;e++) {
+          list.push([a,b,c,d,e])
+          for (let f=e+1;f<6;f++) {
+            list.push([a,b,c,d,e,f])
+          }
+        }
+      }
+    }
+  }
+}
+
+
+let n=0
+for (const t of list) {
+  tileList.push(new Tile(
+    (t[0]??0)*(6**0)+(t[2]??0)*(6**1-3)+(t[4]??0)*(6**2-35),
+    (t[1]??0)*(6**0)+(t[3]??0)*(6**1-4)+(t[5]??0)*(6**2-34),
+    t,++n))
+}
+// tileList.push(new Tile(0,0,[0,1]))
+// tileList.push(new Tile(0,1,[0,1]))
+// tileList.push(new Tile(0,2,[0,1]))
+// tileList.push(new Tile(1,0,[0,1]))
+// tileList.push(new Tile(1,1,[0,1]))
+// tileList.push(new Tile(1,2,[0,1]))
+// tileList.push(new Tile(2,0,[0,1]))
+// tileList.push(new Tile(2,1,[0,1]))
+// tileList.push(new Tile(2,2,[0,1]))
+
+C.x = 1275
+C.y = 725
+C.z = 1/.5
+
+createLayers()
+
+function createLayers() {
+  for (let layer of settings.layers) {
+    if (layer.live) {
+      CVS[layer.name] = document.createElement('canvas')
+      CVS[layer.name].height = innerHeight
+      CVS[layer.name].width = innerWidth
+      CVS[layer.name].id = layer.name
+      document.body.appendChild(CVS[layer.name])
+    } else CVS[layer.name] = new OffscreenCanvas(layer.w??canvasWidth,layer.h??canvasHeight)
+    CTX[layer.name] = CVS[layer.name].getContext('2d')
+    CTX[layer.name].lineCap = "round"
+    CTX[layer.name].lineJoin = "round"
+    CTX[layer.name].font = "9px consolas"
+    CTX[layer.name].textAlign = "center"
+    CTX[layer.name].textBaseline = "middle"
+  }
+  onload=refresh
+}
+
+let counter=0
+
+function refresh() {
+  for (let layer of settings.layers) {
+    if (layer.live) {
+      CVS[layer.name].width = innerWidth
+      CVS[layer.name].height = innerHeight
+      if (layer.scale) {
+        CTX[layer.name].translate(innerWidth/2,innerHeight/2)
+        CTX[layer.name].scale(1/C.z,1/C.z)
+        CTX[layer.name].translate(-C.x,-C.y)
+      }
+    }
+    CTX[layer.name].lineCap = "round"
+    CTX[layer.name].lineJoin = "round"
+    CTX[layer.name].font = "12px consolas"
+    CTX[layer.name].textAlign = "center"
+    CTX[layer.name].textBaseline = "middle"
+  }
+
+  CTX['gui'].fillStyle='goldenrod'
+  CTX['gui'].fillText('\\|/-'[Math.floor(++loop/6)%4],25,25)
+
+  tileList.forEach(tile=>{
+    if (tile.n<counter) tile.draw(CTX['map'])
+  })
+
+  counter++
+
+  if (!pause)
+      // requestAnimationFrame(refresh)
+    setTimeout(refresh,1000/60)
+}
+
+
+
+</script>
+
+</body>
+</html>

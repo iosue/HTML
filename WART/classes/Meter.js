@@ -1,12 +1,13 @@
 class Meter {
-  constructor(i,j,k) {
+  constructor(i,j,k,roads=[]) {
     this.i = i
     this.j = j
     this.k = Number(k) ?? Math.round(Math.random()*8)
+    this.roads = roads
   }
   get w() {return tileSize}
   get h() {return this.w/Math.cos(Math.PI/6)}
-  get x() {return (this.i/2)*this.w}
+  get x() {return (this.i/2)*this.w + (this.i>17?100:0)}
   get y() {return this.j*this.h*3/4 - 0*this.k*4}
   get z() {return this.k}
   get path() {
@@ -24,18 +25,47 @@ class Meter {
     ctx.save()
     ctx.fillStyle=`hsl(${100-this.k*5} 35 35)`
     ctx.fillStyle=[
-      'hsl(200 50 50/0.5)',
-      'hsl(000 00 65/0.5)',
-      'hsl(080 50 60/0.5)',
-      'hsl(100 50 40/0.5)',
+      'hsl(200 50 50)',
+      'hsl(000 00 65)',
+      'hsl(080 50 60)',
+      'hsl(100 50 40)',
       'black',
-      'hsl(000 00 35/0.5)',
+      'hsl(000 00 35)',
     ][this.k]
+    ctx.clip(this.path)
     ctx.fill(this.path)
-    // ctx.font="32px consolas"
-    // ctx.fillStyle='hsl(40 20 80/0.6)'
-    // ctx.fillText(`${this.j}:${this.i}`,this.x,this.y-16)
-    // ctx.fillText(`${this.k}`,this.x,this.y+16)
+    ctx.lineWidth=6
+    ctx.strokeStyle='black'
+    ctx.stroke(this.path)
+
+    if (this.roads.length) console.log(this.roads)
+    ctx.save()
+    ctx.translate(this.x,this.y)
+    ctx.beginPath()
+    for (let d of this.roads) {
+      ctx.save()
+      ctx.moveTo(0,0)
+      ctx.rotate(d*Math.PI/3)
+      ctx.lineTo(this.w/2,0)
+      ctx.restore()
+    }
+    ctx.restore()
+
+
+    ctx.lineWidth = 14
+    ctx.strokeStyle='hsl(000 00 00)'
+    ctx.stroke()
+
+    ctx.lineWidth = 10
+    ctx.strokeStyle='hsl(000 00 65)'
+    ctx.stroke()
+
+    ctx.font="24px consolas"
+    ctx.fillStyle='hsl(40 20 80/0.6)'
+    ctx.fillText(`${this.j}:${this.i}`,this.x,this.y-16)
+    ctx.fillText(`${this.k}`,this.x,this.y+16)
+
+
     ctx.restore()
   }
   hover(ctx=CTX['map']) {

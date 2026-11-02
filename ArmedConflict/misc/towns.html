@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WART</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    canvas {
+      position: fixed;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <script>
+
+    const Game={
+      mapData:[],
+      score:{
+        'hsl(200 50 50)':0,
+        'hsl(000 50 50)':0
+      },
+      piece:{}
+    }
+    const settings={
+      layers:[
+        {name:"bmp"},
+        {name:"pth",live:true,scale:true},
+        {name:"map",live:true,scale:true},
+        {name:"pcs",live:true,scale:true},
+        {name:"gui",live:true,}        
+      ],
+    }
+
+    const mapWidth=950*2.5,
+          mapHeight=600*2.5
+
+    const CVS={},CTX={},M={b:{}},C={x:0,y:0,z:2.5,v:10/9}
+
+    for (let layer of settings.layers) {
+      if (layer.live) {
+        CVS[layer.name] = document.createElement('canvas')
+        CVS[layer.name].height = innerHeight
+        CVS[layer.name].width = innerWidth
+        CVS[layer.name].id = layer.name
+        document.body.appendChild(CVS[layer.name])
+      } else {
+        CVS[layer.name] = new OffscreenCanvas(
+          innerWidth,
+          innerHeight
+        )
+      }
+      CTX[layer.name] = CVS[layer.name].getContext('2d')
+    }
+
+    onload=createMap
+    
+    function createMap() {
+      let bound1=new Town('Boundary 1',0,-100750)
+        bound1.mr=100000
+        bound1.dr=10
+        bound1.full=true
+      Game.mapData.push(bound1)
+      let bound2=new Town('Boundary 2',0,+100750)
+        bound2.mr=100000
+        bound2.dr=10
+        bound2.full=true
+      Game.mapData.push(bound2)
+      let bound3=new Town('Boundary 3',-100000-475*2.5,0)
+        bound3.mr=100000
+        bound3.dr=10
+        bound3.full=true
+      Game.mapData.push(bound3)
+      let bound4=new Town('Boundary 4',+100000+475*2.5,0)
+        bound4.mr=100000
+        bound4.dr=10
+        bound4.full=true
+      Game.mapData.push(bound4)
+      Game.mapData.push(new Town('City 1',0,-300))
+      Game.mapData.push(new Town('City 2',-475,0))
+      Game.mapData.push(new Town('City 3',+475,0))
+      Game.mapData.push(new Town('City 4',0,+300))
+      for (const town of Game.mapData) {
+        town.blockAngleByNeighbours()
+      }
+      refresh()
+    }
+    
+    let nTown=1, pause, loop=0, mTowns=250
+
+    function refresh() {
+      let wait=500
+      if (Game.tile?.hovered) {
+        document.body.style.setProperty('cursor','pointer')
+        delete Game.tile.hovered
+      } else if (Game.space?.hovered) {
+        document.body.style.setProperty('cursor','pointer')
+        delete Game.space.hovered
+      } else {
+        document.body.style.setProperty('cursor','default')
+      }
+      for (let layer of settings.layers) {
+        if (layer.live) {
+          CVS[layer.name].width = innerWidth
+          CVS[layer.name].height = innerHeight
+          if (layer.scale) {
+            CTX[layer.name].translate(innerWidth/2,innerHeight/2)
+            CTX[layer.name].scale(1/C.z,1/C.z)
+            CTX[layer.name].translate(-C.x,-C.y)
+          }
+        }
+        CTX[layer.name].lineCap = "round"
+        CTX[layer.name].lineJoin = "round"
+        CTX[layer.name].font = "12px consolas"
+        CTX[layer.name].textAlign = "center"
+        CTX[layer.name].textBaseline = "middle"
+      }
+
+      // CTX['map'].drawImage(CVS['bmp'],settings.triSpace.b/2-200,-settings.triSpace.h/1)
+
+      CTX['pth'].fillStyle=`hsl(100 20 20)`
+      CTX['pth'].fillRect(-mapWidth/2,-mapHeight/2,mapWidth,mapHeight)
+
+      let parentTown = Game.mapData.find(town=>!town.full)
+      if (parentTown) {
+
+        let angle=parentTown.newValidAngle
+        let dist=parentTown.mr+Math.random()*parentTown.dr
+        let [dx,dy]=[dist*Math.cos(angle*Math.PI/180),dist*Math.sin(angle*Math.PI/180)]
+        let [newX,newY]=[parentTown.x+dx,parentTown.y+dy]
+        if (Game.mapData.length<mTowns+8&&Game.mapData.reduce((r,town)=>{
+            if (town!=parentTown) {
+              let dx=newX-town.x,
+                  dy=newY-town.y
+              town.showBlocked()
+              parentTown.showBlocked('goldenrod')
+              let townDist=Math.hypot(dy,dx)
+              if (townDist<r) {
+                console.log(r,town.name,townDist)
+                return townDist
+              }
+              return Math.min(Math.hypot(dy,dx),r)
+            } return r
+          },Infinity)>parentTown.mr*1) {
+          let newTown=new Town(`Town ${nTown++}`,newX,newY)
+          parentTown.roads.push(newTown)
+          newTown.blockAngleByNeighbours()
+          Game.mapData.push(newTown)
+        } else {
+          if (Game.mapData.length==mTowns+8) {
+            console.log(Game.mapData.length)
+          } else {
+            console.log('waiting',parentTown)
+            wait=2000
+            CTX['map'].save()
+            CTX['map'].beginPath()
+            CTX['map'].arc(newX,newY,5,0,Math.PI*2)
+            CTX['map'].fillStyle='salmon'
+            CTX['map'].fill()
+            CTX['map'].restore()
+          }
+        }
+      }
+      // parentTown.showBlocked()
+
+      // if (parentTown) parentTown.full=true
+
+      Game.mapData.forEach(town=>town.draw())
+
+      // console.log('----------------')
+      // if (loop++>100) return console.log('loop finished')
+      if (!pause)
+      // setTimeout(refresh,wait)
+      requestAnimationFrame(refresh)
+    }
+
+    const normD=a=>{
+      let n=(a+360)%360
+      return n??console.log(a,n)
+    },
+          r2d=a=>Math.round(a*180/Math.PI)
+
+    class Town {
+      constructor(name,x,y,size=100) {
+        this.name = name
+        this.x = x
+        this.y = y
+        this.size = size
+        this.mr = 100
+        this.dr = 80
+        this.roads = []
+        this.blockedAngles = []
+      }
+      blockAngleByNeighbours() {
+        for (const town of Game.mapData) {
+          if (town==this) continue
+          let dx=town.x-this.x,
+              dy=town.y-this.y,
+              a=Math.atan2(dy,dx),
+              A=(a+Math.PI)%(Math.PI*2),
+              d=Math.hypot(dy,dx)
+          if (d>this.mr+this.dr+town.mr+town.dr) {
+            console.log(this.name,'too far from',town.name)
+            continue
+          }
+          let sideA=this.mr+this.dr*1,
+              sideB=d,
+              sideC=town.mr+town.dr*1
+          let n=Math.acos((sideA**2+sideB**2-sideC**2)/(2*sideA*sideB))
+          // console.log(this.name,town.name,r2d(a),r2d(A),r2d(n))
+          // let ctx=CTX['map']
+          // ctx.save()
+          // ctx.beginPath()
+          // ctx.moveTo(this.x,this.y)
+          // ctx.lineTo(town.x,town.y)
+          // ctx.strokeStyle="cyan"
+          // ctx.stroke()
+          // ctx.restore()
+
+          // ctx.save()
+          // ctx.beginPath()
+          // ctx.translate(this.x,this.y)
+          // ctx.rotate(a-n)
+          // ctx.moveTo(this.mr,0)
+          // ctx.rotate(n*2)
+          // ctx.lineTo(this.mr,0)
+          // ctx.strokeStyle="salmon"
+          // ctx.stroke()
+          // ctx.restore()
+          town.blockAngle(r2d(A),r2d(n),this.name,'bbn')
+          this.blockAngle(r2d(a),r2d(n),town.name,'bbn')
+          // town.showBlocked('greenyellow')
+          // this.showBlocked('salmon')
+          if (d<this.mr+this.dr) {
+            this.roads.push(town)
+            town.roads.push(this)
+          }
+        }
+      }
+      blockAngle(angle,n=60,from,fn) {
+        // n++
+        let m=normD(angle-n),
+            M=normD(angle+n)
+        console.log('blocking',this.name,angle,n,m,M,from,fn)
+        if (m<M) {
+          this.blockedAngles.push([m,M,from])
+        } else {
+          this.blockedAngles.push([m,360,from])
+          this.blockedAngles.push([0,M,from])          
+        }
+        this.blockedAngles = this.mergeBlocks()
+      }
+      mergeBlocks() {
+        // console.log('merge',performance.now())
+        this.blockedAngles.sort((a,b)=>a[0]-b[0])
+        if (this.name=="Boundary") console.log('block',...this.blockedAngles)
+        const merged=[]
+        for (const block of this.blockedAngles) {
+          if (!merged.length || merged.at(-1)[1]<block[0]) {
+            merged.push([...block]);
+          } else {
+            merged.at(-1)[1] = Math.max(merged.at(-1)[1],block[1]);
+          }
+        }
+        if (this.name=="Boundary") console.log(...merged)
+        return merged
+      }
+      get freeIntervals() {
+        // console.log('get intervals',performance.now())
+        const free=[]
+        let start=0
+        for (const [a,b] of this.blockedAngles) {
+          if (start<a) free.push([start,a])
+          start=b
+        }
+        if (start<360) free.push([start,360])
+        return free
+      }
+      get newValidAngle() {
+        // console.log('get valid',performance.now())
+        const intervals=this.freeIntervals
+        const sizes=intervals.map(([a,b])=>b-a)
+        const total=sizes.reduce((s,x)=>s+x,0)
+        if (total<=0) {
+          // pause = true
+          this.full = true
+          return refresh
+          console.error(`${this.name} is full`,performance.now())
+        }
+        let r=Math.random()*total
+        for (let i=0;i<intervals.length;i++) {
+          const [a,b]=intervals[i]
+          const size=sizes[i]
+          if (r<size) return a+r
+          r-=size
+        }
+      }
+      blockAngles(angle) {
+        let overlaps=(a,b)=>a[0]<b[0]&&b[0]<a[1]||a[0]<b[1]&&b[1]<a[1]
+        let merge=(a,b)=>[Math.min(a?.[0]??Infinity,b?.[0]??Infinity),Math.max(a?.[1]??0,b?.[1]??0)]
+        let edited=false,
+            minA=angle-60,
+            maxA=angle+60
+        for (const block of this.blockedAngles) {
+          if (maxA>360) {
+           maxA-=360
+           minA-=360
+          }
+          if (block[0]<=minA && minA<=block[1]) {
+            block[1]=Math.max(maxA,block[1])
+            edited=true
+          }
+          if (block[0]<=maxA && maxA<=block[1]) {
+            block[0]=Math.min(minA,block[0])
+            edited=true
+          }
+        }
+        if (!edited) this.blockedAngles.push([minA,maxA])
+        let newArray=[]
+        for (let i=0;i<this.blockedAngles.length;i++) {
+          for (let j=i+1;j<this.blockedAngles.length;j++) {
+            let a=this.blockedAngles[i]
+            let b=this.blockedAngles[j]
+            newArray.push(merge(a,b))
+          }
+          if (newArray.length==0) newArray=this.blockedAngles
+        }
+        this.blockedAngles=newArray
+        if (this.blockedAngles[0][1]-this.blockedAngles[0][0]>360) {
+          this.blocked = true
+        }
+      }
+      showBlocked(color,ctx=CTX['map']) {
+        const r2d=r=>(180*r/Math.PI).toFixed(),
+              d2r=d=>(Math.PI*d/180)
+        if (color=='goldenrod') {
+          this.freeIntervals.forEach((block,b)=>{
+            ctx.save()
+            ctx.beginPath()
+            ctx.moveTo(this.x,this.y)
+            ctx.arc(this.x,this.y,this.mr+this.dr,d2r(block[0]),d2r(block[1]))
+            ctx.lineTo(this.x,this.y)
+            ctx.fillStyle='hsl(100 50 50/.02)'
+            ctx.fill()
+            ctx.restore()
+          })
+        }
+        this.blockedAngles.forEach((block,b)=>{
+          ctx.save()
+          ctx.beginPath()
+          ctx.arc(this.x,this.y,this.mr+this.dr*0,d2r(block[0]),d2r(block[1]))
+          ctx.arc(this.x,this.y,this.mr+this.dr*1,d2r(block[1]),d2r(block[0]),1)
+          ctx.fillStyle=color??'hsl(200 50 50/.75)'
+          ctx.fill()
+
+          ctx.beginPath()
+          ctx.arc(this.x,this.y,this.mr,0,Math.PI*2)
+          ctx.fillStyle=this.full?"salmon":color??'hsl(200 50 50/.75)'
+          ctx.fill()
+          ctx.restore()
+        })
+        // console.table(this.blockedAngles)
+      }
+      draw(ctx=CTX['map']) {
+        ctx.save()
+        ctx.beginPath()
+        ctx.arc(this.x,this.y,this.size/20,0,Math.PI*2)
+        ctx.fillStyle='#ffffff01'
+        ctx.fill()
+        ctx.strokeStyle='#ffff'
+        ctx.stroke()
+
+        ctx.beginPath()
+        ctx.arc(this.x,this.y,this.mr,0,Math.PI*2,0)
+        ctx.arc(this.x,this.y,this.mr+this.dr,0,Math.PI*2,1)
+        ctx.fill()
+
+        ctx.beginPath()
+        ctx.arc(this.x,this.y,this.mr+this.dr*0,0,Math.PI*2,0)
+        ctx.strokeStyle='#0ff1'
+        ctx.stroke()
+
+        ctx.beginPath()
+        ctx.arc(this.x,this.y,this.mr+this.dr*1,0,Math.PI*2,0)
+        ctx.strokeStyle='#ff01'
+        ctx.stroke()
+
+        ctx.textBaseline="top"
+        ctx.fillStyle='white'
+        ctx.fillText(this.name,this.x,this.y+this.size/20+4)
+
+        for (const town of this.roads) {
+          let ctx=CTX['pth']
+          let mid={x:(this.x+town.x)/2, y:(this.y+town.y)/2,}
+          // ctx.beginPath()
+          // ctx.moveTo(this.x,this.y)
+          // ctx.lineTo(mid.x,mid.y)
+          // ctx.lineWidth=8
+          // ctx.strokeStyle='#f804'
+          // ctx.stroke()
+          // ctx.beginPath()
+          // ctx.moveTo(mid.x,mid.y)
+          // ctx.lineTo(town.x,town.y)
+          // ctx.lineWidth=8
+          // ctx.strokeStyle='#08f4'
+          // ctx.stroke()
+          ctx.beginPath()
+          ctx.moveTo(this.x,this.y)
+          ctx.lineTo(town.x,town.y)
+          ctx.lineWidth=8
+          ctx.strokeStyle='#0002'
+          ctx.stroke()
+        }
+        ctx.restore()
+        // this.showBlocked()
+      }
+    }
+
+
+
+    addEventListener('contextmenu',e=>{
+      if (!e.ctrlKey) e.preventDefault()
+    })
+    addEventListener('mousemove',e=>{
+      M.x=e.x
+      M.y=e.y
+      if (M.b[1]) {
+        C.x-=e.movementX*C.z
+        C.y-=e.movementY*C.z
+      }
+    })
+    addEventListener('click',e=>{
+      pause=!pause
+      if (!pause) refresh()
+      console.log(pause?'pause':'resume')
+      // Game.piece.hovered?.click()
+    })
+    addEventListener('mousedown',e=>{
+      M.b[e.button]=true
+    })
+    addEventListener('mouseup',e=>delete M.b[e.button])
+    addEventListener('wheel',e=>{
+      C.x+=(e.x-innerWidth/2)*C.z
+      C.y+=(e.y-innerHeight/2)*C.z
+      C.z*=C.v**Math.sign(e.deltaY)
+      C.y-=(e.y-innerHeight/2)*C.z
+      C.x-=(e.x-innerWidth/2)*C.z
+    })
+
+
+   
+
+</script>
+
+</body>
+</html>

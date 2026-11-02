@@ -291,24 +291,32 @@
 
 
     class Soldier {
-      constructor(rank,role,index) {
+      constructor(rank,role,i) {
         this.count = ++count
         this.rank = rank
         this.role = role
-        this.index = index
+        this.index = i
       }
       get markup() {
+        console.log(this.iLength)
         return `
         <div class="sdr">
-          ${this.index.length!=8?'<font color=red>':''}
+          ${this.index.length!=this.iLength?'<font color=red>':''}
           <a>
-            <i>${this.count} (${this.index})</i>
+            <i>
+              <font ${this.index.match('0')?"color=salmon":""}>
+                ${this.count}
+              </font>
+              <font ${this.index.slice(-1)=='0'?"color=goldenrod":""}>
+                (${this.index})
+              </font>
+            </i>
             <${this.rank>20?'w':this.rank>10?'o':this.rank==10?'m':this.rank>3?'n':'e'} title="${Ranks[this.rank].name}">
               ${Ranks[this.rank].insignia}
             </${this.rank>20?'w':this.rank>10?'o':this.rank==10?'m':this.rank>3?'n':'e'}>
             <r>${this.role}</r>
           </a>
-          ${this.index.length!=8?'</font>':''}
+          ${this.index.length!=this.iLength?'</font>':''}
         </div>
         `
       }
@@ -316,25 +324,30 @@
 
 
     class Formation {
-      constructor(i=0,override) {
-        this.index = i
+      constructor(override) {
+        this.index = "SR "
+        this.iLength=8
         for (const attr in override) {
           this[attr] = override[attr]
         }
-        this.renumber()
       }
       renumber() {
         for (const s in this.subs) {
-          this.subs[s].index = this.index+s
+          if (!this.subs[s]) continue
+          this.subs[s].index = this.index+''+s
+          this.subs[s].iLength = this.iLength
+          this.subs[s].renumber?.()
         }
+        return this
       }
       assign(assignments) {
         for (const index in assignments) {
-          let i=index, subject=this
+          let i=String(index), subject=this
           while (i) {
             subject = subject?.subs[i[0]]
             i=i.slice(1)
           }
+          console.log(this,index,subject)
           for (const attr in assignments[index]) {
             subject[attr] = assignments[index][attr]
           }
@@ -349,10 +362,10 @@
               ${this.symbol}
               <i>(${this.index})</i>
             </f>
-            ${this.name??this.size}
+            ${this.name??this.ordinal??this.size}
           </a>
           <ul>
-          ${this.subs.map(sub=>sub.markup).join('')}
+          ${this.subs.map(sub=>sub?.markup).join('')}
           </ul>
         </div>
         `
@@ -360,203 +373,167 @@
     }
     
     class FireTeam extends Formation {
-      constructor(i,...a) {
-        super(i,...a)
+      constructor(...a) {
+        super(...a)
         this.symbol ??= '∅'
         this.abbr ??= 'ftm'
         this.size ??= "FireTeam"
         this.subs ??= [
-          new Soldier(4,'Team Leader',i+'0'),
-          new Soldier(2,'SAW Gunner',i+'1'),
-          new Soldier(1,'Demolition',i+'2'),
+          undefined,
+          new Soldier(4,'Team Leader'),
+          new Soldier(2,'SAW Gunner'),
+          new Soldier(1,'Demolition'),
         ]
+      }
+      get ordinal() {
+        return `FireTeam ${this.index.slice(-1)}`
       }
     }
 
     class Squad extends Formation {
-      constructor(i,...a) {
-        super(i,...a)
+      constructor(...a) {
+        super(...a)
         this.symbol ??= '•'
         this.abbr ??= 'sqd'
-        this.size ??= ["Gold","Red","Green","Blue"][parseInt(this.index.slice(-2),2)]+" Squad"
+        this.size ??= "Squad"
         this.subs ??= [
-          new FireTeam(i+'0').assign({
-            '0':{rank:6,role:"Squad Leader"},
-            '1':{rank:2,role:"UAV Operator"},
-            '2':{rank:1,role:"Grenadier"}
+          undefined,
+          new FireTeam().assign({
+            '1':{rank:6,role:"Squad Leader"},
+            '2':{rank:2,role:"UAV Operator"},
+            '3':{rank:1,role:"Grenadier"}
           }),
-          new FireTeam(i+'1').assign({
-            '0':{rank:5,role:"Squad Second"},
+          new FireTeam().assign({
+            '1':{rank:5,role:"Squad Second"},
           }),
-          new FireTeam(i+'2'),
+          new FireTeam(),
         ]
+      }
+      get ordinal() {
+        return {
+          '11':"GOLD SQUAD",
+          '12':"RED SQUAD",
+          '21':"GREEN SQUAD",
+          '22':"BLUE SQUAD",
+        }[this.index.slice(-2)]
       }
     }
 
     class Section extends Formation {
-      constructor(i,...a) {
-        super(i,...a)
+      constructor(...a) {
+        super(...a)
         this.symbol ??= '••'
         this.abbr ??= 'sec'
         this.size ??= "Section"
         this.subs ??= [
-          new Squad(i+'0').assign({
-            '00':{rank:7,role:"Platoon Second"},
-            '01':{rank:2,role:"UAV Operator"},
-            '02':{rank:1,role:"Anti-Drone Tech"}
+          undefined,
+          new Squad().assign({
+            '11':{rank:7,role:"Platoon Second"},
+            '12':{rank:2,role:"UAV Operator"},
+            '13':{rank:1,role:"Anti-Drone Tech"}
           }),
-          new Squad(i+'1'),
-          // new Squad(i+'2'),
+          new Squad(),
         ]
       }
     }
 
     class Platoon extends Formation {
-      constructor(i,...a) {
-        super(i,...a)
+      constructor(...a) {
+        super(...a)
         this.symbol ??= '•••'
         this.abbr ??= 'plt'
         this.size ??= "Platoon"
         this.subs ??= [
-          new Section(i+'0',{subs:[
-            new Squad(i+'00',{subs:[
-              new FireTeam(i+'000',{abbr:"ftm col"})
+          undefined,
+          new Section({subs:[
+            undefined,
+            new Squad({subs:[
+              new FireTeam({abbr:"ftm col",subs:[
+                new Soldier(11,'Platoon Commander'),
+                new Soldier(8,'Platoon Sergeant'),
+                new Soldier(2,'Driver'),
+                new Soldier(10,'Platoon Medic'),
+              ]})
             ]}),
-          new Squad(i+'01'),
-          ]}).assign({
-            '000':{rank:11,role:"Platoon Commander"},
-            '001':{rank:8,role:"Platoon Leader"},
-            '002':{rank:10,role:"Platoon Medic"}
-          }),
-          new Section(i+'1'),
+            new Squad(),
+          ]}),
+          new Section(),
         ]
+      }
+      get ordinal() {
+        return `${['0th','1st','2nd','3rd'][this.index.slice(-1)]} Platoon`
       }
     }
 
     class Echelon extends Formation {
-      constructor(i,...a) {
-        super(i,...a)
+      constructor(...a) {
+        super(...a)
         this.symbol ??= '••••'
         this.abbr ??= 'ech'
         this.size ??= "Echelon"
         this.subs ??= [
-          new Platoon(i+'0'),
-          new Platoon(i+'1'),
-          new Platoon(i+'2'),
+          undefined,
+          new Platoon(),
+          new Platoon(),
+          new Platoon(),
         ]
       }
     }
 
     class Company extends Formation {
-      constructor(i,...a) {
-        super(i,...a)
+      constructor(...a) {
+        super(...a)
         this.symbol ??= '|'
         this.abbr ??= 'coy'
-        this.size ??= `<!--${{
-          '10':"1 HHC",
-          '11':"Alpha",
-          '12':"Bravo",
-          '13':"Charlie",
-          '14':"Delta",
-          '15':"1 Weapons",
-
-          '20':'2 HHC',
-          '21':"Echo",
-          '22':"Foxtrot",
-          '23':"Golf",
-          '24':"Hotel",
-          '25':"2 Weapons",
-
-          '30':'3 HHC',
-          '31':"Juliet",
-          '32':"Kilo",
-          '33':"Lima",
-          '34':"Mike",
-          '35':"3 Weapons",
-
-          '40':'4 HHC',
-          '41':"November",
-          '42':"Oscar",
-          '43':"Papa",
-          '44':"Quebec",
-          '45':"4 Weapons",
-        }[this.index.slice(-2)]}-->
-        ${[
-          "<b>1HHC</b>",
-          "Alpha",
-          "Bravo",
-          "Charlie",
-          "Delta",
-          "Zulu",
-
-          '<b>2HHC</b>',
-          "Echo",
-          "Foxtrot",
-          "Golf",
-          "Hotel",
-          "Yankee",
-          
-          '<b>3HHC</b>',
-          "India",
-          "Juliet",
-          "Kilo",
-          "Lima",
-          "X-Ray",
-          
-          '<b>4HHC</b>',
-          "Mike",
-          "November",
-          "Oscar",
-          "Papa",
-          "Whisky",
-          
-          '<b>5HHC</b>',
-          "Quebec",
-          "Romeo",
-          "Sierra",
-          "Tango",
-          "Victor",
-        ][parseInt(this.index.slice(-2),6)-6]}&nbsp;Company`
+        this.size ??= "Company"
         this.subs ??= [
-          new Echelon(i+'0',{name:'Support Echelon',subs:[
-            new Platoon(i+'00',{name:'Coy HQ',subs:[
-              new Section(i+'000',{name:"Company Command",subs:[
-                new Squad(i+'0000',{name:"Command",subs:[
-                  new FireTeam(i+'00000',{subs:[
-                    new Soldier(13,'Company OC',i+'000000'),
-                    new Soldier(3,'Gunner',i+'000001'),
-                    new Soldier(1,'Driver',i+'000002'),
+          undefined,
+          new Echelon({name:'Support Echelon',subs:[
+            undefined,
+            new Platoon({name:'Coy HQ',subs:[
+              new Section({name:"Company Command",subs:[
+                new Squad({name:"Command",subs:[
+                  new FireTeam({subs:[
+                    new Soldier(13,'Company OC'),
+                    new Soldier(3,'Gunner'),
+                    new Soldier(1,'Driver'),
                   ]}),
-                  new FireTeam(i+'00001',{subs:[
-                    new Soldier(12,'Company 2iC',i+'000010'),
-                    new Soldier(3,'Gunner',i+'000011'),
-                    new Soldier(1,'Driver',i+'000012'),
+                  new FireTeam({subs:[
+                    new Soldier(12,'Company 2iC'),
+                    new Soldier(3,'Gunner'),
+                    new Soldier(1,'Driver'),
                   ]}),
                 ]}),
-                new Squad(i+'0020',{name:"Leadership",subs:[
-                  new FireTeam(i+'00200',{name:"Mobile Gun System",subs:[
+                new Squad({name:"Leadership",subs:[
+                  undefined,
+                  new FireTeam({name:"Mobile Gun System",subs:[
                     new Soldier(11,'Fire Support Officer'),
                     new Soldier(3,'Gunner'),
                     new Soldier(1,'Driver'),
                   ]}),
-                  new FireTeam(i+'00201',{name:"Mobile Gun System",subs:[
+                  new FireTeam({name:"Mobile Gun System",subs:[
+                    undefined,
                     new Soldier(21,'Company Sergeant Major'),
                     new Soldier(3,'Gunner'),
                     new Soldier(1,'Driver'),
                   ]}),
                 ]}),
-                new Squad(i+'0010',{name:"FAST Teams",subs:[
-                  new FireTeam(i+'00101',{name:"Ambulance Team",subs:[
-                    new Soldier(10,'Field Medic',i+'001010'),
-                    new Soldier(3,'Medical Tech',i+'001011'),
-                    new Soldier(1,'Driver',i+'001012'),
+                new Squad({name:"FAST Teams",subs:[
+                  undefined,
+                  new FireTeam({name:"Ambulance Team",subs:[
+                  undefined,
+                    new Soldier(10,'Field Medic'),
+                    new Soldier(3,'Medical Tech'),
+                    new Soldier(1,'Driver'),
                   ]}),
-                  new FireTeam(i+'00120',{name:"Repair Team",subs:[
-                    new Soldier(6,'Mechanic',i+'001200'),
-                    new Soldier(3,'Mechanical Tech',i+'001201'),
-                    new Soldier(1,'Driver',i+'001202'),
+                  new FireTeam({name:"Repair Team",subs:[
+                    undefined,
+                    new Soldier(6,'Mechanic'),
+                    new Soldier(3,'Mechanical Tech'),
+                    new Soldier(1,'Driver'),
                   ]}),
-                  new FireTeam(i+'00121',{name:"Recovery Team",subs:[
+                  new FireTeam({name:"Recovery Team",subs:[
+                    undefined,
                     new Soldier(6,'Recoverist'),
                     new Soldier(3,'Recovery Tech'),
                     new Soldier(1,'Driver'),
@@ -564,196 +541,250 @@
                 ]}),
               ]}),
             ]}),
-            new Platoon(i+'01',{name:'Weapons',subs:[
-              new Section(i+'010',{name:"",subs:[
-                new Squad(i+'0110',{name:"",subs:[
-                  new FireTeam(i+'01100',{name:"Weapons HQ",abbr:'ftm col',subs:[
+            new Platoon({name:'Weapons',subs:[
+              undefined,
+              new Section({name:"",subs:[
+                new Squad({name:"",subs:[
+                  new FireTeam({name:"Weapons HQ",abbr:'ftm col',subs:[
                     new Soldier(11,'Weapons Officer'),
                     new Soldier(3,'Gunnery Sergeant'),
                     new Soldier(1,'Driver'),
                   ]}),
                 ]}),
               ]}),
-              new Section(i+'011',{name:"DF Section",subs:[
-                new Squad(i+'0110',{name:"MAT Squad",subs:[
-                  new FireTeam(i+'01100',{subs:[
-                    new Soldier(6,'Leader',i+'010000'),
-                    new Soldier(3,'Gunner',i+'010001'),
-                    new Soldier(1,'Bearer',i+'010002'),
+              new Section({name:"DF Section",subs:[
+                undefined,
+                new Squad({name:"MAT Squad",subs:[
+                  undefined,
+                  new FireTeam({subs:[
+                    undefined,
+                    new Soldier(6,'Leader'),
+                    new Soldier(3,'Gunner'),
+                    new Soldier(1,'Bearer'),
                   ]}),
-                  new FireTeam(i+'01101',{subs:[
-                    new Soldier(6,'Leader',i+'010010'),
-                    new Soldier(3,'Gunner',i+'010011'),
-                    new Soldier(1,'Bearer',i+'010012'),
+                  new FireTeam({subs:[
+                    undefined,
+                    new Soldier(6,'Leader'),
+                    new Soldier(3,'Gunner'),
+                    new Soldier(1,'Bearer'),
                   ]}),
                 ]}),
-                new Squad(i+'0111',{name:"MMG Squad",subs:[
-                  new FireTeam(i+'01110',{subs:[
-                    new Soldier(6,'Leader',i+'010100'),
-                    new Soldier(3,'Gunner',i+'010101'),
-                    new Soldier(1,'Bearer',i+'010102'),
+                new Squad({name:"MMG Squad",subs:[
+                  undefined,
+                  new FireTeam({subs:[
+                    undefined,
+                    new Soldier(6,'Leader'),
+                    new Soldier(3,'Gunner'),
+                    new Soldier(1,'Bearer'),
                   ]}),
-                  new FireTeam(i+'01111',{subs:[
-                    new Soldier(6,'Leader',i+'010110'),
-                    new Soldier(3,'Gunner',i+'010111'),
-                    new Soldier(1,'Bearer',i+'010112'),
+                  new FireTeam({subs:[
+                    undefined,
+                    new Soldier(6,'Leader'),
+                    new Soldier(3,'Gunner'),
+                    new Soldier(1,'Bearer'),
                   ]}),
                 ]}),
               ]}),
-              new Section(i+'012',{name:"IF Section",subs:[
-                new Squad(i+'0120',{name:"60mm Mortar Squad",subs:[
-                  new FireTeam(i+'01200',{subs:[
+              new Section({name:"IF Section",subs:[
+                  undefined,
+                new Squad({name:"60mm Mortar Squad 1",subs:[
+                  undefined,
+                  new FireTeam({name:"Vic Team",subs:[
+                    undefined,
                     new Soldier(6,'Leader'),
                     new Soldier(3,'RATELO'),
-                    new Soldier(3,'Plotter'),
-                    new Soldier(2,'Gunner'),
-                    new Soldier(1,'Bearer'),
-                  ]}),
-                  new FireTeam(i+'01201',{subs:[
-                    new Soldier(6,'Leader'),
-                    new Soldier(3,'RATELO'),
-                    new Soldier(3,'Plotter'),
-                    new Soldier(2,'Gunner'),
                     new Soldier(1,'Driver'),
                   ]}),
-                ]}),
-                new Squad(i+'0121',{name:"Anti-Drone Squad",subs:[
-                  new FireTeam(i+'01210',{subs:[
-                    new Soldier(6,'UAV Observer',i+'201101'),
-                    new Soldier(3,'UAV Interceptor',i+'201101'),
-                    new Soldier(3,'UAV Jammer',i+'201102'),
+                  new FireTeam({name:"Gun Team",subs:[
+                    undefined,
+                    new Soldier(3,'Plotter'),
+                    new Soldier(2,'Gunner'),
+                    new Soldier(1,'Loader'),
                   ]}),
-                  new FireTeam(i+'01211',{subs:[
-                    new Soldier(6,'UAV Observer',i+'201101'),
-                    new Soldier(3,'UAV Interceptor',i+'201101'),
-                    new Soldier(3,'UAV Jammer',i+'201102'),
+                ]}),
+                new Squad({name:"60mm Mortar Squad 2",subs:[
+                  undefined,
+                  new FireTeam({name:"Vic Team",subs:[
+                    undefined,
+                    new Soldier(6,'Leader'),
+                    new Soldier(3,'RATELO'),
+                    new Soldier(1,'Driver'),
+                  ]}),
+                  new FireTeam({name:"Gun Team",subs:[
+                    undefined,
+                    new Soldier(3,'Plotter'),
+                    new Soldier(2,'Gunner'),
+                    new Soldier(1,'Loader'),
+                  ]}),
+                ]}),
+                new Squad({name:"Anti-Drone Squad",subs:[
+                  undefined,
+                  new FireTeam({subs:[
+                    undefined,
+                    new Soldier(6,'UAV Observer'),
+                    new Soldier(3,'UAV Interceptor'),
+                    new Soldier(3,'UAV Jammer'),
+                  ]}),
+                  new FireTeam({subs:[
+                    undefined,
+                    new Soldier(6,'UAV Observer'),
+                    new Soldier(3,'UAV Interceptor'),
+                    new Soldier(3,'UAV Jammer'),
                   ]}),
                 ]}),
               ]}),
             ]}),
-            new Platoon(i+'02',{name:'Logistics',subs:[
-              new Section(i+'020',{name:'Transport',subs:[
-                new Squad(i+'0200',{name:"IFV PLT Transport",subs:[
-                  new FireTeam(i+'02000',{name:"IFV",subs:[
-                    new Soldier(3,'Gunner',i+'020000'),
-                    new Soldier(1,'Driver',i+'020001'),
+            new Platoon({name:'Logistics',subs:[
+              undefined,
+              new Section({name:'Transport',subs:[
+                undefined,
+                new Squad({name:"IFV PLT Transport",subs:[
+                  undefined,
+                  new FireTeam({name:"IFV",subs:[
+                    undefined,
+                    new Soldier(3,'Gunner'),
+                    new Soldier(1,'Driver'),
                   ]}),
-                  new FireTeam(i+'02001',{name:"IFV",subs:[
-                    new Soldier(3,'Gunner',i+'020010'),
-                    new Soldier(1,'Driver',i+'020011'),
+                  new FireTeam({name:"IFV",subs:[
+                    undefined,
+                    new Soldier(3,'Gunner'),
+                    new Soldier(1,'Driver'),
                   ]}),
-                  new FireTeam(i+'02000',{name:"IFV",subs:[
-                    new Soldier(3,'Gunner',i+'020020'),
-                    new Soldier(1,'Driver',i+'020021'),
+                  new FireTeam({name:"IFV",subs:[
+                    undefined,
+                    new Soldier(3,'Gunner'),
+                    new Soldier(1,'Driver'),
                   ]}),
-                  new FireTeam(i+'02000',{name:"IFV",subs:[
-                    new Soldier(3,'Gunner',i+'020030'),
-                    new Soldier(1,'Driver',i+'020031'),
-                  ]}),
-                ]}),
-                new Squad(i+'0201',{name:"APC PLT Transport",subs:[
-                  new FireTeam(i+'02010',{name:"APC",subs:[
-                    new Soldier(3,'Gunner',i+'020100'),
-                    new Soldier(1,'Driver',i+'020101'),
-                  ]}),
-                  new FireTeam(i+'02011',{name:"APC",subs:[
-                    new Soldier(3,'Gunner',i+'020110'),
-                    new Soldier(1,'Driver',i+'020111'),
-                  ]}),
-                  new FireTeam(i+'02012',{name:"APC",subs:[
-                    new Soldier(3,'Gunner',i+'020120'),
-                    new Soldier(1,'Driver',i+'020121'),
-                  ]}),
-                  new FireTeam(i+'02013',{name:"APC",subs:[
-                    new Soldier(3,'Gunner',i+'020130'),
-                    new Soldier(1,'Driver',i+'020131'),
+                  new FireTeam({name:"IFV",subs:[
+                    undefined,
+                    new Soldier(3,'Gunner'),
+                    new Soldier(1,'Driver'),
                   ]}),
                 ]}),
-                new Squad(i+'0202',{name:"Wheeled PLT Transport",subs:[
-                  new FireTeam(i+'02020',{name:"MTW",subs:[
-                    new Soldier(1,'Driver',i+'020201'),
+                new Squad({name:"APC PLT Transport",subs:[
+                  undefined,
+                  new FireTeam({name:"APC",subs:[
+                    undefined,
+                    new Soldier(3,'Gunner'),
+                    new Soldier(1,'Driver'),
                   ]}),
-                  new FireTeam(i+'02021',{name:"MTW",subs:[
-                    new Soldier(1,'Driver',i+'020211'),
+                  new FireTeam({name:"APC",subs:[
+                    undefined,
+                    new Soldier(3,'Gunner'),
+                    new Soldier(1,'Driver'),
                   ]}),
-                  new FireTeam(i+'02022',{name:"MTW",subs:[
-                    new Soldier(1,'Driver',i+'020221'),
+                  new FireTeam({name:"APC",subs:[
+                    undefined,
+                    new Soldier(3,'Gunner'),
+                    new Soldier(1,'Driver'),
                   ]}),
-                  new FireTeam(i+'02023',{name:"MTW",subs:[
-                    new Soldier(1,'Driver',i+'020231'),
+                  new FireTeam({name:"APC",subs:[
+                    undefined,
+                    new Soldier(3,'Gunner'),
+                    new Soldier(1,'Driver'),
+                  ]}),
+                ]}),
+                new Squad({name:"Wheeled PLT Transport",subs:[
+                  undefined,
+                  new FireTeam({name:"MTW",subs:[
+                    undefined,
+                    new Soldier(1,'Driver'),
+                  ]}),
+                  new FireTeam({name:"MTW",subs:[
+                    undefined,
+                    new Soldier(1,'Driver'),
+                  ]}),
+                  new FireTeam({name:"MTW",subs:[
+                    undefined,
+                    new Soldier(1,'Driver'),
+                  ]}),
+                  new FireTeam({name:"MTW",subs:[
+                    undefined,
+                    new Soldier(1,'Driver'),
                   ]}),
                 ]}),
               ]}),
-              new Section(i+'021',{name:"Supply",subs:[
-                new Squad(i+'0210',{name:"Personnel",subs:[
-                  new FireTeam(i+'02100',{name:"LTW",subs:[
-                    new Soldier(8,"CQMS",i+'021000'),
-                    new Soldier(1,"Driver",i+'021001')
+              new Section({name:"Supply",subs:[
+                undefined,
+                new Squad({name:"Personnel",subs:[
+                  undefined,
+                  new FireTeam({name:"LTW",subs:[
+                    undefined,
+                    new Soldier(8,"CQMS"),
+                    new Soldier(1,"Driver"),
                   ]}),
-                  new FireTeam(i+'02101',{name:"Water HTT",subs:[
-                    new Soldier(2,"Storeman",i+'021010'),
-                    new Soldier(1,"Driver",i+'021011')
+                  new FireTeam({name:"Water HTT",subs:[
+                    undefined,
+                    new Soldier(2,"Storeman"),
+                    new Soldier(1,"Driver"),
                   ]}),
-                  new FireTeam(i+'02102',{name:"Rations HTW",subs:[
-                    new Soldier(2,"Storeman",i+'021020'),
-                    new Soldier(1,"Driver",i+'021021')
+                  new FireTeam({name:"Rations HTW",subs:[
+                    undefined,
+                    new Soldier(2,"Storeman"),
+                    new Soldier(1,"Driver"),
                   ]}),
-                  new FireTeam(i+'02103',{name:"Hospitality HTW",subs:[
-                    new Soldier(2,"Storeman",i+'021030'),
-                    new Soldier(1,"Driver",i+'021031')
+                  new FireTeam({name:"Hospitality HTW",subs:[
+                    undefined,
+                    new Soldier(2,"Storeman"),
+                    new Soldier(1,"Driver"),
                   ]}),
                 ]}),
-                new Squad(i+'0211',{name:"Materiel",subs:[
-                  new FireTeam(i+'02110',{name:"LTW",subs:[
-                    new Soldier(7,"Transport Sgt",i+'021100'),
-                    new Soldier(1,"Driver",i+'021101')
+                new Squad({name:"Materiel",subs:[
+                  undefined,
+                  new FireTeam({name:"LTW",subs:[
+                    undefined,
+                    new Soldier(7,"Transport Sgt"),
+                    new Soldier(1,"Driver"),
                   ]}),
-                  new FireTeam(i+'02111',{name:"Workshop HTP",subs:[
-                    new Soldier(6,"Engineer",i+'021110'),
-                    new Soldier(3,"Craftsman",i+'021111'),
-                    new Soldier(3,"Smith",i+'021112'),
-                    new Soldier(1,"Driver",i+'021113')
+                  new FireTeam({name:"Workshop HTP",subs:[
+                    new Soldier(11,"Engineer"),
+                    new Soldier(6,"Craftsman"),
+                    new Soldier(3,"Smith"),
+                    new Soldier(1,"Driver"),
                   ]}),
-                  new FireTeam(i+'02112',{name:"Fuel HTT",subs:[
-                    new Soldier(2,"Storeman",i+'021120'),
-                    new Soldier(1,"Driver",i+'021121')
+                  new FireTeam({name:"Fuel HTT",subs:[
+                    undefined,
+                    new Soldier(2,"Storeman"),
+                    new Soldier(1,"Driver"),
                   ]}),
-                  new FireTeam(i+'02113',{name:"Ammo HTW",subs:[
-                    new Soldier(2,"Storeman",i+'021130'),
-                    new Soldier(1,"Driver",i+'021131')
+                  new FireTeam({name:"Ammo HTW",subs:[
+                    undefined,
+                    new Soldier(2,"Storeman"),
+                    new Soldier(1,"Driver"),
                   ]}),
                 ]})
               ]}),
             ]}),
           ]}),
-          new Echelon(i+'1',{name:'Combat Echelon'}),
+          new Echelon({name:'Combat Echelon'}),
         ]
       }
     }
 
     class Battalion extends Formation {
-      constructor(i,...a) {
-        super(i,...a)
+      constructor(...a) {
+        super(...a)
         this.symbol ??= '||'
         this.abbr ??= 'btn'
-        this.size ??= `${['HQ','1st','2nd','3rd','4th'][this.index.slice(-1)]} Battalion`
+        this.size = "Battalion"
         this.subs ??= [
-          // new Company(i+'0',{subs:[]}),
-          // new Company(i+'1'),
-          // new Company(i+'2'),
-          // new Company(i+'3'),
-          // new Company(i+'4'),
-          new Company(i+'5',{subs:[
-            new Echelon(i+'50',{name:'Intelligence Support',subs:[
-              new Platoon(i+'500',{name:"",subs:[
-                new Section(i+'5000',{name:"",subs:[
-                  new Squad(i+'50000',{name:"Weapons COY HQ",subs:[
-                    new FireTeam(i+'500000',{name:"LAV OP",subs:[
+          new Company({name:"Battalion HQ Company",subs:[]}),
+          // new Company(),
+          // new Company(),
+          // new Company(),
+          // new Company(),
+          new Company({name:"Weapons Company",subs:[
+            undefined,
+            new Echelon({name:'Intelligence Support',subs:[
+              new Platoon({name:"",subs:[
+                new Section({name:"",subs:[
+                  new Squad({name:"Weapons COY HQ",subs:[
+                    new FireTeam({name:"LAV OP",subs:[
                       new Soldier(13,"Company CO"),
                       new Soldier(8,"Gunnery Sergeant"),
                       new Soldier(2,"Driver"),
                     ]}),
-                    new FireTeam(i+'500001',{name:"LAV OP",subs:[
+                    new FireTeam({name:"LAV OP",subs:[
                       new Soldier(12,"Company XO"),
                       new Soldier(21,"Operations Chief"),
                       new Soldier(2,"Driver"),
@@ -761,552 +792,650 @@
                   ]})
                 ]})
               ]}),
-              new Platoon(i+'',{name:"Reconnaissance Platoon",subs:[
-                new Section(i+'',{name:"",subs:[
-                  new Squad(i+'',{name:"",subs:[
-                    new FireTeam(i+'',{name:"",subs:[
+              new Platoon({name:"Reconnaissance Platoon",subs:[
+                new Section({name:"",subs:[
+                  new Squad({name:"",subs:[
+                    new FireTeam({name:"",subs:[
                       new Soldier(11,"Recce Commander"),
                       new Soldier(7,"Recce Sergeant"),
                     ]}),
-                    new FireTeam(i+'',{name:"",subs:[
+                    new FireTeam({name:"",subs:[
+            undefined,
                       new Soldier(3,"Gunner"),
                       new Soldier(2,"Driver"),
                     ]}),
                   ]}),
                 ]}),
-                new Section(i+'',{name:"",subs:[
-                  new Squad(i+'',{name:"",subs:[
-                    new FireTeam(i+'',{name:"",subs:[
+                new Section({name:"",subs:[
+            undefined,
+                  new Squad({name:"",subs:[
+            undefined,
+                    new FireTeam({name:"",subs:[
+            undefined,
                       new Soldier(6,"Team Leader"),
                       new Soldier(2,"Gunner"),
                       new Soldier(1,"Driver"),
                     ]}),
-                    new FireTeam(i+'',{name:"",subs:[
+                    new FireTeam({name:"",subs:[
+            undefined,
                       new Soldier(4,"Sniper"),
                       new Soldier(3,"Spotter"),
                     ]}),
                   ]}),
-                  new Squad(i+'',{name:"",subs:[
-                    new FireTeam(i+'',{name:"",subs:[
+                  new Squad({name:"",subs:[
+            undefined,
+                    new FireTeam({name:"",subs:[
+            undefined,
                       new Soldier(6,"Team Leader"),
                       new Soldier(2,"Gunner"),
                       new Soldier(1,"Driver"),
                     ]}),
-                    new FireTeam(i+'',{name:"",subs:[
+                    new FireTeam({name:"",subs:[
+            undefined,
                       new Soldier(4,"Sniper"),
                       new Soldier(3,"Spotter"),
                     ]}),
                   ]}),
-                  new Squad(i+'',{name:"",subs:[
-                    new FireTeam(i+'',{name:"",subs:[
+                  new Squad({name:"",subs:[
+            undefined,
+                    new FireTeam({name:"",subs:[
+            undefined,
                       new Soldier(6,"Team Leader"),
                       new Soldier(2,"Gunner"),
                       new Soldier(1,"Driver"),
                     ]}),
-                    new FireTeam(i+'',{name:"",subs:[
+            undefined,
+                    new FireTeam({name:"",subs:[
+            undefined,
                       new Soldier(4,"Sniper"),
                       new Soldier(3,"Spotter"),
                     ]}),
                   ]}),
                 ]}),
               ]}),
-              new Platoon(i+'',{name:"Pioneers Platoon",subs:[
-                new Section(i+'',{name:"",subs:[
-                  new Squad(i+'',{name:"",subs:[
-                    new FireTeam(i+'',{name:"",subs:[
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                    ]}),
-                    new FireTeam(i+'',{name:"",subs:[
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                    ]}),
-                  ]}),
-                  new Squad(i+'',{name:"",subs:[
-                    new FireTeam(i+'',{name:"",subs:[
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                    ]}),
-                    new FireTeam(i+'',{name:"",subs:[
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                    ]}),
-                  ]}),
-                ]}),
-                new Section(i+'',{name:"",subs:[
-                  new Squad(i+'',{name:"",subs:[
-                    new FireTeam(i+'',{name:"",subs:[
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                    ]}),
-                    new FireTeam(i+'',{name:"",subs:[
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                    ]}),
-                  ]}),
-                  new Squad(i+'',{name:"",subs:[
-                    new FireTeam(i+'',{name:"",subs:[
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                    ]}),
-                    new FireTeam(i+'',{name:"",subs:[
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                    ]}),
-                  ]}),
-                ]}),
-              ]}),
-              new Platoon(i+'',{name:"Anti-Drone Platoon",subs:[
-                new Section(i+'',{name:"",subs:[
-                  new Squad(i+'',{name:"",subs:[
-                    new FireTeam(i+'',{name:"",subs:[
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                    ]}),
-                    new FireTeam(i+'',{name:"",subs:[
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                    ]}),
-                  ]}),
-                  new Squad(i+'',{name:"",subs:[
-                    new FireTeam(i+'',{name:"",subs:[
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                    ]}),
-                    new FireTeam(i+'',{name:"",subs:[
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                    ]}),
-                  ]}),
-                ]}),
-                new Section(i+'',{name:"",subs:[
-                  new Squad(i+'',{name:"",subs:[
-                    new FireTeam(i+'',{name:"",subs:[
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                    ]}),
-                    new FireTeam(i+'',{name:"",subs:[
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                    ]}),
-                  ]}),
-                  new Squad(i+'',{name:"",subs:[
-                    new FireTeam(i+'',{name:"",subs:[
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                    ]}),
-                    new FireTeam(i+'',{name:"",subs:[
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                      new Soldier(1,""),
-                    ]}),
-                  ]}),
-                ]}),
-              ]}),
-            ]}),
-            new Echelon(i+'51',{name:"Direct Support",subs:[
-              new Platoon(i+'511',{name:"Anti-Armour Platoon",subs:[
-                new Section(i+'5110',{name:"Javelin Section",subs:[
-                  new Squad(i+'51100',{subs:[
-                    new FireTeam(i+'511000',{subs:[
-                      new Soldier(11,"AT Commander"),
-                      new Soldier(8,"AT Sergeant"),
-                    ]}),
-                    new FireTeam(i+'511001',{subs:[
-                      new Soldier(2,"AT Technician"),
-                      new Soldier(1,"AT Driver"),
-                    ]}),
-                  ]}),
-                  new Squad(i+'51101',{subs:[
-                    new FireTeam(i+'511010',{subs:[
-                      new Soldier(6,"AT Leader"),
-                      new Soldier(3,"AT Gunner"),
-                      new Soldier(2,"AT Loader"),
-                    ]}),
-                    new FireTeam(i+'511011',{subs:[
-                      new Soldier(3,"AT Gunner"),
-                      new Soldier(2,"AT Loader"),
-                      new Soldier(1,"AT Driver"),
-                    ]}),
-                  ]}),
-                  new Squad(i+'51102',{subs:[
-                    new FireTeam(i+'511020',{subs:[
-                      new Soldier(6,"AT Leader"),
-                      new Soldier(3,"AT Gunner"),
-                      new Soldier(2,"AT Loader"),
-                    ]}),
-                    new FireTeam(i+'511021',{subs:[
-                      new Soldier(3,"AT Gunner"),
-                      new Soldier(2,"AT Loader"),
-                      new Soldier(1,"AT Driver"),
-                    ]}),
-                  ]}),
-                  new Squad(i+'51103',{subs:[
-                    new FireTeam(i+'511030',{subs:[
-                      new Soldier(6,"AT Leader"),
-                      new Soldier(3,"AT Gunner"),
-                      new Soldier(2,"AT Loader"),
-                    ]}),
-                    new FireTeam(i+'511031',{subs:[
-                      new Soldier(3,"AT Gunner"),
-                      new Soldier(2,"AT Loader"),
-                      new Soldier(1,"AT Driver"),
-                    ]}),
-                  ]}),
-                ]}),
-                new Section(i+'5111',{name:"TOW Section",subs:[
-                  new Squad(i+'51110',{subs:[
-                    new FireTeam(i+'511100',{subs:[
-                      new Soldier(11,"TOW Commander"),
-                      new Soldier(8,"TOW Sergeant"),
-                    ]}),
-                    new FireTeam(i+'511101',{subs:[
-                      new Soldier(2,"TOW Technician"),
-                      new Soldier(1,"TOW Driver"),
-                    ]}),
-                  ]}),
-                  new Squad(i+'51111',{subs:[
-                    new FireTeam(i+'511110',{subs:[
-                      new Soldier(6,"TOW Leader"),
-                      new Soldier(3,"TOW Gunner"),
-                      new Soldier(2,"TOW Driver"),
-                    ]}),
-                    new FireTeam(i+'511111',{subs:[
-                      new Soldier(3,"TOW Gunner"),
-                      new Soldier(2,"TOW Loader"),
-                      new Soldier(1,"TOW Driver"),
-                    ]}),
-                  ]}),
-                  new Squad(i+'51112',{subs:[
-                    new FireTeam(i+'511120',{subs:[
-                      new Soldier(6,"TOW Leader"),
-                      new Soldier(3,"TOW Gunner"),
-                      new Soldier(2,"TOW Driver"),
-                    ]}),
-                    new FireTeam(i+'511121',{subs:[
-                      new Soldier(3,"TOW Gunner"),
-                      new Soldier(2,"TOW Loader"),
-                      new Soldier(1,"TOW Driver"),
-                    ]}),
-                  ]}),
-                  new Squad(i+'51113',{subs:[
-                    new FireTeam(i+'511130',{subs:[
-                      new Soldier(6,"TOW Leader"),
-                      new Soldier(3,"TOW Gunner"),
-                      new Soldier(2,"TOW Driver"),
-                    ]}),
-                    new FireTeam(i+'511131',{subs:[
-                      new Soldier(3,"TOW Gunner"),
-                      new Soldier(2,"TOW Loader"),
-                      new Soldier(1,"TOW Driver"),
-                    ]}),
-                  ]}),
-                ]}),
-              ]}),
-              new Platoon(i+'512',{name:"HMG Platoon",subs:[
-                new Section(i+'5120',{name:"",subs:[
-                  new Squad(i+'51200',{subs:[
-                    new FireTeam(i+'512000',{subs:[
-                      new Soldier(11,"HMG Commander"),
-                      new Soldier(8,"HMG Sergeant"),
-                    ]}),
-                    new FireTeam(i+'512010',{subs:[
-                      new Soldier(2,"HMG Technician"),
-                      new Soldier(1,"HMG Driver"),
-                    ]}),
-                  ]}),
-                  new Squad(i+'51200',{subs:[
-                    new FireTeam(i+'512000',{subs:[
-                      new Soldier(6,"HMG Leader"),
-                      new Soldier(3,"HMG Gunner"),
-                      new Soldier(2,"HMG Loader"),
-                      new Soldier(1,"HMG Driver"),
-                    ]}),
-                    new FireTeam(i+'512010',{subs:[
-                      new Soldier(6,"HMG Leader"),
-                      new Soldier(3,"HMG Gunner"),
-                      new Soldier(2,"HMG Loader"),
-                      new Soldier(1,"HMG Driver"),
-                    ]}),
-                  ]}),
-                  new Squad(i+'51200',{subs:[
-                    new FireTeam(i+'512000',{subs:[
-                      new Soldier(6,"HMG Leader"),
-                      new Soldier(3,"HMG Gunner"),
-                      new Soldier(2,"HMG Loader"),
-                      new Soldier(1,"HMG Driver"),
-                    ]}),
-                    new FireTeam(i+'512010',{subs:[
-                      new Soldier(6,"HMG Leader"),
-                      new Soldier(3,"HMG Gunner"),
-                      new Soldier(2,"HMG Loader"),
-                      new Soldier(1,"HMG Driver"),
-                    ]}),
-                  ]}),
-                  new Squad(i+'51200',{subs:[
-                    new FireTeam(i+'512000',{subs:[
-                      new Soldier(6,"HMG Leader"),
-                      new Soldier(3,"HMG Gunner"),
-                      new Soldier(2,"HMG Loader"),
-                      new Soldier(1,"HMG Driver"),
-                    ]}),
-                    new FireTeam(i+'512010',{subs:[
-                      new Soldier(6,"HMG Leader"),
-                      new Soldier(3,"HMG Gunner"),
-                      new Soldier(2,"HMG Loader"),
-                      new Soldier(1,"HMG Driver"),
-                    ]}),
-                  ]}),
-                ]}),
-              ]}),
-            ]}),
-            new Echelon(i+'52',{name:"Indirect Support",subs:[
-              new Platoon(i+'520',{name:"80mm Mortar Platoon",subs:[
-                new Section(i+'5200',{name:"Mortar Platoon HQ",subs:[
-                  new Squad(i+'52000',{name:"",subs:[
-                    new FireTeam(i+'520000',{name:"",subs:[
-                      new Soldier(12,"Mortar Commander"),
-                      new Soldier(8,"Mortar Sergeant"),
-                    ]}),
-                    new FireTeam(i+'520001',{name:"",subs:[
-                      new Soldier(6,"Ammunition Technician"),
-                      new Soldier(3,"Driver"),
-                    ]}),
-                  ]}),
-                ]}),
-                new Section(i+'5201',{name:"1st Mortar Section",subs:[
-                  new Squad(i+'52010',{name:"Section HQ",subs:[
-                    new FireTeam(i+'520100',{name:"Command",subs:[
-                      new Soldier(7,"Section Leader"),
+              new Platoon({name:"Pioneers Platoon",subs:[
+                new Section({name:"",subs:[
+                  new Squad({name:"",subs:[
+                    new FireTeam({name:"",abbr:"ftm col",subs:[
+                      new Soldier(11,"Pioneer Commander"),
+                      new Soldier(8,"Pioneer Sergeant"),
                       new Soldier(2,"Driver"),
-                      new Soldier(3,"Forward Observer"),
-                      new Soldier(3,"Forward Observer"),
-                    ]}),
-                    new FireTeam(i+'520101',{name:"Fire Direction Center",subs:[
-                      new Soldier(11,"Fire Director"),
-                      new Soldier(6,"Operator"),
-                      new Soldier(3,"Operator"),
-                      new Soldier(3,"RATELO"),
-                    ]}),
-                  ]}),
-                  new Squad(i+'52011',{name:"Mortar Squad 1",subs:[
-                    new FireTeam(i+'520110',{name:"Gun Team",subs:[
-                      new Soldier(6,"Squad Leader"),
-                      new Soldier(3,"Mortar Gunner"),
-                      new Soldier(3,"Assistant Gunner"),
-                    ]}),
-                    new FireTeam(i+'520111',{name:"Ammo Team",subs:[
-                      new Soldier(2,"Ammo Bearer"),
-                      new Soldier(2,"Ammo Bearer"),
-                      new Soldier(1,"Driver"),
-                    ]}),
-                  ]}),
-                  new Squad(i+'52012',{name:"Mortar Squad 2",subs:[
-                    new FireTeam(i+'520120',{name:"Gun Team",subs:[
-                      new Soldier(6,"Squad Leader"),
-                      new Soldier(3,"Mortar Gunner"),
-                      new Soldier(3,"Assistant Gunner"),
-                    ]}),
-                    new FireTeam(i+'520121',{name:"Ammo Team",subs:[
-                      new Soldier(2,"Ammo Bearer"),
-                      new Soldier(2,"Ammo Bearer"),
-                      new Soldier(1,"Driver"),
-                    ]}),
-                  ]}),
-                  new Squad(i+'52013',{name:"Mortar Squad 3",subs:[
-                    new FireTeam(i+'520130',{name:"Gun Team",subs:[
-                      new Soldier(6,"Squad Leader"),
-                      new Soldier(3,"Mortar Gunner"),
-                      new Soldier(3,"Assistant Gunner"),
-                    ]}),
-                    new FireTeam(i+'520131',{name:"Ammo Team",subs:[
-                      new Soldier(2,"Ammo Bearer"),
-                      new Soldier(2,"Ammo Bearer"),
-                      new Soldier(1,"Driver"),
                     ]}),
                   ]}),
                 ]}),
-                new Section(i+'5202',{name:"2nd Mortar Section",subs:[
-                  new Squad(i+'52020',{name:"Section HQ",subs:[
-                    new FireTeam(i+'520200',{name:"Command",subs:[
-                      new Soldier(7,"Section Leader"),
-                      new Soldier(2,"Driver"),
-                      new Soldier(3,"Forward Observer"),
-                      new Soldier(3,"Forward Observer"),
+                new Section({name:"",subs:[
+                  undefined,
+                  new Squad({name:"",subs:[
+                    undefined,
+                    new FireTeam({name:"",subs:[
+                      undefined,
+                      new Soldier(6,""),
+                      new Soldier(3,""),
+                      new Soldier(1,""),
                     ]}),
-                    new FireTeam(i+'520201',{name:"Fire Direction Center",subs:[
-                      new Soldier(11,"Fire Director"),
-                      new Soldier(6,"Operator"),
-                      new Soldier(3,"Operator"),
-                      new Soldier(3,"RATELO"),
-                    ]}),
-                  ]}),
-                  new Squad(i+'52021',{name:"Mortar Squad 4",subs:[
-                    new FireTeam(i+'520210',{name:"Gun Team",subs:[
-                      new Soldier(6,"Squad Leader"),
-                      new Soldier(3,"Mortar Gunner"),
-                      new Soldier(3,"Assistant Gunner"),
-                    ]}),
-                    new FireTeam(i+'520211',{name:"Ammo Team",subs:[
-                      new Soldier(2,"Ammo Bearer"),
-                      new Soldier(2,"Ammo Bearer"),
-                      new Soldier(1,"Driver"),
+                    new FireTeam({name:"",subs:[
+                      undefined,
+                      new Soldier(4,""),
+                      new Soldier(3,""),
+                      new Soldier(3,""),
                     ]}),
                   ]}),
-                  new Squad(i+'52022',{name:"Mortar Squad 5",subs:[
-                    new FireTeam(i+'520220',{name:"Gun Team",subs:[
-                      new Soldier(6,"Squad Leader"),
-                      new Soldier(3,"Mortar Gunner"),
-                      new Soldier(3,"Assistant Gunner"),
+                  new Squad({name:"",subs:[
+                    undefined,
+                    new FireTeam({name:"",subs:[
+                      undefined,
+                      new Soldier(5,""),
+                      new Soldier(3,""),
+                      new Soldier(1,""),
                     ]}),
-                    new FireTeam(i+'520221',{name:"Ammo Team",subs:[
-                      new Soldier(2,"Ammo Bearer"),
-                      new Soldier(2,"Ammo Bearer"),
-                      new Soldier(1,"Driver"),
+                    new FireTeam({name:"",subs:[
+                      undefined,
+                      new Soldier(4,""),
+                      new Soldier(3,""),
+                      new Soldier(3,""),
                     ]}),
                   ]}),
-                  new Squad(i+'52023',{name:"Mortar Squad 6",subs:[
-                    new FireTeam(i+'520230',{name:"Gun Team",subs:[
-                      new Soldier(6,"Squad Leader"),
-                      new Soldier(3,"Mortar Gunner"),
-                      new Soldier(3,"Assistant Gunner"),
+                  new Squad({name:"",subs:[
+                    undefined,
+                    new FireTeam({name:"",subs:[
+                      undefined,
+                      new Soldier(5,""),
+                      new Soldier(3,""),
+                      new Soldier(1,""),
                     ]}),
-                    new FireTeam(i+'520231',{name:"Ammo Team",subs:[
-                      new Soldier(2,"Ammo Bearer"),
-                      new Soldier(2,"Ammo Bearer"),
-                      new Soldier(1,"Driver"),
+                    new FireTeam({name:"",subs:[
+                      undefined,
+                      new Soldier(4,""),
+                      new Soldier(3,""),
+                      new Soldier(3,""),
                     ]}),
                   ]}),
                 ]}),
               ]}),
-              new Platoon(i+'521',{name:"UAV Assault Platoon",subs:[
-                new Section(i+'5210',{subs:[
-                  new Squad(i+'52100',{subs:[
-                    new FireTeam(i+'521000',{subs:[
-                      new Soldier(11,"UAV Commander"),
-                      new Soldier(8,"UAV Sergeant"),
-                      new Soldier(1,"UAV Driver"),
-                    ]}),
-                    new FireTeam(i+'521001',{subs:[
-                      new Soldier(1,"UAV Driver"),
-                      new Soldier(1,"UAV Driver"),
-                      new Soldier(1,"UAV Driver"),
-                    ]}),
-                  ]}),
-                ]}),
-                new Section(i+'5211',{subs:[
-                  new Squad(i+'52110',{subs:[
-                    new FireTeam(i+'521100',{subs:[
-                      new Soldier(6,"UAV Leader"),
-                      new Soldier(3,"UAV Observer"),
-                    ]}),
-                    new FireTeam(i+'521101',{subs:[
-                      new Soldier(2,"UAV Pilot"),
-                      new Soldier(3,"UAV Technician"),
-                    ]}),
-                    new FireTeam(i+'521102',{subs:[
-                      new Soldier(2,"UAV Pilot"),
-                      new Soldier(3,"UAV Technician"),
-                    ]}),
-                  ]}),
-                  new Squad(i+'52111',{subs:[
-                    new FireTeam(i+'521110',{subs:[
-                      new Soldier(6,"UAV Leader"),
-                      new Soldier(3,"UAV Observer"),
-                    ]}),
-                    new FireTeam(i+'521111',{subs:[
-                      new Soldier(2,"UAV Pilot"),
-                      new Soldier(3,"UAV Technician"),
-                    ]}),
-                    new FireTeam(i+'521112',{subs:[
-                      new Soldier(2,"UAV Pilot"),
-                      new Soldier(3,"UAV Technician"),
-                    ]}),
-                  ]}),
-                  new Squad(i+'52112',{subs:[
-                    new FireTeam(i+'521120',{subs:[
-                      new Soldier(6,"UAV Leader"),
-                      new Soldier(3,"UAV Observer"),
-                    ]}),
-                    new FireTeam(i+'521121',{subs:[
-                      new Soldier(2,"UAV Pilot"),
-                      new Soldier(3,"UAV Technician"),
-                    ]}),
-                    new FireTeam(i+'521122',{subs:[
-                      new Soldier(2,"UAV Pilot"),
-                      new Soldier(3,"UAV Technician"),
-                    ]}),
-                  ]}),
-                ]}),
-              ]}),
+            //   new Platoon({name:"Anti-Drone Platoon",subs:[
+            // undefined,
+            //     new Section({name:"",subs:[
+            // undefined,
+            //       new Squad({name:"",subs:[
+            // undefined,
+            //         new FireTeam({name:"",subs:[
+            // undefined,
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //         ]}),
+            //         new FireTeam({name:"",subs:[
+            // undefined,
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //         ]}),
+            //       ]}),
+            //       new Squad({name:"",subs:[
+            // undefined,
+            //         new FireTeam({name:"",subs:[
+            // undefined,
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //         ]}),
+            //         new FireTeam({name:"",subs:[
+            // undefined,
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //         ]}),
+            //       ]}),
+            //     ]}),
+            //     new Section({name:"",subs:[
+            // undefined,
+            //       new Squad({name:"",subs:[
+            // undefined,
+            //         new FireTeam({name:"",subs:[
+            // undefined,
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //         ]}),
+            //         new FireTeam({name:"",subs:[
+            // undefined,
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //         ]}),
+            //       ]}),
+            //       new Squad({name:"",subs:[
+            // undefined,
+            //         new FireTeam({name:"",subs:[
+            // undefined,
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //         ]}),
+            // undefined,
+            //         new FireTeam({name:"",subs:[
+            // undefined,
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //           new Soldier(1,""),
+            //         ]}),
+            //       ]}),
+            //     ]}),
+            //   ]}),
             ]}),
+            // new Echelon({name:"Direct Support",subs:[
+            //   undefined,
+            //   new Platoon({name:"Anti-Armour Platoon",subs:[
+            //     undefined,
+            //     new Section({name:"Javelin Section",subs:[
+            //       new Squad({subs:[
+            //         new FireTeam({subs:[
+            //           new Soldier(11,"AT Commander"),
+            //           new Soldier(8,"AT Sergeant"),
+            //         ]}),
+            //         new FireTeam({subs:[
+            // undefined,
+            //           new Soldier(2,"AT Technician"),
+            //           new Soldier(1,"AT Driver"),
+            //         ]}),
+            //       ]}),
+            //       new Squad({subs:[
+            // undefined,
+            //         new FireTeam({subs:[
+            // undefined,
+            //           new Soldier(6,"AT Leader"),
+            //           new Soldier(3,"AT Gunner"),
+            //           new Soldier(2,"AT Loader"),
+            //         ]}),
+            //         new FireTeam({subs:[
+            // undefined,
+            //           new Soldier(3,"AT Gunner"),
+            //           new Soldier(2,"AT Loader"),
+            //           new Soldier(1,"AT Driver"),
+            //         ]}),
+            //       ]}),
+            //       new Squad({subs:[
+            // undefined,
+            //         new FireTeam({subs:[
+            // undefined,
+            //           new Soldier(6,"AT Leader"),
+            //           new Soldier(3,"AT Gunner"),
+            //           new Soldier(2,"AT Loader"),
+            //         ]}),
+            //         new FireTeam({subs:[
+            // undefined,
+            //           new Soldier(3,"AT Gunner"),
+            //           new Soldier(2,"AT Loader"),
+            //           new Soldier(1,"AT Driver"),
+            //         ]}),
+            //       ]}),
+            //       new Squad({subs:[
+            // undefined,
+            //         new FireTeam({subs:[
+            // undefined,
+            //           new Soldier(6,"AT Leader"),
+            //           new Soldier(3,"AT Gunner"),
+            //           new Soldier(2,"AT Loader"),
+            //         ]}),
+            //         new FireTeam({subs:[
+            // undefined,
+            //           new Soldier(3,"AT Gunner"),
+            //           new Soldier(2,"AT Loader"),
+            //           new Soldier(1,"AT Driver"),
+            //         ]}),
+            //       ]}),
+            //     ]}),
+            //     new Section({name:"TOW Section",subs:[
+            //       new Squad({subs:[
+            //         new FireTeam({subs:[
+            //           new Soldier(11,"TOW Commander"),
+            //           new Soldier(8,"TOW Sergeant"),
+            //         ]}),
+            //         new FireTeam({subs:[
+            // undefined,
+            //           new Soldier(2,"TOW Technician"),
+            //           new Soldier(1,"TOW Driver"),
+            //         ]}),
+            //       ]}),
+            //       new Squad({subs:[
+            // undefined,
+            //         new FireTeam({subs:[
+            // undefined,
+            //           new Soldier(6,"TOW Leader"),
+            //           new Soldier(3,"TOW Gunner"),
+            //           new Soldier(2,"TOW Driver"),
+            //         ]}),
+            //         new FireTeam({subs:[
+            // undefined,
+            //           new Soldier(3,"TOW Gunner"),
+            //           new Soldier(2,"TOW Loader"),
+            //           new Soldier(1,"TOW Driver"),
+            //         ]}),
+            //       ]}),
+            //       new Squad({subs:[
+            // undefined,
+            //         new FireTeam({subs:[
+            // undefined,
+            //           new Soldier(6,"TOW Leader"),
+            //           new Soldier(3,"TOW Gunner"),
+            //           new Soldier(2,"TOW Driver"),
+            //         ]}),
+            //         new FireTeam({subs:[
+            // undefined,
+            //           new Soldier(3,"TOW Gunner"),
+            //           new Soldier(2,"TOW Loader"),
+            //           new Soldier(1,"TOW Driver"),
+            //         ]}),
+            //       ]}),
+            //       new Squad({subs:[
+            // undefined,
+            //         new FireTeam({subs:[
+            // undefined,
+            //           new Soldier(6,"TOW Leader"),
+            //           new Soldier(3,"TOW Gunner"),
+            //           new Soldier(2,"TOW Driver"),
+            //         ]}),
+            //         new FireTeam({subs:[
+            // undefined,
+            //           new Soldier(3,"TOW Gunner"),
+            //           new Soldier(2,"TOW Loader"),
+            //           new Soldier(1,"TOW Driver"),
+            //         ]}),
+            //       ]}),
+            //     ]}),
+            //   ]}),
+            //   new Platoon({name:"HMG Platoon",subs:[
+            //     undefined,
+            //     new Section({name:"",subs:[
+            //       new Squad({subs:[
+            //         new FireTeam({subs:[
+            //           new Soldier(11,"HMG Commander"),
+            //           new Soldier(8,"HMG Sergeant"),
+            //         ]}),
+            //         new FireTeam({subs:[
+            // undefined,
+            //           new Soldier(2,"HMG Technician"),
+            //           new Soldier(1,"HMG Driver"),
+            //         ]}),
+            //       ]}),
+            //       new Squad({subs:[
+            // undefined,
+            //         new FireTeam({subs:[
+            // undefined,
+            //           new Soldier(6,"HMG Leader"),
+            //           new Soldier(3,"HMG Gunner"),
+            //           new Soldier(2,"HMG Loader"),
+            //           new Soldier(1,"HMG Driver"),
+            //         ]}),
+            //         new FireTeam({subs:[
+            // undefined,
+            //           new Soldier(6,"HMG Leader"),
+            //           new Soldier(3,"HMG Gunner"),
+            //           new Soldier(2,"HMG Loader"),
+            //           new Soldier(1,"HMG Driver"),
+            //         ]}),
+            //       ]}),
+            //       new Squad({subs:[
+            //         undefined,
+            //         new FireTeam({subs:[
+            //           undefined,
+            //           new Soldier(6,"HMG Leader"),
+            //           new Soldier(3,"HMG Gunner"),
+            //           new Soldier(2,"HMG Loader"),
+            //           new Soldier(1,"HMG Driver"),
+            //         ]}),
+            //         new FireTeam({subs:[
+            //           undefined,
+            //           new Soldier(6,"HMG Leader"),
+            //           new Soldier(3,"HMG Gunner"),
+            //           new Soldier(2,"HMG Loader"),
+            //           new Soldier(1,"HMG Driver"),
+            //         ]}),
+            //       ]}),
+            //       new Squad({subs:[
+            //         undefined,
+            //         new FireTeam({subs:[
+            //           undefined,
+            //           new Soldier(6,"HMG Leader"),
+            //           new Soldier(3,"HMG Gunner"),
+            //           new Soldier(2,"HMG Loader"),
+            //           new Soldier(1,"HMG Driver"),
+            //         ]}),
+            //         new FireTeam({subs:[
+            //           undefined,
+            //           new Soldier(6,"HMG Leader"),
+            //           new Soldier(3,"HMG Gunner"),
+            //           new Soldier(2,"HMG Loader"),
+            //           new Soldier(1,"HMG Driver"),
+            //         ]}),
+            //       ]}),
+            //     ]}),
+            //   ]}),
+            // ]}),
+            // new Echelon({name:"Indirect Support",subs:[
+            //   undefined,
+            //   new Platoon({name:"80mm Mortar Platoon",subs:[
+            //     new Section({name:"Mortar Platoon HQ",subs:[
+            //       new Squad({name:"",subs:[
+            //         new FireTeam({name:"",subs:[
+            //           new Soldier(12,"Mortar Commander"),
+            //           new Soldier(8,"Mortar Sergeant"),
+            //         ]}),
+            //         new FireTeam({name:"",subs:[
+            //           undefined,
+            //           new Soldier(6,"Ammunition Technician"),
+            //           new Soldier(3,"Driver"),
+            //         ]}),
+            //       ]}),
+            //     ]}),
+            //     new Section({name:"1st Mortar Section",subs:[
+            //       new Squad({name:"Section HQ",subs:[
+            //         undefined,
+            //         new FireTeam({name:"Command",subs:[
+            //           undefined,
+            //           new Soldier(7,"Section Leader"),
+            //           new Soldier(2,"Driver"),
+            //           new Soldier(3,"Forward Observer"),
+            //           new Soldier(3,"Forward Observer"),
+            //         ]}),
+            //         new FireTeam({name:"Fire Direction Center",subs:[
+            //           new Soldier(11,"Fire Director"),
+            //           new Soldier(6,"Operator"),
+            //           new Soldier(3,"Operator"),
+            //           new Soldier(3,"RATELO"),
+            //         ]}),
+            //       ]}),
+            //       new Squad({name:"80mm Mortar Squad 1",subs:[
+            //         undefined,
+            //         new FireTeam({name:"Gun Team",subs:[
+            //           undefined,
+            //           new Soldier(6,"Squad Leader"),
+            //           new Soldier(3,"Mortar Gunner"),
+            //           new Soldier(3,"Assistant Gunner"),
+            //         ]}),
+            //         new FireTeam({name:"Ammo Team",subs:[
+            //           undefined,
+            //           new Soldier(2,"Ammo Bearer"),
+            //           new Soldier(2,"Ammo Bearer"),
+            //           new Soldier(1,"Driver"),
+            //         ]}),
+            //       ]}),
+            //       new Squad({name:"80mm Mortar Squad 2",subs:[
+            //         undefined,
+            //         new FireTeam({name:"Gun Team",subs:[
+            //           undefined,
+            //           new Soldier(6,"Squad Leader"),
+            //           new Soldier(3,"Mortar Gunner"),
+            //           new Soldier(3,"Assistant Gunner"),
+            //         ]}),
+            //         new FireTeam({name:"Ammo Team",subs:[
+            //           undefined,
+            //           new Soldier(2,"Ammo Bearer"),
+            //           new Soldier(2,"Ammo Bearer"),
+            //           new Soldier(1,"Driver"),
+            //         ]}),
+            //       ]}),
+            //       new Squad({name:"80mm Mortar Squad 3",subs:[
+            //         undefined,
+            //         new FireTeam({name:"Gun Team",subs:[
+            //           undefined,
+            //           new Soldier(6,"Squad Leader"),
+            //           new Soldier(3,"Mortar Gunner"),
+            //           new Soldier(3,"Assistant Gunner"),
+            //         ]}),
+            //         new FireTeam({name:"Ammo Team",subs:[
+            //           undefined,
+            //           new Soldier(2,"Ammo Bearer"),
+            //           new Soldier(2,"Ammo Bearer"),
+            //           new Soldier(1,"Driver"),
+            //         ]}),
+            //       ]}),
+            //     ]}),
+            //     new Section({name:"2nd Mortar Section",subs:[
+            //       new Squad({name:"Section HQ",subs:[
+            //         undefined,
+            //         new FireTeam({name:"Command",subs:[
+            //           undefined,
+            //           new Soldier(7,"Section Leader"),
+            //           new Soldier(2,"Driver"),
+            //           new Soldier(3,"Forward Observer"),
+            //           new Soldier(3,"Forward Observer"),
+            //         ]}),
+            //         new FireTeam({name:"Fire Direction Center",subs:[
+            //           new Soldier(11,"Fire Director"),
+            //           new Soldier(6,"Operator"),
+            //           new Soldier(3,"Operator"),
+            //           new Soldier(3,"RATELO"),
+            //         ]}),
+            //       ]}),
+            //       new Squad({name:"80mm Mortar Squad 4",subs:[
+            //         undefined,
+            //         new FireTeam({name:"Gun Team",subs:[
+            //           undefined,
+            //           new Soldier(6,"Squad Leader"),
+            //           new Soldier(3,"Mortar Gunner"),
+            //           new Soldier(3,"Assistant Gunner"),
+            //         ]}),
+            //         new FireTeam({name:"Ammo Team",subs:[
+            //           undefined,
+            //           new Soldier(2,"Ammo Bearer"),
+            //           new Soldier(2,"Ammo Bearer"),
+            //           new Soldier(1,"Driver"),
+            //         ]}),
+            //       ]}),
+            //       new Squad({name:"80mm Mortar Squad 5",subs:[
+            //       undefined,
+            //         new FireTeam({name:"Gun Team",subs:[
+            //           undefined,
+            //           new Soldier(6,"Squad Leader"),
+            //           new Soldier(3,"Mortar Gunner"),
+            //           new Soldier(3,"Assistant Gunner"),
+            //         ]}),
+            //         new FireTeam({name:"Ammo Team",subs:[
+            //           undefined,
+            //           new Soldier(2,"Ammo Bearer"),
+            //           new Soldier(2,"Ammo Bearer"),
+            //           new Soldier(1,"Driver"),
+            //         ]}),
+            //       ]}),
+            //       new Squad({name:"80mm Mortar Squad 6",subs:[
+            //         undefined,
+            //         new FireTeam({name:"Gun Team",subs:[
+            //           undefined,
+            //           new Soldier(6,"Squad Leader"),
+            //           new Soldier(3,"Mortar Gunner"),
+            //           new Soldier(3,"Assistant Gunner"),
+            //         ]}),
+            //         new FireTeam({name:"Ammo Team",subs:[
+            //           undefined,
+            //           new Soldier(2,"Ammo Bearer"),
+            //           new Soldier(2,"Ammo Bearer"),
+            //           new Soldier(1,"Driver"),
+            //         ]}),
+            //       ]}),
+            //     ]}),
+            //   ]}),
+            //   new Platoon({name:"UAV Assault Platoon",subs:[
+            //     new Section({name:"UAV HQ",subs:[
+            //       undefined,
+            //       new Squad({subs:[
+            //         undefined,
+            //         new FireTeam({subs:[
+            //           new Soldier(11,"UAV Commander"),
+            //           new Soldier(8,"UAV Sergeant"),
+            //           new Soldier(1,"UAV Driver"),
+            //         ]}),
+            //         new FireTeam({subs:[
+            //           undefined,
+            //           new Soldier(1,"UAV Driver"),
+            //           new Soldier(1,"UAV Driver"),
+            //           new Soldier(1,"UAV Driver"),
+            //         ]}),
+            //       ]}),
+            //     ]}),
+            //     new Section({subs:[
+            //       undefined,
+            //       new Squad({subs:[
+            //         undefined,
+            //         new FireTeam({subs:[
+            //           undefined,
+            //           new Soldier(6,"UAV Leader"),
+            //           new Soldier(3,"UAV Observer"),
+            //         ]}),
+            //         new FireTeam({subs:[
+            //           undefined,
+            //           new Soldier(2,"UAV Pilot"),
+            //           new Soldier(3,"UAV Technician"),
+            //         ]}),
+            //         new FireTeam({subs:[
+            //           undefined,
+            //           new Soldier(2,"UAV Pilot"),
+            //           new Soldier(3,"UAV Technician"),
+            //         ]}),
+            //       ]}),
+            //       new Squad({subs:[
+            //         undefined,
+            //         new FireTeam({subs:[
+            //           undefined,
+            //           new Soldier(6,"UAV Leader"),
+            //           new Soldier(3,"UAV Observer"),
+            //         ]}),
+            //         new FireTeam({subs:[
+            //           undefined,
+            //           new Soldier(2,"UAV Pilot"),
+            //           new Soldier(3,"UAV Technician"),
+            //         ]}),
+            //         new FireTeam({subs:[
+            //           undefined,
+            //           new Soldier(2,"UAV Pilot"),
+            //           new Soldier(3,"UAV Technician"),
+            //         ]}),
+            //       ]}),
+            //       new Squad({subs:[
+            //         undefined,
+            //         new FireTeam({subs:[
+            //           undefined,
+            //           new Soldier(6,"UAV Leader"),
+            //           new Soldier(3,"UAV Observer"),
+            //         ]}),
+            //         new FireTeam({subs:[
+            //           undefined,
+            //           new Soldier(2,"UAV Pilot"),
+            //           new Soldier(3,"UAV Technician"),
+            //         ]}),
+            //         new FireTeam({subs:[
+            //           undefined,
+            //           new Soldier(2,"UAV Pilot"),
+            //           new Soldier(3,"UAV Technician"),
+            //         ]}),
+            //       ]}),
+            //     ]}),
+            //   ]}),
+            // ]}),
           ]}),
         ]
       }
     }
 
     class Regiment extends Formation {
-      constructor(i,...a) {
-        super(i,...a)
+      constructor(...a) {
+        super(...a)
         this.symbol ??= '|||'
         this.abbr ??= 'rgt'
         this.size ??= "Regiment"
         this.subs ??= [
-          new Battalion(i+'1'),
-          new Battalion(i+'2'),
-          new Battalion(i+'3'),
-          new Battalion(i+'4'),
+          new Battalion(),
+          new Battalion(),
+          new Battalion(),
+          new Battalion(),
         ]
       }
     }
 
     class Cohort extends Formation {
-      constructor(i,...a) {
-        super(i,...a)
+      constructor(...a) {
+        super(...a)
         this.symbol ??= '||||'
         this.abbr ??= 'cht'
         this.size ??= "Cohort"
         this.subs ??= [
-          new Regiment(i+'A',{name:"Stone Shield Regiment"}),
-          new Regiment(i+'R',{name:"Stone Shield Reserves"}),
+          new Regiment({name:"Stone Shield Regiment"}),
+          new Regiment({name:"Stone Shield Reserves"}),
         ]
       }
     }
 
-    document.body.innerHTML+=new Battalion('1').markup
+    // document.body.innerHTML+=new Battalion({index:'SR 1'}).renumber().markup
+    document.body.innerHTML+=new Battalion({iLength:10}).renumber().markup
 
-    // document.body.innerHTML+=`<li>${new Formation('Company','A').markUp}</li>`
   </script>
 </body>
 </html>
