@@ -19,19 +19,15 @@
   <script src="./scripts/helpers.js"></script>
   <script src="./scripts/listeners.js"></script>
   <script src="./classes/Meter.js"></script>
+  <script src="./classes/Units.js"></script>
   <script>
 
 // onload=()=>{
-//   createLayers()
-//   createMap()
-//   createSprites()
-//   createPCs()
-//   createGUI()
-//   refresh()
+  createLayers()
+  createMap()
+  createUnits()
+  refresh()
 // }
-
-createLayers()
-
 
 function createLayers() {
   for (let layer of settings.layers) {
@@ -45,365 +41,56 @@ function createLayers() {
     CTX[layer.name] = CVS[layer.name].getContext('2d')
     CTX[layer.name].lineCap = "round"
     CTX[layer.name].lineJoin = "round"
-    CTX[layer.name].font = "9px consolas"
+    CTX[layer.name].font=`${tileSize/6}px consolas`
     CTX[layer.name].textAlign = "center"
     CTX[layer.name].textBaseline = "middle"
   }
-
-  return createMap()
 }
 
 function createMap(ctx=CTX['bmp']) {
-  C.z=3.25
+  ctx.fillRect(0,0,10000,10000)
 
-  ctx.translate(tileSize,tileSize/Math.cos(Math.PI/6)*7/8)
+  ctx.translate(tileSize/Math.cos(Math.PI/6)/2,tileSize/2)
   for (let j=0;j<mapJ;j++)
   for (let i=0;i<mapI;i++) {
-    let newTile = new Meter(2*i+j%2,j,mapData[j][i])
-    Game.terrain[j]??=[]
-    Game.terrain[j][2*i+j%2] = newTile
+    let newTile = new Meter(i,2*j+(i+1)%2,mapData1[j][i])
+    Game.terrain[i]??=[]
+    Game.terrain[i][2*j+(i+1)%2] = newTile
     // newTile.draw()
   }
 
-  const roads=[
-    [0,8,[1]],
-    [0,10,[0,2]],
-    [0,12,[2,3]],
+  for (const road of roads1) {
+    Game.terrain[road[0]][road[1]].roads = road[2]
+  }
+  // for (const tile of roads2) {
+  //   Game.terrain[tile[0]][tile[1]].roads = tile[2]
+  // }
 
-    [0,18,[0]],
-    [0,20,[1,3]],
-    [0,22,[0,2]],
-    [0,24,[0,3]],
-    [0,26,[3]],
-    [0,30,[0]],
-    [0,32,[1,3]],
+  for (const city of cities1) {
+    Game.terrain[city[0]][city[1]].name = city[2]
+  }
+  // for (const city of cities2) {
+    // Game.terrain[city[0]][city[1]].name = city[2]
+  // }
 
+  // CTX['bmp'].translate(0,mapI*tileSize)
+  // CTX['bmp'].rotate(-Math.PI/2)
+  Game.terrain.flat().forEach(tile=>tile.draw(CTX['bmp']))
+}
 
-    [1,3,[2]],
-    [1,9,[2,4,5]],
-    [1,11,[1,5]],
-    [1,13,[1,2]],
-    [1,15,[2]],
-
-    [1,19,[0,2]],
-    [1,21,[0,3,4,5]],
-    [1,23,[1,3]],
-    [1,33,[0,2,4]],
-    [1,35,[3]],
-
-
-    [2,2,[0,5]],
-    [2,4,[0,1,3]],
-    [2,6,[0,2,3]],
-    [2,8,[1,3,5]],
-    [2,12,[4,5]],
-    [2,14,[0,1,4,5]],
-    [2,16,[1,3]],
-
-    [2,18,[0,5]],
-    [2,20,[3]],
-    [2,24,[1,4]],
-    [2,26,[2]],
-    [2,30,[0,2]],
-    [2,32,[3,5]],
-
-
-    [3,5,[2,4,5]],
-    [3,9,[1,4]],
-    [3,15,[4]],
-    [3,17,[2,4]],
-
-    [3,19,[1]],
-    [3,23,[0]],
-    [3,25,[0,1,2,3,4,5]],
-    [3,27,[0,3]],
-    [3,29,[1,3,5]],
-
-
-    [4,4,[1,2,5]],
-    [4,10,[0,2,4]],
-    [4,12,[1,3]],
-    [4,16,[2,5]],
-
-    [4,20,[1,4]],
-    [4,24,[2,5]],
-    [4,26,[1,4]],
-    [4,28,[0,2]],
-    [4,30,[0,1,3,4]],
-    [4,32,[3]],
-
-
-    [5,3,[0,2,5]],
-    [5,5,[1,3,4]],
-    [5,9,[2,5]],
-    [5,13,[0,1,4]],
-    [5,15,[2,3,5]],
-
-    [5,19,[0,2]],
-    [5,21,[0,1,3,4]],
-    [5,23,[3,5]],
-    [5,27,[2,4,5]],
-    [5,31,[1,4]],
-    [5,35,[2]],
-
-
-    [6,2,[2,5]],
-    [6,6,[0,1,4]],
-    [6,8,[0,1,2,3,5]],
-    [6,10,[0,3]],
-    [6,12,[0,3]],
-    [6,14,[0,1,2,3,4,5]],
-    [6,16,[1,3]],
-
-    [6,18,[5]],
-    [6,22,[0,1,4]],
-    [6,24,[0,3]],
-    [6,26,[2,3,5]],
-    [6,32,[1,4]],
-    [6,34,[2,5]],
-
-
-    [7,1,[1,5]],
-    [7,7,[2,4,5]],
-    [7,9,[1,4]],
-    [7,13,[2,5]],
-    [7,15,[1,2,4]],
-    [7,17,[4]],
-
-    [7,19,[1]],
-    [7,23,[0,2,4]],
-    [7,25,[1,3,5]],
-    [7,29,[0,2]],
-    [7,31,[0,3]],
-    [7,33,[1,2,3,4,5]],
-
-
-    [8,2,[0,1,2,4]],
-    [8,4,[0,3]],
-    [8,6,[1,3,5]],
-    [8,8,[0,2]],
-    [8,10,[1,3,4]],
-    [8,12,[0,2,5]],
-    [8,14,[3,5]],
-    [8,16,[2,4]],
-
-    [8,20,[0,4]],
-    [8,22,[1,3,5]],
-    [8,26,[4]],
-    [8,28,[0,5]],
-    [8,30,[2,3]],
-    [8,32,[5]],
-    [8,34,[4]],
-
-
-    [9,1,[1,5]],
-    [9,3,[4]],
-    [9,7,[2,4,5]],
-    [9,11,[0,2,4,5]],
-    [9,13,[2,3]],
-    [9,15,[1,5]],
-
-    [9,19,[1]],
-    [9,23,[1,2,4]],
-    [9,29,[0,1,2,5]],
-    [9,31,[1,3]],
-
-
-    [10,2,[1,2,4]],
-    [10,6,[1,2,5]],
-    [10,10,[2,5]],
-    [10,12,[5]],
-    [10,16,[2,4]],
-
-    [10,20,[0,4]],
-    [10,22,[0,2,3,5]],
-    [10,24,[1,3,4]],
-    [10,28,[2,5]],
-    [10,30,[2,4]],
-    [10,32,[0,4]],
-    [10,34,[3]],
-
-
-    [11,1,[2,5]],
-    [11,3,[0,1,4]],
-    [11,5,[0,3,5]],
-    [11,7,[0,1,3,4]],
-    [11,9,[0,3,5]],
-    [11,11,[3]],
-    [11,13,[1]],
-    [11,15,[0,5]],
-    [11,17,[2,3]],
-
-    [11,19,[0]],
-    [11,21,[3,5]],
-    [11,25,[0,1,4]],
-    [11,27,[1,3,5]],
-    [11,29,[0,2,5]],
-    [11,31,[3]],
-
-
-    [12,0,[1,5]],
-    [12,4,[2,4]],
-    [12,8,[2,4]],
-    [12,14,[0,1,2,4]],
-    [12,16,[3,5]],
-
-    [12,26,[0,2,4]],
-    [12,28,[1,3,4,5]],
-
-
-    [13,1,[0,2,4]],
-    [13,3,[1,3,5]],
-    [13,7,[2,5]],
-    [13,11,[2]],
-    [13,13,[2,5]],
-    [13,15,[1,4]],
-
-    [13,19,[0]],
-    [13,21,[0,1,2,3]],
-    [13,23,[0,3]],
-    [13,25,[1,3,5]],
-    [13,29,[1,4]],
-    [13,33,[0,2]],
-    [13,35,[3]],
-
-
-    [14,0,[5]],
-    [14,4,[0,4]],
-    [14,6,[1,3,5]],
-    [14,8,[0,2]],
-    [14,10,[0,3,5]],
-    [14,12,[1,3,5]],
-    [14,16,[4]],
-
-    [14,18,[0]],
-    [14,20,[3,5]],
-    [14,22,[0,4]],
-    [14,24,[3]],
-    [14,26,[1,4]],
-    [14,30,[0,1,4]],
-    [14,32,[1,3,5]],
-
-
-    [15,7,[4,5]],
-    [15,13,[0,4]],
-    [15,15,[3]],
-
-    [15,27,[0,4]],
-    [15,29,[0,3]],
-    [15,31,[0,3,4]],
-    [15,33,[0,3,4]],
-    [15,35,[3]],
-
+function createUnits() {
+  Game.units=[
+    new InfantryBTN('hsl(200 50 50)',7,8),
+    new Brigade('hsl(200 50 50)',7.5,8),
+    new DragoonBTN('hsl(200 50 50)',8,8),
+    new Infantry('hsl(200 50 50)',6.75,9),
+    new Dragoons('hsl(200 50 50)',7.25,9),
+    new Cavalry('hsl(200 50 50)',7.75,9),
+    new Artillery('hsl(200 50 50)',8.25,9),
   ]
-  for (const tile of roads) {
-    Game.terrain[tile[0]][tile[1]].roads = tile[2]
-  }
-
-  Game.terrain.flat().forEach(tile=>tile.draw())
-
-  return createSprites()
-}
-
-function createSprites(ctx=CTX['sprites']) {
-  for (const mode in SpriteList) {
-    Sprites[mode]??={}
-    for (const pose in SpriteList[mode]) {
-      Sprites[mode][pose]??=[]
-      CVS[`${mode}_${pose}`] = new OffscreenCanvas(300*4,200*5)
-
-      // CVS[`${mode}_${pose}`] = document.createElement('canvas')
-      // CVS[`${mode}_${pose}`].width = 300*4
-      // CVS[`${mode}_${pose}`].height = 200*5
-      // document.body.appendChild(CVS[`${mode}_${pose}`])
-
-      CTX[`${mode}_${pose}`] = CVS[`${mode}_${pose}`].getContext('2d')
-      for (let i=0;i<SpriteList[mode][pose];i++) {
-        let img = new Image()
-        img.src=`./sprites/topDown/${mode}/${pose}/survivor-${pose}_${mode}_${i}.png`
-        img.onload=()=>CTX[`${mode}_${pose}`].drawImage(img,300*(i%4),200*Math.floor(i/4))
-      }
-    }
-  }
-  return createPCs()
-}
-
-function createPCs() {
-  Game.PCs.push(
-    new Soldier(1,"Rifleman",undefined,Game.terrain[5][15])
-  )
-  Game.PCs.push(
-    new Soldier(1,"Rifleman",undefined,Game.terrain[10][10])
-  )
-  Game.PCs.push(
-    new Soldier(1,"Rifleman",undefined,Game.terrain[5][5])
-  )
-  Game.activePC = Game.PCs[0]
-
-  return createGUI()
-}
-
-function createGUI() {
-  // pause=true
-  Game.buttons=[]
-  Game.hotkeys={}
-
-  new Button(-400,64,(button)=>{
-    let i=Game.pendingPCs.indexOf(Game.activePC)
-        i+=Game.pendingPCs.length-1
-        i%=Game.pendingPCs.length
-    Game.activePC = Game.pendingPCs[i]
-    if (Game.activePC) Game.activePC.focus = true
-    delete Game.phase
-  },'Prev PC',null,'Shift','ShiftLeft')
-
-  new Button(-250,64,()=>{},'Move','plan_move',1,'Digit1')
-
-  new Button(-150,64,()=>{},'Shoot','plan_shoot',2,'Digit2')
-
-  new Button(-50,64,()=>{},'Suppress','plan_suppress',3,'Digit3')
-
-  new Button(+50,64,()=>{},'Reload','plan_reload',4,'Digit4')
-
-  new Button(+150,64,()=>{
-      Game.activePC.done = true
-      delete Game.phase
-      Game.hotkeys['Tab'].click()
-    },'End Turn','next_turn',9,'Digit9')
-
-  new Button(+250,64,()=>{
-        Game.PCs.forEach(pc=>{
-          let carry = pc.energy.carry
-          pc.energy.spent = 0
-          pc.energy.costs = 0
-          pc.energy.datum = carry
-          delete pc.done
-        })
-      Game.activePC = Game.PCs[0]
-      Game.activePC.focus = true
-      delete Game.phase
-    },'End Round','next_round',0,'Digit0')
-
-  new Button(+400,64,(button)=>{
-      let i=Game.pendingPCs.indexOf(Game.activePC)
-          i+=Game.pendingPCs.length+1
-          i%=Game.pendingPCs.length
-      Game.activePC = Game.pendingPCs[i]
-      console.log(Game.activePC)
-      if (!Game.activePC) {
-        console.log('end round')
-        Game.hotkeys['Digit0'].click()
-      } else {
-        Game.activePC.focus = true
-      }
-      delete Game.phase
-    },'Next PC',null,'Tab','Tab')
-
-  onload=refresh
 }
 
 function refresh() {
-  // console.log(Game.phase)
   //reset layers
   for (let layer of settings.layers) {
     if (layer.live) {
@@ -413,8 +100,6 @@ function refresh() {
         CTX[layer.name].translate(innerWidth/2,innerHeight/2)
         CTX[layer.name].scale(1/C.z,1/C.z)
         CTX[layer.name].translate(-C.x,-C.y)
-        // CTX[layer.name].scale(10/10,9/10)
-        // CTX[layer.name].rotate(Math.PI/12)
       }
     }
     CTX[layer.name].lineCap = "round"
@@ -424,57 +109,19 @@ function refresh() {
     CTX[layer.name].textBaseline = "middle"
   }
 
-  if (Game.hoverButton || Game.hoverHex) {
-    document.body.style.setProperty('cursor','default')
-  } else {
-    document.body.style.setProperty('cursor','default')
-  }
-  // delete Game.hoverButton
-  // delete Game.hoverHex
-
-
   //draw loop
-  CTX['map'].drawImage(CVS['bmp'],-tileSize,-tileSize*1)
-  // CTX['test'].drawImage(CVS['rifle_idle'],0,0)
-
-  // CTX['map'].strokeStyle='white'
-  // CTX['map'].strokeRect(0,0,mapWidth,mapHeight)
+  CTX['map'].globalAlpha=0.5
+  CTX['map'].drawImage(CVS['bmp'],-tileSize/Math.cos(Math.PI/6)/2,-tileSize/2)
 
   CTX['gui'].fillStyle='goldenrod'
   CTX['gui'].fillText('\\|/-'[Math.floor(++loop/6)%4],25,25)
 
-  // displayUI()
   Game.terrain.flat().forEach(hex=>hex.hover())
-  // Game.PCs.forEach(pc=>pc.update())
+  Game.units.forEach(unit=>unit.draw())
 
   if (!pause)
-      // requestAnimationFrame(refresh)
     setTimeout(refresh,1000/60)
 }
-
-function displayUI(ctx=CTX['gui']) {
-  ctx.save()
-  Game.activePC.drawGauge(ctx)
-  if (Game.phase?.match(/^wait/)) return
-
-  ctx.translate(0,innerHeight-80)
-  ctx.beginPath
-  ctx.rect(0,0,innerWidth,-128)
-  ctx.fillStyle=`hsl(200 50 20/0.30)`
-  ctx.fill()
-  ctx.font="13px slate"
-  Game.buttons.forEach(b=>b.draw(ctx))
-
-  ctx.beginPath()
-  ctx.rect(0,80,innerWidth,-208)
-  if (ctx.isPointInPath(M.x,M.y)) {
-    Game.hoverHex=null
-  } else {
-    delete Game.hoverHex
-  }
-  ctx.restore()
-}
-
 
 </script>
 
