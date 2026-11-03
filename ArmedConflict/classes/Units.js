@@ -3,12 +3,7 @@ class Unit {
     this.color = color
     this.i = i
     this.j = j
-    this.fieldMove = 1
-    this.crossCountry = true
-    this.attack = {
-      green: 2,
-      red: 1
-    }
+    Game.terrain[i][j].units.push(this)
   }
   get x() {return this.i*tileSize/Math.cos(Math.PI/6)*3/4}
   get y() {return (this.j/2)*tileSize}
@@ -27,12 +22,14 @@ class Unit {
     return ctx
   }
   draw(ctx=CTX['pcs']) {
+    this.checkHover()
     ctx.save()
 
     ctx.translate(this.x,this.y)
+    ctx.scale(0.75,0.75)
     ctx.lineWidth=tileSize/100
 
-    if (Game.unit?.hovered==this) {
+    if (Game.hovered.unit==this) {
       ctx.save()
         ctx.translate(0.75,0.75)
         ctx.lineWidth=12
@@ -75,7 +72,7 @@ class Unit {
       ctx.translate(0,-this.size/3.5)
       ctx.beginPath()
       ctx.font=`${this.size/5}px consolas`
-      ctx.fillStyle='black'
+      ctx.fillStyle=(this.color[4]==0)?'white':'black'
       ctx.fillText(this.symbol,0,0)
     ctx.restore()
 
@@ -127,15 +124,17 @@ class Unit {
     ctx.restore()
 
     //indirect fire dice
-    ctx.save()
-      ctx.translate(-this.size/4,+this.size/6)
-      ctx.beginPath()
-      ctx.arc(0,8,2,0,Math.PI*2)
-      ctx.strokeStyle='black'
-      ctx.fillStyle=this.iDie,
-      ctx.stroke()
-      ctx.fill()
-    ctx.restore()
+    if (this.iDie) {
+      ctx.save()
+        ctx.translate(-this.size/4,+this.size/6)
+        ctx.beginPath()
+        ctx.arc(0,8,2,0,Math.PI*2)
+        ctx.strokeStyle='black'
+        ctx.fillStyle=this.iDie,
+        ctx.stroke()
+        ctx.fill()
+      ctx.restore()
+    }
 
 
     //direct fire dice
@@ -176,8 +175,6 @@ class Unit {
 
     //////////////////////
     ctx.restore()
-    
-    this.checkHover()
   }
   get icon() {
     let ctx=new Path2D()
@@ -204,103 +201,109 @@ class Unit {
   checkHover(ctx=CTX['pcs']) {
     ctx.save()
     ctx.translate(this.x,this.y)
+    ctx.scale(0.75,0.75)
     if (ctx.isPointInPath(this.token,M.x,M.y)) {
-      Game.unit ??= {}
-      Game.unit.hovered = this
+      Game.hovered.unit = this
     }
     ctx.restore()
   }
 
 }
 
-class Brigade extends Unit {
+const BGE=tileSize/3.0,
+      BTN=tileSize/3.5,
+      COY=tileSize/4.0
+
+class BGEInfantry extends Unit {
   armour=6
   attack = {
-    green: 2,
+    'hsl(100 50 50)': 2,
+    'hsl(000 50 50)': 2,
   }
-  iDie='green'
-  iRange=2
-  size=tileSize/3
+  crossCountry=true
+  fieldMove=1
+  iDie=null
+  iRange=0
+  size=BGE
   symbol="X"
   type='infantry'
 }
 
-class InfantryBTN extends Unit {
+class BTNInfantry extends Unit {
   armour=5
   attack = {
-    red: 1
+    'hsl(100 50 50)': 1,
+    'hsl(000 50 50)': 1,
   }
-  iDie='green'
-  iRange=1
-  size=tileSize/3.5
+  crossCountry=true
+  fieldMove=1
+  iDie=null
+  iRange=0
+  size=BTN
   symbol="||"
   type='infantry'
 }
 
-class Infantry extends Unit {
+class COYInfantry extends Unit {
   armour=2
   attack = {
-    green: 2,
-    red: 2
+    'hsl(100 50 50)': 1,
   }
-  fieldMove=2
-  iDie='red'
-  iRange=2
-  size=tileSize/4
+  crossCountry=true
+  fieldMove=1
+  iDie=null
+  iRange=0
+  size=COY
   symbol="|"
   type='infantry'
 }
 
-class Cavalry extends Unit {
-  armour=2
+class COYCavalry extends Unit {
+  armour=7
   attack = {
-    green: 2,
-    red: 2
+    'hsl(000 50 50)': 1
   }
   fieldMove=2
-  iDie='red'
-  iRange=2
-  size=tileSize/4
+  iDie='hsl(100 50 50)'
+  iRange=1
+  size=COY
   symbol="|"
   type='cavalry'
 }
 
-class Artillery extends Unit {
-  armour=2
-  attack = {
-    green: 2,
-    red: 2
-  }
-  fieldMove=2
-  iDie='red'
+class COYArtillery extends Unit {
+  armour=1
+  attack = {}
+  fieldMove=1
+  iDie='hsl(000 50 50)'
   iRange=2
-  size=tileSize/4
+  size=COY
   symbol="|"
   type='artillery'
 }
 
-class Dragoons extends Unit {
-  armour=2
+class COYDragoon extends Unit {
+  armour=4
   attack = {
-    green: 2,
-    red: 2
+    'hsl(000 50 50)': 1
   }
   fieldMove=2
-  iDie='red'
-  iRange=2
-  size=tileSize/4
+  iDie=null
+  iRange=0
+  size=COY
   symbol="|"
   type='dragoon'
 }
 
-class DragoonBTN extends Unit {
-  armour=5
+class BTNDragoon extends Unit {
+  armour=6
   attack = {
-    red: 1
+    'hsl(000 50 50)': 2
   }
-  iDie='green'
-  iRange=1
-  size=tileSize/3.5
+  fieldMove=2
+  iDie=null
+  iRange=0
+  size=BTN
   symbol="||"
   type='dragoon'
 }

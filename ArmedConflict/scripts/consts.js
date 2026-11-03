@@ -285,7 +285,7 @@ const mapI=mapData1[0].length, mapJ=mapData1.length,
         ],
       },
       CVS={},CTX={},K={},
-      C={x:mapWidth/2,y:mapHeight/2,z:0.25,v:10/9},
+      C={x:mapWidth/2,y:mapHeight/2,z:0.5,v:10/9},
       M={
         b:{},
         get sx() {return (this.x-innerWidth/2)*C.z},
@@ -294,7 +294,9 @@ const mapI=mapData1[0].length, mapJ=mapData1.length,
       Game={
         locations:[],
         terrain:[],
+        units:[],
         PCs:[],
+        hovered:{},
         get pendingPCs() {
           return this.PCs.filter(pc=>!pc.done)
         }

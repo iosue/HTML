@@ -11,6 +11,7 @@
     canvas {
       position: fixed;
       inset: 0;
+      color: hsl(60, 56%, 91%);
     }
   </style>
 </head>
@@ -18,7 +19,7 @@
   <script src="./scripts/consts.js"></script>
   <script src="./scripts/helpers.js"></script>
   <script src="./scripts/listeners.js"></script>
-  <script src="./classes/Meter.js"></script>
+  <script src="./classes/Tile.js"></script>
   <script src="./classes/Units.js"></script>
   <script>
 
@@ -53,41 +54,64 @@ function createMap(ctx=CTX['bmp']) {
   ctx.translate(tileSize/Math.cos(Math.PI/6)/2,tileSize/2)
   for (let j=0;j<mapJ;j++)
   for (let i=0;i<mapI;i++) {
-    let newTile = new Meter(i,2*j+(i+1)%2,mapData1[j][i])
+    let newTile = new Tile(i,2*j+(i+1)%2,mapData1[j][i])
     Game.terrain[i]??=[]
     Game.terrain[i][2*j+(i+1)%2] = newTile
-    // newTile.draw()
   }
 
-  for (const road of roads1) {
-    Game.terrain[road[0]][road[1]].roads = road[2]
-  }
-  // for (const tile of roads2) {
-  //   Game.terrain[tile[0]][tile[1]].roads = tile[2]
-  // }
+  for (const road of roads1) Game.terrain[road[0]][road[1]].roads = road[2]
+  // for (const tile of roads2) Game.terrain[tile[0]][tile[1]].roads = tile[2]
 
-  for (const city of cities1) {
-    Game.terrain[city[0]][city[1]].name = city[2]
-  }
-  // for (const city of cities2) {
-    // Game.terrain[city[0]][city[1]].name = city[2]
-  // }
+  for (const city of cities1) Game.terrain[city[0]][city[1]].name = city[2]
+  // for (const city of cities2) Game.terrain[city[0]][city[1]].name = city[2]
 
-  // CTX['bmp'].translate(0,mapI*tileSize)
-  // CTX['bmp'].rotate(-Math.PI/2)
-  Game.terrain.flat().forEach(tile=>tile.draw(CTX['bmp']))
+  Game.terrain.flat().forEach(tile=>tile.draw(CTX['bmp'],true))
 }
 
 function createUnits() {
-  Game.units=[
-    new InfantryBTN('hsl(200 50 50)',7,8),
-    new Brigade('hsl(200 50 50)',7.5,8),
-    new DragoonBTN('hsl(200 50 50)',8,8),
-    new Infantry('hsl(200 50 50)',6.75,9),
-    new Dragoons('hsl(200 50 50)',7.25,9),
-    new Cavalry('hsl(200 50 50)',7.75,9),
-    new Artillery('hsl(200 50 50)',8.25,9),
-  ]
+  Game.units.push(
+    new  BGEInfantry('hsl(100 50 50)',7,8),
+    new  BTNInfantry('hsl(100 50 50)',7,8),
+    new  BTNInfantry('hsl(100 50 50)',7,8),
+    new   COYDragoon('hsl(100 50 50)',7,8),
+    new   COYCavalry('hsl(100 50 50)',7,8),
+    new   COYCavalry('hsl(100 50 50)',7,8),
+    new COYArtillery('hsl(100 50 50)',7,8),
+
+    new  BGEInfantry( 'hsl(200 50 50)',8,7),
+    new  BGEInfantry( 'hsl(200 50 50)',8,7),
+    new  BGEInfantry( 'hsl(200 50 50)',8,7),
+    new  BTNInfantry( 'hsl(200 50 50)',8,7),
+    new  BTNInfantry( 'hsl(200 50 50)',8,7),
+    new  BTNInfantry( 'hsl(200 50 50)',8,7),
+    new   BTNDragoon( 'hsl(200 50 50)',8,7),
+    new   BTNDragoon( 'hsl(200 50 50)',8,7),
+    new   BTNDragoon( 'hsl(200 50 50)',8,7),
+    new  COYInfantry( 'hsl(200 50 50)',8,7),
+    new  COYInfantry( 'hsl(200 50 50)',8,7),
+    new  COYInfantry( 'hsl(200 50 50)',8,7),
+    new   COYDragoon( 'hsl(200 50 50)',8,7),
+    new   COYDragoon( 'hsl(200 50 50)',8,7),
+    new   COYCavalry( 'hsl(200 50 50)',8,7),
+    new   COYCavalry( 'hsl(200 50 50)',8,7),
+    
+    new   COYDragoon( 'hsl(000 50 50)',8,9),
+    new   COYCavalry( 'hsl(000 50 50)',8,9),
+    new   COYDragoon( 'hsl(000 50 50)',8,9),
+
+    new   BTNDragoon(' hsl(050 50 50)',6,7),
+    new   COYCavalry(' hsl(050 50 50)',6,7),
+    new COYArtillery(' hsl(050 50 50)',6,7),
+
+    new  BGEInfantry( 'hsl(500 00 80)',6,9),
+    new  BTNInfantry( 'hsl(500 00 80)',6,9),
+    new  COYInfantry( 'hsl(500 00 80)',6,9),
+
+    new   COYDragoon( 'hsl(000 00 20)',7,10),
+    new   COYCavalry( 'hsl(000 00 20)',7,10),
+    new COYArtillery( 'hsl(000 00 20)',7,10),
+  )
+  Game.terrain.flat().forEach(tile=>tile.reorderUnits())
 }
 
 function refresh() {
@@ -109,6 +133,8 @@ function refresh() {
     CTX[layer.name].textBaseline = "middle"
   }
 
+  Game.hovered = {}
+
   //draw loop
   CTX['map'].globalAlpha=0.5
   CTX['map'].drawImage(CVS['bmp'],-tileSize/Math.cos(Math.PI/6)/2,-tileSize/2)
@@ -116,8 +142,8 @@ function refresh() {
   CTX['gui'].fillStyle='goldenrod'
   CTX['gui'].fillText('\\|/-'[Math.floor(++loop/6)%4],25,25)
 
-  Game.terrain.flat().forEach(hex=>hex.hover())
-  Game.units.forEach(unit=>unit.draw())
+  Game.terrain.flat().forEach(hex=>hex.draw())
+  // Game.units.forEach(unit=>unit.draw())
 
   if (!pause)
     setTimeout(refresh,1000/60)
