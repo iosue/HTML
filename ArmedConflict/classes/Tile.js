@@ -79,35 +79,9 @@ class Tile {
         units[unit.constructor.name].push(unit)
       })
 
-      if (
-        (units.BGEInfantry||units.BTNInfantry||units.BTNDragoon) &&
-        (units.COYInfantry||units.COYDragoon||units.COYCavalry||units.COYArtillery)
-      ) rows++
-
-      if  (units.BGEInfantry) topCols++
-      if  (units.BTNInfantry) topCols++
-      if  (units.BTNDragoon)  topCols++
-      if  (units.COYInfantry) coyCols++
-      if  (units.COYDragoon)  coyCols++
-      if  (units.COYCavalry)  coyCols++
-      if (units.COYArtillery) coyCols++
-
-      let col=0
-      for (const form of ["BTNInfantry","BGEInfantry","BTNDragoon"]) {
-        if (units[form]) {
-          units[form].forEach(unit=>unit.draw())
-          if (units[form].length>1) showStackSize(units[form])
-          col++
-        }
-      }
-      col=0
-      for (const form of ["COYInfantry","COYDragoon","COYCavalry","COYArtillery"]) {
-        if (units[form]) {
-          units[form].forEach(unit=>unit.draw())
-          if (units[form].length>1) showStackSize(units[form])
-          col++
-        }
-      }
+      for (const unit of this.units) unit.draw()
+      for (const form of ["BTNInfantry","BGEInfantry","BTNDragoon","COYInfantry","COYDragoon","COYCavalry","COYArtillery"]) 
+        if (units[form]?.length>1) showStackSize(units[form])
       function showStackSize(form) {
         ctx.save()
         ctx.translate(form[0].x,form[0].y)
@@ -125,7 +99,7 @@ class Tile {
     }
   }
   draw(ctx=CTX['bmp'],paint=false,reorder=false) {
-    this.checkHover()
+    // this.checkHover()
 
     if (paint) {
       const colors=[
@@ -177,14 +151,14 @@ class Tile {
       ctx.restore()
     }
 
-    if (Game.hovered.tile==this) {
-      this.highlight(CTX['pth'],'hsl(0 0 100)')
-    }
+    // if (Game.hovered.tile==this) {
+    //   this.highlight(CTX['pth'],'hsl(0 0 100)')
+    // }
 
     if (reorder) {
       this.reorderUnits()
-    } else {
-      this.drawUnits()
+    // } else {
+    //   this.drawUnits()
     }
   }
 
@@ -250,6 +224,7 @@ class Tile {
     if (Game.hovered.tile===null) return
     if (ctx.isPointInPath(this.path,M.x,M.y)) {
       Game.hovered.tile = this
+      this.highlight(CTX['pth'],'hsl(0 0 100)')
     }
   }
   highlight(ctx=CTX['pth'],color='cyan') {

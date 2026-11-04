@@ -1,12 +1,13 @@
 class Unit {
-  constructor(color,i,j) {
+  constructor(color,i,j,reserve=false) {
     this.color = color
     this.i = i
     this.j = j
-    Game.terrain[i][j].units.push(this)
+    this.reserve = reserve
+    if (Game.terrain[i]?.[j]) Game.terrain[i][j].units.push(this)
   }
-  get x() {return this.i*tileSize/Math.cos(Math.PI/6)*3/4}
-  get y() {return (this.j/2)*tileSize}
+  get x() {return this.reserve?this.i:this.i*tileSize/Math.cos(Math.PI/6)*3/4}
+  get y() {return this.reserve?this.j:(this.j/2)*tileSize}
   get token() {
     let ctx=new Path2D()
     let width=this.size,
@@ -22,7 +23,7 @@ class Unit {
     return ctx
   }
   draw(ctx=CTX['pcs']) {
-    this.checkHover()
+    // this.checkHover()
     ctx.save()
 
     ctx.translate(this.x,this.y)
@@ -118,6 +119,7 @@ class Unit {
         ctx.moveTo(+1.5,3)
         ctx.lineTo(+3.5,3)
       }
+      ctx.strokeStyle=(this.color[4]==0)?'white':'black'
       ctx.fillStyle='hsl(080 50 60)',
       ctx.stroke()
       ctx.fill()

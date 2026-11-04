@@ -272,8 +272,9 @@ const cities2=[]
 const mapI=mapData1[0].length, mapJ=mapData1.length,
       mapWidth=(mapI-1)*3/4*tileSize/Math.cos(Math.PI/6),
       mapHeight=(mapJ-1/2)*1*tileSize,
-      canvasWidth=mapWidth+tileSize/Math.cos(Math.PI/6),
-      canvasHeight=mapHeight+tileSize,
+      mapBorder=tileSize*0.75
+      canvasWidth=mapWidth+mapBorder*2,
+      canvasHeight=mapHeight+mapBorder*2,
       settings={
         layers:[
           {name:"bmp",},
@@ -285,7 +286,7 @@ const mapI=mapData1[0].length, mapJ=mapData1.length,
         ],
       },
       CVS={},CTX={},K={},
-      C={x:mapWidth/2,y:mapHeight/2,z:0.5,v:10/9},
+      C={x:mapWidth/2,y:mapHeight/2,z:2+2.125,v:10/9},
       M={
         b:{},
         get sx() {return (this.x-innerWidth/2)*C.z},
@@ -301,6 +302,7 @@ const mapI=mapData1[0].length, mapJ=mapData1.length,
           return this.PCs.filter(pc=>!pc.done)
         }
       }
+C={x: -700, y: 140, z: 0.8, v: 10/9}
 let pause=false
 
 const Sprites={}

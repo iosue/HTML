@@ -20,12 +20,14 @@
   <script src="./scripts/helpers.js"></script>
   <script src="./scripts/listeners.js"></script>
   <script src="./classes/Tile.js"></script>
+  <script src="./classes/ReservePools.js"></script>
   <script src="./classes/Units.js"></script>
   <script>
 
 // onload=()=>{
   createLayers()
   createMap()
+  createReservePools()
   createUnits()
   refresh()
 // }
@@ -49,9 +51,10 @@ function createLayers() {
 }
 
 function createMap(ctx=CTX['bmp']) {
-  ctx.fillRect(0,0,10000,10000)
+  ctx.fillStyle='hsl(100 15 15)'
+  ctx.fillRect(0,0,canvasWidth,canvasHeight)
 
-  ctx.translate(tileSize/Math.cos(Math.PI/6)/2,tileSize/2)
+  ctx.translate(mapBorder,mapBorder)
   for (let j=0;j<mapJ;j++)
   for (let i=0;i<mapI;i++) {
     let newTile = new Tile(i,2*j+(i+1)%2,mapData1[j][i])
@@ -68,48 +71,59 @@ function createMap(ctx=CTX['bmp']) {
   Game.terrain.flat().forEach(tile=>tile.draw(CTX['bmp'],true))
 }
 
+function createReservePools() {
+  Game.reserves=[
+    new ReservePool( 'hsl(000 50 50)',1,1),
+    new ReservePool( 'hsl(000 00 80)',1,2),
+    new ReservePool(' hsl(050 50 50)',1,3),
+    new ReservePool( 'hsl(000 00 20)',2,1),
+    new ReservePool( 'hsl(200 50 50)',2,2),
+    new ReservePool( 'hsl(100 50 50)',2,3),
+  ]
+}
+
 function createUnits() {
   Game.units.push(
-    new  BGEInfantry('hsl(100 50 50)',7,8),
-    new  BTNInfantry('hsl(100 50 50)',7,8),
-    new  BTNInfantry('hsl(100 50 50)',7,8),
-    new   COYDragoon('hsl(100 50 50)',7,8),
-    new   COYCavalry('hsl(100 50 50)',7,8),
-    new   COYCavalry('hsl(100 50 50)',7,8),
-    new COYArtillery('hsl(100 50 50)',7,8),
+  //   new  BGEInfantry('hsl(100 50 50)',7,8),
+  //   new  BTNInfantry('hsl(100 50 50)',7,8),
+  //   new  BTNInfantry('hsl(100 50 50)',7,8),
+  //   new   COYDragoon('hsl(100 50 50)',7,8),
+  //   new   COYCavalry('hsl(100 50 50)',7,8),
+  //   new   COYCavalry('hsl(100 50 50)',7,8),
+  //   new COYArtillery('hsl(100 50 50)',7,8),
 
-    new  BGEInfantry( 'hsl(200 50 50)',8,7),
-    new  BGEInfantry( 'hsl(200 50 50)',8,7),
-    new  BGEInfantry( 'hsl(200 50 50)',8,7),
-    new  BTNInfantry( 'hsl(200 50 50)',8,7),
-    new  BTNInfantry( 'hsl(200 50 50)',8,7),
-    new  BTNInfantry( 'hsl(200 50 50)',8,7),
-    new   BTNDragoon( 'hsl(200 50 50)',8,7),
-    new   BTNDragoon( 'hsl(200 50 50)',8,7),
-    new   BTNDragoon( 'hsl(200 50 50)',8,7),
-    new  COYInfantry( 'hsl(200 50 50)',8,7),
-    new  COYInfantry( 'hsl(200 50 50)',8,7),
-    new  COYInfantry( 'hsl(200 50 50)',8,7),
-    new   COYDragoon( 'hsl(200 50 50)',8,7),
-    new   COYDragoon( 'hsl(200 50 50)',8,7),
-    new   COYCavalry( 'hsl(200 50 50)',8,7),
-    new   COYCavalry( 'hsl(200 50 50)',8,7),
+    // new  BGEInfantry( 'hsl(200 50 50)',8,7),
+    // new  BGEInfantry( 'hsl(200 50 50)',8,7),
+    // new  BGEInfantry( 'hsl(200 50 50)',8,7),
+  //   new  BTNInfantry( 'hsl(200 50 50)',8,7),
+  //   new  BTNInfantry( 'hsl(200 50 50)',8,7),
+  //   new  BTNInfantry( 'hsl(200 50 50)',8,7),
+  //   new   BTNDragoon( 'hsl(200 50 50)',8,7),
+  //   new   BTNDragoon( 'hsl(200 50 50)',8,7),
+  //   new   BTNDragoon( 'hsl(200 50 50)',8,7),
+  //   new  COYInfantry( 'hsl(200 50 50)',8,7),
+  //   new  COYInfantry( 'hsl(200 50 50)',8,7),
+  //   new  COYInfantry( 'hsl(200 50 50)',8,7),
+  //   new   COYDragoon( 'hsl(200 50 50)',8,7),
+  //   new   COYDragoon( 'hsl(200 50 50)',8,7),
+  //   new   COYCavalry( 'hsl(200 50 50)',8,7),
+  //   new   COYCavalry( 'hsl(200 50 50)',8,7),
     
-    new   COYDragoon( 'hsl(000 50 50)',8,9),
-    new   COYCavalry( 'hsl(000 50 50)',8,9),
-    new   COYDragoon( 'hsl(000 50 50)',8,9),
+  //   new   COYDragoon( 'hsl(000 50 50)',8,9),
+  //   new   COYCavalry( 'hsl(000 50 50)',8,9),
+  //   new   COYDragoon( 'hsl(000 50 50)',8,9),
 
-    new   BTNDragoon(' hsl(050 50 50)',6,7),
-    new   COYCavalry(' hsl(050 50 50)',6,7),
-    new COYArtillery(' hsl(050 50 50)',6,7),
+  //   new   BTNDragoon(' hsl(050 50 50)',6,7),
+  //   new   COYCavalry(' hsl(050 50 50)',6,7),
+  //   new COYArtillery(' hsl(050 50 50)',6,7),
 
-    new  BGEInfantry( 'hsl(500 00 80)',6,9),
-    new  BTNInfantry( 'hsl(500 00 80)',6,9),
-    new  COYInfantry( 'hsl(500 00 80)',6,9),
+  //   new  BGEInfantry( 'hsl(500 00 80)',6,9),
+  //   new  BTNInfantry( 'hsl(500 00 80)',6,9),
+  //   new  COYInfantry( 'hsl(500 00 80)',6,9),
 
-    new   COYDragoon( 'hsl(000 00 20)',7,10),
-    new   COYCavalry( 'hsl(000 00 20)',7,10),
-    new COYArtillery( 'hsl(000 00 20)',7,10),
+  //   new   COYDragoon( 'hsl(000 00 20)',7,10),
+  //   new   COYCavalry( 'hsl(000 00 20)',7,10),
+  //   new COYArtillery( 'hsl(000 00 20)',7,10),
   )
   Game.terrain.flat().forEach(tile=>tile.reorderUnits())
 }
@@ -136,14 +150,25 @@ function refresh() {
   Game.hovered = {}
 
   //draw loop
-  CTX['map'].globalAlpha=0.5
-  CTX['map'].drawImage(CVS['bmp'],-tileSize/Math.cos(Math.PI/6)/2,-tileSize/2)
+  CTX['map'].globalAlpha = 0.5
+  CTX['map'].drawImage(CVS['bmp'],-mapBorder,-mapBorder)
+  CTX['map'].lineWidth=20
+  CTX['map'].strokeStyle='black'
+  CTX['map'].strokeRect(-mapBorder,-mapBorder,canvasWidth,canvasHeight)
+  CTX['map'].lineWidth=10
+  CTX['map'].strokeStyle='white'
+  CTX['map'].strokeRect(-mapBorder,-mapBorder,canvasWidth,canvasHeight)
+  CTX['map'].globalAlpha = 1.0
+  Game.reserves.forEach(pool=>pool.draw(CTX['map']))
+  
 
   CTX['gui'].fillStyle='goldenrod'
   CTX['gui'].fillText('\\|/-'[Math.floor(++loop/6)%4],25,25)
 
-  Game.terrain.flat().forEach(hex=>hex.draw())
-  // Game.units.forEach(unit=>unit.draw())
+  Game.terrain.flat().forEach(hex=>hex.checkHover())
+  Game.units.forEach(unit=>unit.checkHover())
+  Game.reserves.forEach(reserve=>reserve.drawUnits())
+  Game.terrain.flat().forEach(tile=>tile.drawUnits())
 
   if (!pause)
     setTimeout(refresh,1000/60)
