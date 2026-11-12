@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WART</title>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+    canvas {
+      position: fixed;
+      inset: 0;
+    }
+  </style>
+</head>
+<body>
+  <script src="./scripts/consts.js"></script>
+  <script src="./scripts/helpers.js"></script>
+  <script src="./scripts/listeners.js"></script>
+  <script>
+
+  class Tile {
+    constructor(i,j,size,k) {
+      this.i = i
+      this.j = j
+      this.k = k
+      this.w = size
+      this.h = this.w/Math.cos(Math.PI/6)
+    }    
+    get x() {return (this.i-this.j/2)*this.w}
+    get y() {return this.j*this.h*3/4}
+    get path() {
+      let ctx = new Path2D()
+      ctx.lineTo(this.x+this.w*0,this.y-this.h/2)
+      ctx.lineTo(this.x+this.w/2,this.y-this.h/4)
+      ctx.lineTo(this.x+this.w/2,this.y+this.h/4)
+      ctx.lineTo(this.x-this.w*0,this.y+this.h/2)
+      ctx.lineTo(this.x-this.w/2,this.y+this.h/4)
+      ctx.lineTo(this.x-this.w/2,this.y-this.h/4)
+      ctx.closePath()
+      return ctx
+    }
+    draw(ctx) {
+      ctx.save()
+      ctx.fillStyle='#fff2'
+      if (this.k>0) {
+        ctx.fillStyle=[
+          'transparent',
+          'hsl(0 0 50)',
+          'hsl(100 20 40)',
+          'hsl(100 40 20)',
+          'hsl(030 40 20)',
+          'hsl(060 30 30)',
+        ][this.k]
+        ctx.fill(this.path)
+      }
+      ctx.font=`${this.w/5}px consolas`
+      ctx.lineWidth=this.w/50
+      ctx.strokeStyle=`hsl(${Math.log(this.w/20)/Math.log(5)*210/3} 0 50/${1/Math.log(this.w/4)/Math.log(5)})`
+      ctx.clip(this.path)
+      ctx.stroke(this.path)
+      ctx.fillText(`${this.j}:${this.i}`,this.x,this.y)
+      ctx.restore()
+    }
+    highlight(ctx) {
+      ctx.save()
+      ctx.lineWidth=this.w/50
+      ctx.fillStyle=`#fff4`
+      ctx.clip(this.path)
+      ctx.fill(this.path)
+      ctx.restore()
+    }
+    checkHover(ctx=CTX['map']) {
+      if (ctx.isPointInPath(this.path,M.x,M.y)) {
+        this.highlight(ctx)
+        if (M.b[0]&&this.k==0) {
+          this.k = Game.setType
+          Game.mapData[this.j][this.i]=Game.setType
+        } else if (M.b[2]) {
+          delete this.k
+          Game.mapData[this.j][this.i]=0
+        }
+        if (M.b[1]) {
+          console.log(
+            Object.entries(Game.mapData).sort((a,b)=>a[0]-b[0]).map(([k,v])=>v).map(row=>Object.entries(row).sort((a,b)=>a[0]-b[0]).map(([k,v])=>v).join('')),
+          )
+        }
+      }
+    }
+  }
+
+
+  Game.mapData = {}
+  for (let i=-312;i<=312;i++) {
+    Game.mapData[i]={}
+  }
+  
+  C.x=0
+  C.y=0
+  C.z=1/4
+
+  Game.setType=2
+
+
+
+  tileSize=500
+  settings.layers[0].w=tileSize*25
+  settings.layers[0].h=(tileSize/Math.cos(Math.PI/6)*(13+12/2))
+  
+  onload=async()=>{
+    let rawData = await(await fetch('./map.json')).json()
+    for (const r in rawData)
+    for (const q in rawData[r])
+      Game.mapData[r-312][q-312]=rawData[r][q]
+    createLayers()
+    createMap()
+    refresh()
+  }
+function createLayers() {
+  for (let layer of settings.layers) {
+    if (layer.live) {
+      CVS[layer.name] = document.createElement('canvas')
+      CVS[layer.name].height = innerHeight
+      CVS[layer.name].width = innerWidth
+      CVS[layer.name].id = layer.name
+      document.body.appendChild(CVS[layer.name])
+    } else CVS[layer.name] = new OffscreenCanvas(layer.w??canvasWidth,layer.h??canvasHeight)
+    CTX[layer.name] = CVS[layer.name].getContext('2d')
+    CTX[layer.name].lineCap = "round"
+    CTX[layer.name].lineJoin = "round"
+    CTX[layer.name].font = "9px consolas"
+    CTX[layer.name].textAlign = "center"
+    CTX[layer.name].textBaseline = "middle"
+  }
+}
+
+function createMap(ctx=CTX['bmp']) {
+  ctx.translate(settings.layers[0].w/2,settings.layers[0].h/2)
+
+  ctx.fillStyle=`hsl(100 20 20/0.20)`
+  ctx.fillRect(-12500/2,-12500/2,12500,12500)
+  ctx.strokeRect(-5000,-5000,10000,10000)
+
+  let cols
+  Game.terrain={}
+  Game.terrain.xsm=[]
+  Game.terrain.sml=[]
+  Game.terrain.med=[]
+  Game.terrain.lrg=[]
+  cols=(5**4-1)/2
+  for (let j=-cols;j<=cols;j++)
+  for (let i=-cols;i<=cols;i++) {
+    if (i-j<-cols||j-i<-cols) continue
+    let newTile = new Tile(i,j,size=20,Game.mapData[j][i])
+    Game.terrain.xsm[j+cols]??=[]
+    Game.terrain.xsm[j+cols][i+cols] = newTile
+  }
+  cols=(5**3-1)/2
+  for (let j=-cols;j<=cols;j++)
+  for (let i=-cols;i<=cols;i++) {
+    if (i-j<-cols||j-i<-cols) continue
+    let newTile = new Tile(i,j,size=100)
+    Game.terrain.sml[j+cols]??=[]
+    Game.terrain.sml[j+cols][i+cols] = newTile
+  }
+  cols=(5**2-1)/2
+  for (let j=-cols;j<=cols;j++)
+  for (let i=-cols;i<=cols;i++) {
+    if (i-j<-cols||j-i<-cols) continue
+    let newTile = new Tile(i,j,size=500)
+    Game.terrain.med[j+cols]??=[]
+    Game.terrain.med[j+cols][i+cols] = newTile
+  }
+  cols=(5**1-1)/2
+  for (let j=-cols;j<=cols;j++)
+  for (let i=-cols;i<=cols;i++) {
+    if (i-j<-cols||j-i<-cols) continue
+    let newTile = new Tile(i,j,size=2500)
+    Game.terrain.lrg[j+cols]??=[]
+    Game.terrain.lrg[j+cols][i+cols] = newTile
+  }
+  Game.terrain.xsm.flat().forEach(tile=>tile.draw(ctx))
+  Game.terrain.sml.flat().forEach(tile=>tile.draw(ctx))
+  Game.terrain.med.flat().forEach(tile=>tile.draw(ctx))
+  Game.terrain.lrg.flat().forEach(tile=>tile.draw(ctx))
+  Game.terrain.xsm = Game.terrain.xsm.flat()
+}
+
+function refresh() {
+  for (let layer of settings.layers) {
+    if (layer.live) {
+      CVS[layer.name].width = innerWidth
+      CVS[layer.name].height = innerHeight
+      if (layer.scale) {
+        CTX[layer.name].translate(innerWidth/2,innerHeight/2)
+        CTX[layer.name].scale(1/C.z,1/C.z)
+        CTX[layer.name].translate(-C.x,-C.y)
+      }
+    }
+    CTX[layer.name].lineCap = "round"
+    CTX[layer.name].lineJoin = "round"
+    CTX[layer.name].font = "12px consolas"
+    CTX[layer.name].textAlign = "center"
+    CTX[layer.name].textBaseline = "middle"
+  }
+
+
+  CTX['map'].drawImage(CVS['bmp'],-settings.layers[0].w/2,-settings.layers[0].h/2)
+  CTX['map'].globalAlpha = 0.25
+  CTX['map'].drawImage(img,-settings.layers[0].w/2,-settings.layers[0].h/2,settings.layers[0].w,settings.layers[0].h)
+  CTX['map'].globalAlpha = 0.65
+
+  Game.terrain.xsm.forEach(tile=>{
+    if (C.z<1.5)
+    if (innerWidth*C.z+tile.w>2*(C.x-tile.x)
+    &&  innerWidth*C.z+tile.w>2*(tile.x-C.x)
+    &&  innerHeight*C.z+tile.h>2*(C.y-tile.y)
+    &&  innerHeight*C.z+tile.h>2*(tile.y-C.y)) {
+      tile.checkHover(CTX['map'])
+      tile.draw(CTX['map'])
+    }
+  })
+
+
+  if (!pause)
+    requestAnimationFrame(refresh)
+    // setTimeout(refresh,1000/60)
+}
+
+let img=new Image()
+img.src='./screenshot.png'
+
+</script>
+
+</body>
+</html>

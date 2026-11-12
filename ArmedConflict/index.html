@@ -20,6 +20,7 @@
   <script src="./scripts/helpers.js"></script>
   <script src="./scripts/listeners.js"></script>
   <script src="./classes/Tile.js"></script>
+  <script src="./classes/Cubes.js"></script>
   <script src="./classes/ReservePools.js"></script>
   <script src="./classes/Units.js"></script>
   <script>
@@ -69,6 +70,115 @@ function createMap(ctx=CTX['bmp']) {
   // for (const city of cities2) Game.terrain[city[0]][city[1]].name = city[2]
 
   Game.terrain.flat().forEach(tile=>tile.draw(CTX['bmp'],true))
+
+  ctx.beginPath()
+  ctx.rect(canvasWidth-mapBorder,canvasHeight-mapBorder/2,-570,760)
+  ctx.fill()
+  ctx.lineWidth=20
+  ctx.strokeStyle='black'
+  ctx.stroke()
+  ctx.lineWidth=10
+  ctx.strokeStyle='white'
+  ctx.stroke()
+
+  ctx.translate(canvasWidth-mapBorder-570/2,canvasHeight-mapBorder/2+100)
+  ctx.font='64px consolas'
+  ctx.fillStyle="white"
+  ctx.fillText('ALLIANCES',0,0)
+
+  ctx.fillStyle="hsl(0 0 25)"
+  ctx.fillRect(0,50,-250,575)
+  ctx.fillStyle="hsl(0 0 40)"
+  ctx.fillRect(0,50,+250,575)
+  ctx.lineWidth=4
+  ctx.strokeRect(-250,50,500,575)
+
+  ctx.lineWidth=4
+  let shiftX=270,
+      shiftY=shiftX*3/4
+
+  ctx.beginPath()
+  ctx.translate(-shiftX/2,130)
+  ctx.moveTo(0,0)
+  ctx.lineTo(+200,0)
+  ctx.lineTo(+190,-10)
+  ctx.moveTo(+200,0)
+  ctx.lineTo(+190,+10)
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.arc(0,0,50,0,Math.PI*2)
+  ctx.fillStyle='black'
+  ctx.fill()
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.translate(+shiftX,0)
+  ctx.moveTo(0,0)
+  ctx.lineTo(-200,150)
+  ctx.lineTo(-200+2,150-14)
+  ctx.moveTo(-200,150)
+  ctx.lineTo(-200+14,150+2)
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.arc(0,0,50,0,Math.PI*2)
+  ctx.fillStyle='black'
+  ctx.fill()
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.translate(-shiftX,shiftY)
+  ctx.moveTo(0,0)
+  ctx.lineTo(+200,0)
+  ctx.lineTo(+190,-10)
+  ctx.moveTo(+200,0)
+  ctx.lineTo(+190,+10)
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.arc(0,0,50,0,Math.PI*2)
+  ctx.fillStyle='black'
+  ctx.fill()
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.translate(+shiftX,0)
+  ctx.moveTo(0,0)
+  ctx.lineTo(-200,150)
+  ctx.lineTo(-200+2,150-14)
+  ctx.moveTo(-200,150)
+  ctx.lineTo(-200+14,150+2)
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.arc(0,0,50,0,Math.PI*2)
+  ctx.fillStyle='black'
+  ctx.fill()
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.translate(-shiftX,shiftY)
+  ctx.moveTo(0,0)
+  ctx.lineTo(+200,0)
+  ctx.lineTo(+190,-10)
+  ctx.moveTo(+200,0)
+  ctx.lineTo(+190,+10)
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.arc(0,0,50,0,Math.PI*2)
+  ctx.fillStyle='black'
+  ctx.fill()
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.translate(+shiftX,0)
+  ctx.arc(0,0,50,0,Math.PI*2)
+  ctx.fillStyle='black'
+  ctx.fill()
+  ctx.stroke()
+
 }
 
 function createReservePools() {
@@ -159,17 +269,18 @@ function refresh() {
   CTX['map'].strokeStyle='white'
   CTX['map'].strokeRect(-mapBorder,-mapBorder,canvasWidth,canvasHeight)
   CTX['map'].globalAlpha = 1.0
-  Game.reserves.forEach(pool=>pool.draw(CTX['map']))
   
-
+  
   CTX['gui'].fillStyle='goldenrod'
   CTX['gui'].fillText('\\|/-'[Math.floor(++loop/6)%4],25,25)
-
-  Game.terrain.flat().forEach(hex=>hex.checkHover())
+  
+  
+  
   Game.units.forEach(unit=>unit.checkHover())
-  Game.reserves.forEach(reserve=>reserve.drawUnits())
+  Game.reserves.forEach(pool=>pool.draw(CTX['map']))
+  Game.terrain.flat().forEach(hex=>hex.checkHover())
   Game.terrain.flat().forEach(tile=>tile.drawUnits())
-
+  
   if (!pause)
     setTimeout(refresh,1000/60)
 }

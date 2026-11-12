@@ -73,14 +73,14 @@ class Tile {
   }
   drawUnits(ctx=CTX['pcs']) {
     if (this.units.length) {
-      let units={}, rows=1, topCols=0, coyCols=0
+      let units={}
       this.units.forEach(unit=>{
         units[unit.constructor.name] ??= []
         units[unit.constructor.name].push(unit)
       })
 
       for (const unit of this.units) unit.draw()
-      for (const form of ["BTNInfantry","BGEInfantry","BTNDragoon","COYInfantry","COYDragoon","COYCavalry","COYArtillery"]) 
+      for (const form in units) 
         if (units[form]?.length>1) showStackSize(units[form])
       function showStackSize(form) {
         ctx.save()
@@ -98,8 +98,7 @@ class Tile {
       }
     }
   }
-  draw(ctx=CTX['bmp'],paint=false,reorder=false) {
-    // this.checkHover()
+  draw(ctx=CTX['bmp'],paint=false,reorder=false,message) {
 
     if (paint) {
       const colors=[

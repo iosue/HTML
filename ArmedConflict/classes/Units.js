@@ -1,13 +1,14 @@
 class Unit {
-  constructor(color,i,j,reserve=false) {
+  constructor(color,i,j) {
     this.color = color
     this.i = i
     this.j = j
-    this.reserve = reserve
+    this.shiftX = 0
+    this.shiftY = 0
     if (Game.terrain[i]?.[j]) Game.terrain[i][j].units.push(this)
   }
-  get x() {return this.reserve?this.i:this.i*tileSize/Math.cos(Math.PI/6)*3/4}
-  get y() {return this.reserve?this.j:(this.j/2)*tileSize}
+  get x() {return this.i*tileSize/Math.cos(Math.PI/6)*3/4 + this.shiftX*tileSize}
+  get y() {return (this.j/2)*tileSize + this.shiftY*tileSize}
   get token() {
     let ctx=new Path2D()
     let width=this.size,
